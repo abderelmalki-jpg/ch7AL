@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { getSuggestions, type FormState } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@ export function AddProductForm() {
     const { toast } = useToast();
 
   const initialState: FormState = { message: '', suggestions: [] };
-  const [state, formAction] = useFormState(getSuggestions, initialState);
+  const [state, formAction] = useActionState(getSuggestions, initialState);
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
