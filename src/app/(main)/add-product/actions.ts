@@ -4,7 +4,7 @@ import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-produ
 import { z } from 'zod';
 
 const schema = z.object({
-    productDescription: z.string().min(10, { message: 'Description must be at least 10 characters long.' }),
+    productDescription: z.string().min(10, { message: 'La description doit contenir au moins 10 caractères.' }),
 });
 
 export type FormState = {
@@ -25,7 +25,7 @@ export async function getSuggestions(
 
     if (!validatedFields.success) {
         return {
-            message: 'Validation failed.',
+            message: 'La validation a échoué.',
             suggestions: [],
             errors: validatedFields.error.flatten().fieldErrors,
         };
@@ -38,18 +38,18 @@ export async function getSuggestions(
 
         if (suggestedProductNames && suggestedProductNames.length > 0) {
             return {
-                message: 'Here are some suggestions:',
+                message: 'Voici quelques suggestions :',
                 suggestions: suggestedProductNames,
             };
         } else {
              return {
-                message: 'Could not generate suggestions based on the description.',
+                message: 'Impossible de générer des suggestions basées sur la description.',
                 suggestions: [],
             };
         }
     } catch (error) {
         return {
-            message: 'An error occurred while generating suggestions.',
+            message: 'Une erreur est survenue lors de la génération des suggestions.',
             suggestions: [],
         };
     }

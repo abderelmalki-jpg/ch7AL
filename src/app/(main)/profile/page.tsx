@@ -7,11 +7,11 @@ import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star
 import Link from "next/link";
 
 const menuItems = [
-    { icon: Settings, text: 'Settings', href: '#' },
-    { icon: Languages, text: 'Language', href: '#' },
-    { icon: Lock, text: 'Privacy', href: '#' },
-    { icon: HelpCircle, text: 'Help', href: '#' },
-    { icon: Shield, text: 'About', href: '#' },
+    { icon: Settings, text: 'Paramètres', href: '#' },
+    { icon: Languages, text: 'Langue', href: '#' },
+    { icon: Lock, text: 'Confidentialité', href: '#' },
+    { icon: HelpCircle, text: 'Aide', href: '#' },
+    { icon: Shield, text: 'À propos', href: '#' },
 ]
 
 export default function ProfilePage() {
@@ -25,7 +25,7 @@ export default function ProfilePage() {
                     <AvatarFallback>FZ</AvatarFallback>
                 </Avatar>
                 <h1 className="text-3xl font-headline font-bold">Fatima Zahra</h1>
-                <p className="text-muted-foreground">Joined 2 months ago</p>
+                <p className="text-muted-foreground">A rejoint il y a 2 mois</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-8 text-center">

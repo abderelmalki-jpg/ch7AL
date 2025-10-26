@@ -24,8 +24,8 @@ export function AuthForm() {
       <form className="space-y-4">
         {!isLogin && (
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" type="text" placeholder="Your Name" required />
+            <Label htmlFor="name">Nom</Label>
+            <Input id="name" type="text" placeholder="Votre nom" required />
           </div>
         )}
         <div className="space-y-2">
@@ -33,19 +33,19 @@ export function AuthForm() {
           <Input id="email" type="email" placeholder="email@example.com" required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Mot de passe</Label>
           <Input id="password" type="password" required />
         </div>
         {isLogin && (
           <div className="flex items-center justify-between text-sm">
              <div></div>
             <Button variant="link" type="button" className="p-0 h-auto text-primary">
-              Forgot Password?
+              Mot de passe oublié ?
             </Button>
           </div>
         )}
         <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-          {isLogin ? "Log In" : "Create Account"}
+          {isLogin ? "Se connecter" : "Créer un compte"}
         </Button>
       </form>
 
@@ -54,7 +54,7 @@ export function AuthForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          <span className="bg-card px-2 text-muted-foreground">Ou continuer avec</span>
         </div>
       </div>
       
@@ -64,14 +64,14 @@ export function AuthForm() {
       </Button>
 
       <div className="mt-6 text-center text-sm">
-        {isLogin ? "Don't have an account?" : "Already have an account?"}
+        {isLogin ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"}
         <Button
           variant="link"
           type="button"
           onClick={() => setIsLogin(!isLogin)}
           className="text-primary"
         >
-          {isLogin ? "Sign up" : "Log in"}
+          {isLogin ? "S'inscrire" : "Se connecter"}
         </Button>
       </div>
     </div>

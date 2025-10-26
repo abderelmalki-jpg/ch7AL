@@ -39,7 +39,7 @@ export default function HomePage() {
             <HomeClient />
           </h1>
           <p className="opacity-90 max-w-prose">
-            Find the best prices near you, powered by the community.
+            Trouvez les meilleurs prix près de chez vous, grâce à la communauté.
           </p>
         </div>
       </div>
@@ -65,25 +65,25 @@ export default function HomePage() {
         <Link href="/scanner" className="block">
           <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
             <Camera className="h-10 w-10 mx-auto text-accent mb-2" />
-            <p className="font-semibold text-sm">Scan Product</p>
+            <p className="font-semibold text-sm">Scanner Produit</p>
           </Card>
         </Link>
         <Link href="/search" className="block">
           <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
             <Search className="h-10 w-10 mx-auto text-accent mb-2" />
-            <p className="font-semibold text-sm">Search Price</p>
+            <p className="font-semibold text-sm">Chercher Prix</p>
           </Card>
         </Link>
         <Link href="/map" className="block">
           <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
             <MapPin className="h-10 w-10 mx-auto text-accent mb-2" />
-            <p className="font-semibold text-sm">Nearby Stores</p>
+            <p className="font-semibold text-sm">Magasins à proximité</p>
           </Card>
         </Link>
          <Link href="/add-product" className="block">
           <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
             <Plus className="h-10 w-10 mx-auto text-accent mb-2" />
-            <p className="font-semibold text-sm">Add Product</p>
+            <p className="font-semibold text-sm">Ajouter Produit</p>
           </Card>
         </Link>
       </div>
@@ -92,7 +92,7 @@ export default function HomePage() {
         {/* Recent Contributions */}
         <div>
           <h2 className="text-2xl font-headline font-bold text-foreground mb-4">
-            Recent Contributions
+            Contributions Récentes
           </h2>
           <div className="space-y-3">
             {recentContributions.map((contribution) => (
@@ -111,7 +111,7 @@ export default function HomePage() {
                       {contribution.price.toFixed(2)} DH
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(contribution.date), "MMM d")}
+                      {format(new Date(contribution.date), "d MMM")}
                     </p>
                   </div>
                 </CardContent>
@@ -123,7 +123,7 @@ export default function HomePage() {
         {/* Top Contributors */}
         <div>
           <h2 className="text-2xl font-headline font-bold text-foreground mb-4">
-            Top Contributors
+            Top Contributeurs
           </h2>
           <Card>
             <CardContent className="p-0">

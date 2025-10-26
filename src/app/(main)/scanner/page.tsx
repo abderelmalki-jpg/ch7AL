@@ -6,8 +6,8 @@ export default function ScannerPage() {
   return (
     <div className="flex flex-col h-full bg-gray-900">
       <div className="p-6 bg-gray-800/50 backdrop-blur-sm text-white text-center">
-        <h1 className="text-2xl font-headline font-bold">Barcode Scanner</h1>
-        <p className="text-white/80">Place the barcode inside the frame</p>
+        <h1 className="text-2xl font-headline font-bold">Scanner de code-barres</h1>
+        <p className="text-white/80">Placez le code-barres à l'intérieur du cadre</p>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-4 relative">
@@ -26,10 +26,10 @@ export default function ScannerPage() {
           <Card>
             <CardContent className="p-4 space-y-4">
                 <Button className="w-full bg-primary hover:bg-primary/90">
-                    <ScanLine className="mr-2 h-4 w-4" /> Start Scan
+                    <ScanLine className="mr-2 h-4 w-4" /> Démarrer le scan
                 </Button>
                 <Button variant="secondary" className="w-full">
-                    Enter Barcode Manually
+                    Saisir le code-barres manuellement
                 </Button>
             </CardContent>
           </Card>

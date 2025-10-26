@@ -6,11 +6,11 @@ import { Home, Search, ScanLine, MapPin, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/search", label: "Search", icon: Search },
+  { href: "/", label: "Accueil", icon: Home },
+  { href: "/search", label: "Recherche", icon: Search },
   { href: "/scanner", label: "Scan", icon: ScanLine, isCentral: true },
-  { href: "/map", label: "Map", icon: MapPin },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/map", label: "Carte", icon: MapPin },
+  { href: "/profile", label: "Profil", icon: User },
 ];
 
 export function BottomNav() {

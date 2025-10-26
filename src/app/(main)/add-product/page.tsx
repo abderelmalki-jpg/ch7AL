@@ -10,9 +10,9 @@ export default function AddProductPage() {
                 <div className="flex items-center gap-3">
                     <PackagePlus className="h-8 w-8 text-primary" />
                     <div>
-                        <CardTitle className="font-headline text-2xl">Add a New Product</CardTitle>
+                        <CardTitle className="font-headline text-2xl">Ajouter un nouveau produit</CardTitle>
                         <CardDescription>
-                            Contribute to the community by adding a new product.
+                            Contribuez à la communauté en ajoutant un nouveau produit.
                         </CardDescription>
                     </div>
                 </div>

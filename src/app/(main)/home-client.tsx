@@ -8,17 +8,17 @@ export function HomeClient() {
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) {
-      setGreeting('Good Morning');
+      setGreeting('Bonjour');
     } else if (hour < 18) {
-      setGreeting('Good Afternoon');
+      setGreeting('Bon après-midi');
     } else {
-      setGreeting('Good Evening');
+      setGreeting('Bonsoir');
     }
   }, []);
 
   if (!greeting) {
-    return <span>Welcome!</span>
+    return <span>Bienvenue !</span>
   }
 
-  return <span>{greeting}, Fatima!</span>;
+  return <span>{greeting}, Fatima !</span>;
 }

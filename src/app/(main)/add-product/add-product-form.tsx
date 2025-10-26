@@ -37,40 +37,40 @@ export function AddProductForm() {
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-        title: "Copied to clipboard!",
-        description: `"${text}" has been copied.`,
+        title: "Copié dans le presse-papiers !",
+        description: `"${text}" a été copié.`,
     });
   }
 
   return (
     <form className="space-y-6">
         <div className="space-y-2">
-            <Label htmlFor="product-name">Product Name</Label>
-            <Input id="product-name" placeholder="e.g., Coca-Cola Can" />
+            <Label htmlFor="product-name">Nom du produit</Label>
+            <Input id="product-name" placeholder="ex: Canette de Coca-Cola" />
         </div>
         <div className="space-y-2">
-            <Label htmlFor="brand">Brand</Label>
-            <Input id="brand" placeholder="e.g., Coca-Cola" />
+            <Label htmlFor="brand">Marque</Label>
+            <Input id="brand" placeholder="ex: Coca-Cola" />
         </div>
         <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Input id="category" placeholder="e.g., Drinks" />
+            <Label htmlFor="category">Catégorie</Label>
+            <Input id="category" placeholder="ex: Boissons" />
         </div>
 
         <Card className="bg-secondary/50">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                    <Wand2 className="text-accent" /> AI Name Suggestions
+                    <Wand2 className="text-accent" /> Suggestions de nom par IA
                 </CardTitle>
-            </Header>
+            </CardHeader>
             <CardContent>
                 <form action={formAction} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="product-description">Product Description</Label>
+                        <Label htmlFor="product-description">Description du produit</Label>
                         <Textarea 
                             id="product-description" 
                             name="product-description" 
-                            placeholder="Describe the product to get name suggestions. For example: 'A popular carbonated soft drink, classic flavor, in a red can.'"
+                            placeholder="Décrivez le produit pour obtenir des suggestions de noms. Par exemple : 'Une boisson gazeuse populaire, saveur classique, dans une canette rouge.'"
                         />
                          {state.errors?.productDescription && (
                             <p className="text-sm font-medium text-destructive">{state.errors.productDescription[0]}</p>
@@ -78,7 +78,7 @@ export function AddProductForm() {
                     </div>
                     <Button type="submit" variant="outline">
                         <Lightbulb className="mr-2 h-4 w-4"/>
-                        Suggest Names
+                        Suggérer des noms
                     </Button>
                 </form>
                 
@@ -105,7 +105,7 @@ export function AddProductForm() {
             </CardContent>
         </Card>
 
-        <SubmitButton label="Add Product" loadingLabel="Adding..." />
+        <SubmitButton label="Ajouter le produit" loadingLabel="Ajout en cours..." />
     </form>
   );
 }
