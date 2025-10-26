@@ -65,7 +65,7 @@ export default function HomePage() {
         <Link href="/scanner" className="block">
           <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
             <Camera className="h-10 w-10 mx-auto text-accent mb-2" />
-            <p className="font-semibold text-sm">Scanner Produit</p>
+            <p className="font-semibold text-sm">Analyser Produit</p>
           </Card>
         </Link>
         <Link href="/search" className="block">
