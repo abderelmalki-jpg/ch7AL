@@ -73,6 +73,9 @@ export function AuthForm() {
     setIsLoading(true);
     try {
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({
+            prompt: 'select_account'
+        });
         await signInWithPopup(auth, provider);
         toast({ title: 'Connexion réussie avec Google !' });
         router.replace('/');
@@ -149,5 +152,7 @@ export function AuthForm() {
     </div>
   );
 }
+
+    
 
     
