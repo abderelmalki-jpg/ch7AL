@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useUser } from '@/firebase';
 
 export function HomeClient() {
   const [greeting, setGreeting] = useState('');
+  const { user } = useUser();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -20,5 +22,7 @@ export function HomeClient() {
     return <span>Bienvenue !</span>
   }
 
-  return <span>{greeting}, Fatima !</span>;
+  const displayName = user?.displayName?.split(' ')[0] || "Abder";
+
+  return <span>{greeting}, {displayName} !</span>;
 }
