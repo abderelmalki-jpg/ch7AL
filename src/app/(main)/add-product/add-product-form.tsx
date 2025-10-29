@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info } from 'lucide-react';
+import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info, ArrowLeft } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -221,6 +220,16 @@ export function AddProductForm() {
 
                 {isCameraOn && (
                     <div className="space-y-4">
+                         <div className="flex gap-2">
+                             <Button onClick={() => router.back()} variant="outline">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Retour
+                            </Button>
+                             <Button variant="outline" size="icon" onClick={() => setIsCameraOn(false)}>
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Fermer</span>
+                            </Button>
+                        </div>
                         <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
                             <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                             <canvas ref={canvasRef} className="hidden" />
@@ -232,25 +241,19 @@ export function AddProductForm() {
                                 </div>
                             )}
                         </div>
-                        <div className="flex gap-2">
-                             <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full bg-accent hover:bg-accent/90">
-                                {isIdentifying ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                        Analyse en cours...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Zap className="mr-2 h-5 w-5" />
-                                        Identifier le Produit
-                                    </>
-                                )}
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => setIsCameraOn(false)}>
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Fermer</span>
-                            </Button>
-                        </div>
+                        <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full bg-accent hover:bg-accent/90">
+                            {isIdentifying ? (
+                                <>
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    Analyse en cours...
+                                </>
+                            ) : (
+                                <>
+                                    <Zap className="mr-2 h-5 w-5" />
+                                    Identifier le Produit
+                                </>
+                            )}
+                        </Button>
                     </div>
                 )}
             </CardContent>

@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { AddProductForm } from "./add-product-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,18 +17,16 @@ export default function AddProductPage() {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
         <Card className="overflow-hidden">
-            <CardHeader className="bg-primary/5">
-                <div className="flex items-start gap-4">
+            <CardHeader className="bg-primary/5 text-center">
+                 <div className="flex justify-center mb-4">
                     <div className="p-3 bg-primary/10 rounded-full">
-                         <Camera className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                        <CardTitle className="font-headline text-2xl text-primary">Ajouter un prix</CardTitle>
-                        <CardDescription>
-                            Analysez un produit avec l'IA ou entrez les détails manuellement.
-                        </CardDescription>
+                         <Camera className="h-8 w-8 text-primary" />
                     </div>
                 </div>
+                <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
+                <CardDescription>
+                    Utilisez le scan de code-barres pour la rapidité, ou l'analyse IA pour identifier de nouveaux produits.
+                </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
                 <div className="mb-6 text-center">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { ScanLine, Video, VideoOff, Loader2 } from 'lucide-react';
+import { ScanLine, Video, VideoOff, Loader2, ArrowLeft } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -92,6 +91,12 @@ export default function ScannerPage() {
 
     return (
         <div className="container mx-auto max-w-2xl px-4 py-8">
+            <div className="mb-4">
+                <Button onClick={() => router.back()} variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Retour
+                </Button>
+            </div>
             <Card>
                  <CardHeader>
                     <div className="flex items-start gap-4">
