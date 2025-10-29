@@ -203,17 +203,17 @@ export function AddProductForm() {
     <div className="space-y-8">
         
         {/* --- AI Camera Scanner --- */}
-        <Card className="bg-primary/5">
+        <Card className="bg-primary/5 border-primary/20">
              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                    <Camera className="text-primary" />
+                <CardTitle className="flex items-center gap-2 font-headline text-xl text-primary">
+                    <Camera />
                     Analyse par IA
                 </CardTitle>
                 <CardDescription>Utilisez votre caméra pour identifier un produit et remplir les champs automatiquement.</CardDescription>
             </CardHeader>
             <CardContent>
                 {!isCameraOn && (
-                     <Button onClick={() => setIsCameraOn(true)} className="w-full">
+                     <Button onClick={() => setIsCameraOn(true)} className="w-full" variant="outline">
                         <Camera className="mr-2 h-4 w-4" /> Ouvrir la caméra
                     </Button>
                 )}
@@ -232,7 +232,7 @@ export function AddProductForm() {
                             )}
                         </div>
                         <div className="flex gap-2">
-                             <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full">
+                             <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full bg-accent hover:bg-accent/90">
                                 {isIdentifying ? (
                                     <>
                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -245,7 +245,7 @@ export function AddProductForm() {
                                     </>
                                 )}
                             </Button>
-                            <Button variant="outline" onClick={() => setIsCameraOn(false)}>
+                            <Button variant="outline" size="icon" onClick={() => setIsCameraOn(false)}>
                                 <X className="h-4 w-4" />
                                 <span className="sr-only">Fermer</span>
                             </Button>
@@ -264,7 +264,7 @@ export function AddProductForm() {
             <input type="hidden" name="longitude" value={longitude ?? ""} />
             <input type="hidden" name="photoDataUri" value={photoDataUri} />
 
-            <h2 className="text-xl font-bold font-headline border-b pb-2">Détails du prix</h2>
+            <h2 className="text-xl font-bold font-headline border-b pb-2 text-primary">Détails du prix</h2>
 
             {priceFormState.errors?.userId && <p className="text-sm font-medium text-destructive">{priceFormState.errors.userId[0]}</p>}
 
@@ -312,7 +312,7 @@ export function AddProductForm() {
                 <div className="flex gap-2">
                     <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
                     <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
-                        {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4" />}
+                        {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
                         <span className="sr-only">Géolocaliser</span>
                     </Button>
                 </div>
@@ -330,20 +330,22 @@ export function AddProductForm() {
             </Button>
         </form>
 
-        <Card className="bg-secondary/50">
+        <Card className="bg-accent/10 border-accent/20">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                    <Wand2 className="text-accent" /> Pas sûr du nom ? Demandez à l'IA
+                <CardTitle className="flex items-center gap-2 font-headline text-xl text-accent-foreground">
+                    <Wand2 className="text-accent" /> Pas sûr du nom ?
                 </CardTitle>
+                 <CardDescription className="text-accent-foreground/80">Décrivez le produit pour obtenir des suggestions de noms de la part de l'IA.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form action={handleSuggestionSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="product-description">Description du produit</Label>
+                        <Label htmlFor="product-description" className="text-accent-foreground/90">Description du produit</Label>
                         <Textarea 
                             id="product-description" 
                             name="productDescription" 
-                            placeholder="Décrivez le produit pour obtenir des suggestions de noms. Par exemple : 'Une boisson gazeuse populaire, saveur classique, dans une canette rouge.'"
+                            placeholder="ex: 'Une boisson gazeuse populaire dans une canette rouge...'"
+                            className="bg-background/50"
                         />
                          {suggestionState.errors?.productDescription && (
                             <p className="text-sm font-medium text-destructive">{suggestionState.errors.productDescription[0]}</p>
@@ -366,7 +368,7 @@ export function AddProductForm() {
                 
                 {suggestionState.suggestions.length > 0 && (
                     <div className="mt-4 space-y-2">
-                        <p className="font-semibold">{suggestionState.message}</p>
+                        <p className="font-semibold text-accent-foreground/90">{suggestionState.message}</p>
                         <div className="flex flex-wrap gap-2">
                             {suggestionState.suggestions.map((name, index) => (
                                 <button

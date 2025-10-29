@@ -24,36 +24,36 @@ export default function ProfilePage() {
                     <AvatarImage src={userImage?.imageUrl} alt="Fatima Zahra" data-ai-hint={userImage?.imageHint} />
                     <AvatarFallback>FZ</AvatarFallback>
                 </Avatar>
-                <h1 className="text-3xl font-headline font-bold">Fatima Zahra</h1>
+                <h1 className="text-3xl font-headline font-bold text-primary">Fatima Zahra</h1>
                 <p className="text-muted-foreground">A rejoint il y a 2 mois</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-8 text-center">
-                <Card>
+                <Card className="bg-accent/10 border-accent/20">
                     <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2 text-primary">
-                            <Star className="w-6 h-6" /> Points
+                        <CardTitle className="flex items-center justify-center gap-2 text-accent-foreground">
+                            <Star className="w-6 h-6 text-accent" /> Points
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold">1,520</p>
+                        <p className="text-3xl font-bold text-accent">1,520</p>
                     </CardContent>
                 </Card>
-                 <Card>
+                 <Card className="bg-primary/10 border-primary/20">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-center gap-2 text-primary">
                             <BarChart3 className="w-6 h-6" /> Contributions
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold">152</p>
+                        <p className="text-3xl font-bold text-primary">152</p>
                     </CardContent>
                 </Card>
             </div>
 
             <Card className="mb-8">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-primary">
                          <Award className="w-6 h-6 text-accent" /> Badges
                     </CardTitle>
                 </CardHeader>
@@ -62,7 +62,7 @@ export default function ProfilePage() {
                         {userBadges.map(badge => (
                              <div key={badge.name} className="flex flex-col items-center gap-2">
                                 <span className="text-5xl">{badge.emoji}</span>
-                                <span className="font-medium capitalize">{badge.name}</span>
+                                <span className="font-medium capitalize text-muted-foreground">{badge.name}</span>
                             </div>
                         ))}
                     </div>
