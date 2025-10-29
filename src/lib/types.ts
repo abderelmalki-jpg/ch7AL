@@ -1,4 +1,5 @@
 
+
 export type Contribution = {
   id: string;
   productName: string;
@@ -7,6 +8,7 @@ export type Contribution = {
   date: string;
   latitude: number;
   longitude: number;
+  imageUrl?: string;
 };
 
 export type Contributor = {

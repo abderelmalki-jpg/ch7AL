@@ -8,7 +8,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
+          "description": "Unique identifier for the UserProfile entity. Same as Firebase Auth UID."
         },
         "email": {
           "type": "string",
@@ -19,9 +19,9 @@
           "type": "string",
           "description": "Display name of the user."
         },
-        "phone": {
+        "photoURL": {
           "type": "string",
-          "description": "Phone number of the user."
+          "description": "URL of the user's profile picture."
         },
         "createdAt": {
           "type": "string",
@@ -81,10 +81,6 @@
           "type": "string",
           "description": "Barcode of the product."
         },
-        "description": {
-          "type": "string",
-          "description": "Description of the product."
-        },
         "imageUrl": {
           "type": "string",
           "description": "URL of the product image.",
@@ -104,7 +100,6 @@
       "required": [
         "id",
         "name",
-        "barcode",
         "createdAt",
         "updatedAt"
       ]
@@ -188,20 +183,11 @@
           "type": "string",
           "description": "Timestamp indicating when the store was added.",
           "format": "date-time"
-        },
-        "rating": {
-          "type": "number",
-          "description": "Average rating of the store."
-        },
-        "totalRatings": {
-          "type": "number",
-          "description": "Total number of ratings received by the store."
         }
       },
       "required": [
         "id",
         "name",
-        "address",
         "latitude",
         "longitude",
         "createdAt"
@@ -281,9 +267,6 @@
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, following the core design principles and strategy mandates outlined in the prompt. The design emphasizes authorization independence through denormalization, structural segregation for homogeneous security postures, and consistent access modeling. Here's a breakdown:\n\n*   **Authorization Independence:** The structure avoids hierarchical authorization dependencies (`get()` calls in security rules) by denormalizing authorization-related data. For example, the `prices` collection stores the `userId` to enforce ownership, eliminating the need to fetch the user document in security rules.\n*   **Structural Segregation:**  Each collection is designed to contain documents with the same security requirements. This simplifies security rules.\n*   **Access Modeling:**\n    *   **User Profiles:** User data is stored under `/users/{userId}`, providing clear path-based ownership.\n    *   **Stores:** Stores are in a top-level collection `/stores`. Since any user can add a store, ownership is not enforced at the store level. However, each `price` entry links to a `storeId`.\n    *   **Products:** Products are in a top-level collection `/products`. Similar to Stores, ownership is not enforced at the product level, but each `price` entry links to a `productId`.\n    *   **Prices:** Price data is stored in a top-level `/prices` collection. Each price document contains the `userId`, `productId`, and `storeId`, denormalizing essential information for authorization and querying. A user can create a price entry, so user ID is included in the price data. The 'verified' and 'reports' fields allow community moderation, but security rules should prevent unauthorized modification of these fields.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations:\n\n*   Listing prices requires no `get()` calls because `prices` contains all the necessary information for filtering and authorization.\n*   The segregation of user profiles, products, stores, and price entries into separate collections with consistent security needs enables straightforward and secure listing based on the `request.auth.uid` and the denormalized fields.\n\n**Invariants:**\n\n*   Timestamps (`createdAt`, `updatedAt`) can be enforced via security rules to ensure data integrity.\n*   Ownership is maintained by the `userId` field in the `prices` collection."
+    ]
   }
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from "next/image";
@@ -15,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, ThumbsDown, MessageSquare, MapPin } from "lucide-react";
 import type { Contribution } from "@/lib/types";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { MapClient } from "../map/map-client";
 
 interface ContributionCardProps {
@@ -24,7 +24,6 @@ interface ContributionCardProps {
 }
 
 export function ContributionCard({ contribution, apiKey }: ContributionCardProps) {
-  const productImage = PlaceHolderImages.find(img => img.id === 'product-1');
   const storeForMap = [{
     id: Number(contribution.id),
     name: contribution.storeName,
@@ -60,14 +59,13 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
           <DialogTitle>{contribution.productName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {productImage && (
+          {contribution.imageUrl && (
             <div className="relative aspect-video w-full rounded-lg overflow-hidden border">
                 <Image 
-                    src={productImage.imageUrl} 
+                    src={contribution.imageUrl} 
                     alt={contribution.productName} 
                     fill 
                     className="object-contain" 
-                    data-ai-hint={productImage.imageHint}
                 />
             </div>
           )}
