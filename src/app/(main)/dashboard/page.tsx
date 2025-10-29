@@ -33,7 +33,7 @@ export default function DashboardPage() {
               Rechercher un prix
             </Link>
           </Button>
-           <Button asChild size="lg" variant="secondary" className="h-14 text-lg">
+           <Button asChild size="lg" className="h-14 text-lg bg-accent text-accent-foreground hover:bg-accent/90">
             <Link href="/add-product">
                 <PlusCircle className="mr-2 h-5 w-5" />
                 Contribuer un prix
