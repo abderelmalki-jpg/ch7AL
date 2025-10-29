@@ -3,7 +3,7 @@
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { getDb } from '@/firebase/server';
 
 
 // --- AI Suggestions Action ---
@@ -137,7 +137,7 @@ async function getOrCreateProduct(db: Firestore, productName: string, brand?: st
 
 
 export async function addPrice(prevState: AddPriceFormState, formData: FormData): Promise<AddPriceFormState> {
-    const { firestore: db } = getSdks();
+    const db = getDb();
     
     const validatedFields = addPriceSchema.safeParse({
         userId: formData.get('userId'),
