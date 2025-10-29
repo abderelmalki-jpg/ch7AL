@@ -19,6 +19,8 @@ export function ProductRecognizer() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let stream: MediaStream | null = null;
+    
     async function getCameraPermission() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setHasCameraPermission(false);
@@ -26,24 +28,38 @@ export function ProductRecognizer() {
         return;
       }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
         setHasCameraPermission(true);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erreur accès caméra:', err);
         setHasCameraPermission(false);
-        setError("L'autorisation d'accès à la caméra est requise. Veuillez l'activer dans les paramètres de votre navigateur.");
+        if (err.name === 'NotAllowedError') {
+             setError("L'autorisation d'accès à la caméra est requise. Veuillez l'activer dans les paramètres de votre navigateur.");
+        } else if (err.name === 'NotReadableError' || err.name === 'OverconstrainedError') {
+             setError("La caméra est déjà utilisée par une autre application. Veuillez fermer l'autre application et réessayer.");
+        } else {
+             setError("Une erreur inattendue est survenue lors de l'accès à la caméra.");
+        }
       }
     }
 
     getCameraPermission();
 
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
+         try {
+            const currentStream = videoRef.current.srcObject as MediaStream;
+            currentStream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+            console.error("Erreur lors de l'arrêt du flux vidéo", e);
+        }
+        videoRef.current.srcObject = null;
       }
     };
   }, []);
