@@ -15,31 +15,32 @@ type Store = {
   position: { lat: number; lng: number };
 }
 
-const defaultStores: Store[] = [
-  { id: 1, name: 'Hanout Omar', position: { lat: 33.9716, lng: -6.8498 } },
-  { id: 2, name: 'Epicerie Al Amal', position: { lat: 33.9730, lng: -6.8520 } },
-  { id: 3, name: 'Chez Hassan', position: { lat: 33.9700, lng: -6.8480 } },
-];
-
 interface MapClientProps {
     apiKey: string;
     stores?: Store[];
 }
 
-export function MapClient({ apiKey, stores = defaultStores }: MapClientProps) {
-  const position = stores.length > 0 ? stores[0].position : { lat: 33.9716, lng: -6.8498 };
-  const [openInfoWindow, setOpenInfoWindow] = useState<number | null>(null);
-
+export function MapClient({ apiKey, stores }: MapClientProps) {
   if (!apiKey) {
     return (
-      <div className="flex items-center justify-center h-full bg-muted/20">
-        <div className="text-center text-muted-foreground p-4">
-          <p className="font-bold">Carte non disponible</p>
-          <p className="text-sm">Veuillez fournir une clé API Google Maps dans votre fichier `.env` pour afficher la carte.</p>
+        <div className="flex items-center justify-center h-full bg-muted/20">
+            <div className="text-center text-muted-foreground p-4">
+                <p className="font-bold">Carte non disponible</p>
+                <p className="text-sm">Veuillez fournir une clé API Google Maps dans votre fichier `.env` pour afficher la carte.</p>
+            </div>
         </div>
-      </div>
     );
   }
+
+  const position = stores && stores.length > 0 ? stores[0].position : { lat: 33.9716, lng: -6.8498 };
+  const [openInfoWindow, setOpenInfoWindow] = useState<number | null>(null);
+
+  const defaultStores: Store[] = stores || [
+    { id: 1, name: 'Hanout Omar', position: { lat: 33.9716, lng: -6.8498 } },
+    { id: 2, name: 'Epicerie Al Amal', position: { lat: 33.9730, lng: -6.8520 } },
+    { id: 3, name: 'Chez Hassan', position: { lat: 33.9700, lng: -6.8480 } },
+  ];
+
 
   return (
     <APIProvider apiKey={apiKey}>
@@ -47,10 +48,11 @@ export function MapClient({ apiKey, stores = defaultStores }: MapClientProps) {
         defaultCenter={position}
         defaultZoom={14}
         mapId="souk-price-map"
-        gestureHandling={'greedy'}
-        disableDefaultUI={true}
+        gestureHandling={'cooperative'}
+        disableDefaultUI={false}
+        zoomControl={true}
       >
-        {stores.map(store => (
+        {defaultStores.map(store => (
             <AdvancedMarker 
                 key={store.id} 
                 position={store.position}
@@ -64,12 +66,12 @@ export function MapClient({ apiKey, stores = defaultStores }: MapClientProps) {
             </AdvancedMarker>
         ))}
 
-        {openInfoWindow && stores.find(s => s.id === openInfoWindow) && (
+        {openInfoWindow && defaultStores.find(s => s.id === openInfoWindow) && (
             <InfoWindow 
-                position={stores.find(s => s.id === openInfoWindow)?.position}
+                position={defaultStores.find(s => s.id === openInfoWindow)?.position}
                 onCloseClick={() => setOpenInfoWindow(null)}
             >
-                <p className="font-bold">{stores.find(s => s.id === openInfoWindow)?.name}</p>
+                <p className="font-bold">{defaultStores.find(s => s.id === openInfoWindow)?.name}</p>
             </InfoWindow>
         )}
       </Map>
