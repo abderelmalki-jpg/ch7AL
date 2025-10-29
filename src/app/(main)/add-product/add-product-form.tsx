@@ -291,34 +291,39 @@ export function AddProductForm() {
                 </div>
             )}
             
-            <div className="space-y-2">
-                <Label htmlFor="productName">Nom du produit</Label>
-                <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
-                {priceFormState.errors?.productName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.productName[0]}</p>}
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="price">Prix</Label>
-                <div className="relative">
-                     <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" className="pl-4 pr-12" required/>
-                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
-                        DH
-                    </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="productName">Nom du produit</Label>
+                    <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
+                    {priceFormState.errors?.productName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.productName[0]}</p>}
                 </div>
-                 {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
+                <div className="space-y-2">
+                    <Label htmlFor="price">Prix</Label>
+                    <div className="relative">
+                        <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" className="pl-4 pr-12" required/>
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
+                            DH
+                        </span>
+                    </div>
+                    {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
+                </div>
             </div>
-             <div className="space-y-2">
-                <Label htmlFor="storeName">Lieu (Hanout)</Label>
-                <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" required />
-                {priceFormState.errors?.storeName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.storeName[0]}</p>}
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="address">Adresse (Optionnel)</Label>
-                <div className="flex gap-2">
-                    <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
-                    <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
-                        {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
-                        <span className="sr-only">Géolocaliser</span>
-                    </Button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="storeName">Lieu (Hanout)</Label>
+                    <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" required />
+                    {priceFormState.errors?.storeName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.storeName[0]}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="address">Adresse (Optionnel)</Label>
+                    <div className="flex gap-2">
+                        <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
+                        <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
+                            {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
+                            <span className="sr-only">Géolocaliser</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
