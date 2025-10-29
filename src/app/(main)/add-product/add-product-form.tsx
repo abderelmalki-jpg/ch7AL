@@ -181,17 +181,6 @@ export function AddProductForm() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="brandDisplay">Marque</Label>
-                    <Input id="brandDisplay" placeholder="ex: Coca-Cola" value={brand} onChange={(e) => setBrand(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="categoryDisplay">Catégorie</Label>
-                    <Input id="categoryDisplay" placeholder="ex: Boissons" value={category} onChange={(e) => setCategory(e.target.value)} />
-                </div>
-            </div>
-
             <Button type="submit" disabled={isSubmittingPrice} className="w-full text-lg h-12">
                 {isSubmittingPrice ? (
                     <>
