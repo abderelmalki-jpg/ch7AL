@@ -6,7 +6,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-4">
             <Logo className="h-24 w-24" />
         </div>
         <Card className="shadow-2xl rounded-2xl">

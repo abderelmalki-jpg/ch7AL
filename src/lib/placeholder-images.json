@@ -45,8 +45,8 @@
     {
       "id": "logo",
       "description": "Souk Price App Logo",
-      "imageUrl": "https://images.unsplash.com/photo-1670014540751-e94103476566?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxncmVlbiUyMGxvZ298ZW58MHx8fHwxNzYxNDQ2ODc4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "green logo"
+      "imageUrl": "https://res.cloudinary.com/dhjwimevi/image/upload/v1761680866/ChatGPT_Image_28_oct._2025_20_47_33_wcpmzf.png",
+      "imageHint": "app logo"
     }
   ]
 }
