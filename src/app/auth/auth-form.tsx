@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -76,7 +77,12 @@ export function AuthForm() {
         toast({ title: 'Connexion réussie avec Google !' });
         router.replace('/');
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Erreur Google', description: 'Impossible de se connecter avec Google.'});
+        console.error("Erreur de connexion Google :", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Erreur Google', 
+            description: error.message || 'Impossible de se connecter avec Google.'
+        });
     } finally {
         setIsLoading(false);
     }
@@ -143,3 +149,5 @@ export function AuthForm() {
     </div>
   );
 }
+
+    
