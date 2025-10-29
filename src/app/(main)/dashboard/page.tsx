@@ -62,28 +62,28 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Link href="/scanner" className="block">
-          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
+        <Link href="/add-product" className="block">
+          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full flex flex-col justify-center items-center">
             <Camera className="h-10 w-10 mx-auto text-accent mb-2" />
             <p className="font-semibold text-sm">Analyser Produit</p>
           </Card>
         </Link>
         <Link href="/search" className="block">
-          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
+          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full flex flex-col justify-center items-center">
             <Search className="h-10 w-10 mx-auto text-accent mb-2" />
             <p className="font-semibold text-sm">Chercher Prix</p>
           </Card>
         </Link>
         <Link href="/map" className="block">
-          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
+          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full flex flex-col justify-center items-center">
             <MapPin className="h-10 w-10 mx-auto text-accent mb-2" />
             <p className="font-semibold text-sm">Magasins à proximité</p>
           </Card>
         </Link>
          <Link href="/add-product" className="block">
-          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full">
+          <Card className="text-center p-4 hover:bg-accent/20 transition-colors h-full flex flex-col justify-center items-center">
             <Plus className="h-10 w-10 mx-auto text-accent mb-2" />
-            <p className="font-semibold text-sm">Ajouter Produit</p>
+            <p className="font-semibold text-sm">Ajouter Prix</p>
           </Card>
         </Link>
       </div>

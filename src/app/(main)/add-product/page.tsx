@@ -1,6 +1,6 @@
 import { AddProductForm } from "./add-product-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PackagePlus } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Suspense } from "react";
 
 function AddProductFormSuspenseWrapper() {
@@ -18,12 +18,12 @@ export default function AddProductPage() {
             <CardHeader>
                 <div className="flex items-start gap-4">
                     <div className="p-3 bg-primary/10 rounded-full">
-                         <PackagePlus className="h-6 w-6 text-primary" />
+                         <Camera className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                        <CardTitle className="font-headline text-2xl">Ajouter un prix</CardTitle>
+                        <CardTitle className="font-headline text-2xl">Ajouter un produit</CardTitle>
                         <CardDescription>
-                            Partagez un prix que vous avez vu. Chaque contribution aide la communauté à économiser.
+                            Analysez un produit avec l'IA ou entrez les détails manuellement pour partager un prix.
                         </CardDescription>
                     </div>
                 </div>

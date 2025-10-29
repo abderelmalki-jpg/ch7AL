@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect, useActionState } from 'react';
+import { useState, useEffect, useActionState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { getSuggestions, addPrice, type SuggestionFormState, type AddPriceFormState } from './actions';
+import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info, Video } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
@@ -19,17 +21,18 @@ export function AddProductForm() {
     const { user } = useUser();
     const searchParams = useSearchParams();
 
-    // Form state for adding a price
+    // Form states
     const initialPriceState: AddPriceFormState = { status: 'idle', message: '' };
     const [priceFormState, addPriceAction] = useActionState(addPrice, initialPriceState);
 
-    // Form state for AI suggestions
     const initialSuggestionState: SuggestionFormState = { message: '', suggestions: [] };
     const [suggestionState, suggestionAction] = useActionState(getSuggestions, initialSuggestionState);
 
+    // Submission states
     const [isSubmittingPrice, setIsSubmittingPrice] = useState(false);
     const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false);
 
+    // Form fields
     const [productName, setProductName] = useState(searchParams.get('name') || '');
     const [brand, setBrand] = useState(searchParams.get('brand') || '');
     const [category, setCategory] = useState(searchParams.get('category') || '');
@@ -38,7 +41,93 @@ export function AddProductForm() {
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
 
+    // Location state
     const [isLocating, setIsLocating] = useState(false);
+    
+    // Camera and AI state
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isCameraOn, setIsCameraOn] = useState(false);
+    const [isIdentifying, setIsIdentifying] = useState(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+
+     useEffect(() => {
+        let stream: MediaStream | null = null;
+        async function getCameraPermission() {
+          if (!isCameraOn) {
+            if (videoRef.current && videoRef.current.srcObject) {
+              const currentStream = videoRef.current.srcObject as MediaStream;
+              currentStream.getTracks().forEach(track => track.stop());
+              videoRef.current.srcObject = null;
+            }
+            return;
+          };
+
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
+            return;
+          }
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+            setCameraError(null);
+          } catch (err: any) {
+            console.error('Erreur accès caméra:', err);
+            if (err.name === 'NotAllowedError') {
+                 setCameraError("L'autorisation d'accès à la caméra est requise.");
+            } else {
+                 setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
+            }
+            setIsCameraOn(false);
+          }
+        }
+        getCameraPermission();
+        return () => {
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+        };
+    }, [isCameraOn]);
+
+
+    const handleCapture = async () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        setIsIdentifying(true);
+
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if(context) {
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            const dataUri = canvas.toDataURL('image/jpeg');
+            
+            try {
+                const result = await identifyProduct({ photoDataUri: dataUri });
+                setProductName(result.name);
+                setBrand(result.brand);
+                setCategory(result.category);
+                setPhotoDataUri(dataUri);
+                setIsCameraOn(false); // Turn off camera after capture
+                toast({
+                    title: "Produit Identifié!",
+                    description: `C'est un(e) ${result.name}.`,
+                    icon: <Sparkles className="text-accent" />
+                })
+            } catch (e) {
+                console.error(e);
+                toast({
+                    variant: "destructive",
+                    title: "Erreur d'identification",
+                    description: "L'IA n'a pas pu identifier le produit. Réessayez.",
+                });
+            }
+        }
+        setIsIdentifying(false);
+    };
 
     useEffect(() => {
         if (priceFormState.status === 'success') {
@@ -47,7 +136,6 @@ export function AddProductForm() {
                 description: priceFormState.message,
                 duration: 4000,
             });
-            // Redirect to dashboard after a short delay to allow user to see the toast
             setTimeout(() => router.push('/dashboard'), 1000);
         } else if (priceFormState.status === 'error') {
              toast({
@@ -86,7 +174,7 @@ export function AddProductForm() {
     
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
-            toast({ variant: 'destructive', title: 'Géolocalisation non supportée', description: 'Votre navigateur ne supporte pas la géolocalisation.' });
+            toast({ variant: 'destructive', title: 'Géolocalisation non supportée' });
             return;
         }
 
@@ -96,31 +184,78 @@ export function AddProductForm() {
                 const { latitude, longitude } = position.coords;
                 setLatitude(latitude);
                 setLongitude(longitude);
-                // Simple feedback for now. A reverse geocoding API could provide a full address.
                 setAddress(`Position GPS : ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
                 setIsLocating(false);
-                toast({ title: 'Localisation obtenue !', description: "L'adresse a été mise à jour.", icon: <CheckCircle2 className="text-green-500" /> });
+                toast({ title: 'Localisation obtenue !', icon: <CheckCircle2 className="text-green-500" /> });
             },
             () => {
                 setIsLocating(false);
-                toast({ variant: 'destructive', title: 'Erreur de localisation', description: 'Impossible de récupérer votre position. Vérifiez les autorisations de votre navigateur.' });
+                toast({ variant: 'destructive', title: 'Erreur de localisation' });
             }
         );
     };
 
     const removeImage = () => {
         setPhotoDataUri('');
-        // We also need to remove it from the URL query params
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.delete('photoDataUri');
-        newParams.delete('name');
-        newParams.delete('brand');
-        newParams.delete('category');
-        router.replace(`/add-product?${newParams.toString()}`, { scroll: false });
     }
 
   return (
     <div className="space-y-8">
+        
+        {/* --- AI Camera Scanner --- */}
+        <Card className="bg-primary/5">
+             <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-xl">
+                    <Camera className="text-primary" />
+                    Analyse par IA
+                </CardTitle>
+                <CardDescription>Utilisez votre caméra pour identifier un produit et remplir les champs automatiquement.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {!isCameraOn && (
+                     <Button onClick={() => setIsCameraOn(true)} className="w-full">
+                        <Camera className="mr-2 h-4 w-4" /> Ouvrir la caméra
+                    </Button>
+                )}
+
+                {isCameraOn && (
+                    <div className="space-y-4">
+                        <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                            <canvas ref={canvasRef} className="hidden" />
+                            {cameraError && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                                    <div className="text-center text-white p-4">
+                                        <p>{cameraError}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                             <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full">
+                                {isIdentifying ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Analyse en cours...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Zap className="mr-2 h-5 w-5" />
+                                        Identifier le Produit
+                                    </>
+                                )}
+                            </Button>
+                            <Button variant="outline" onClick={() => setIsCameraOn(false)}>
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Fermer</span>
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+
+        {/* --- Product & Price Form --- */}
         <form action={handlePriceSubmit} className="space-y-6">
             <input type="hidden" name="userId" value={user?.uid || ''} />
             <input type="hidden" name="brand" value={brand} />
@@ -129,12 +264,14 @@ export function AddProductForm() {
             <input type="hidden" name="longitude" value={longitude ?? ""} />
             <input type="hidden" name="photoDataUri" value={photoDataUri} />
 
+            <h2 className="text-xl font-bold font-headline border-b pb-2">Détails du prix</h2>
+
             {priceFormState.errors?.userId && <p className="text-sm font-medium text-destructive">{priceFormState.errors.userId[0]}</p>}
 
             {photoDataUri && (
                 <div className="space-y-2">
                     <Label>Aperçu de l'image</Label>
-                    <div className="relative aspect-video w-full rounded-lg overflow-hidden border">
+                    <div className="relative aspect-video w-full max-w-sm mx-auto rounded-lg overflow-hidden border">
                         <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" />
                          <Button
                             type="button"
