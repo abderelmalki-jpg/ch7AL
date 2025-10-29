@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/firebase/provider";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -16,25 +21,84 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     )
 }
 
+const getFirebaseErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+            return 'Email ou mot de passe incorrect.';
+        case 'auth/invalid-email':
+            return 'Cette adresse email est invalide.';
+        case 'auth/email-already-in-use':
+            return 'Cette adresse email est déjà utilisée par un autre compte.';
+        case 'auth/weak-password':
+            return 'Le mot de passe est trop faible. Il doit contenir au moins 6 caractères.';
+        default:
+            return 'Une erreur est survenue. Veuillez réessayer.';
+    }
+}
+
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleAuthAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+        if (isLogin) {
+            await signInWithEmailAndPassword(auth, email, password);
+        } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+            // We would also update the user's profile with the name here
+        }
+        toast({ title: isLogin ? 'Connexion réussie !' : 'Compte créé !', description: 'Vous allez être redirigé.' });
+        router.replace('/');
+    } catch (error: any) {
+        const errorMessage = getFirebaseErrorMessage(error.code);
+        toast({ variant: 'destructive', title: 'Erreur d\'authentification', description: errorMessage });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+  
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        toast({ title: 'Connexion réussie avec Google !' });
+        router.replace('/');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Erreur Google', description: 'Impossible de se connecter avec Google.'});
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
 
   return (
     <div>
-      <form className="space-y-4">
+      <form className="space-y-4" onSubmit={handleAuthAction}>
         {!isLogin && (
           <div className="space-y-2">
             <Label htmlFor="name">Nom</Label>
-            <Input id="name" type="text" placeholder="Votre nom" required />
+            <Input id="name" type="text" placeholder="Votre nom" required value={name} onChange={e => setName(e.target.value)} disabled={isLoading} />
           </div>
         )}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="email@example.com" required />
+          <Input id="email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Mot de passe</Label>
-          <Input id="password" type="password" required />
+          <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading}/>
         </div>
         {isLogin && (
           <div className="flex items-center justify-between text-sm">
@@ -44,8 +108,9 @@ export function AuthForm() {
             </Button>
           </div>
         )}
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-          {isLogin ? "Se connecter" : "Créer un compte"}
+        <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLogin ? "Se connecter" : "Créer un compte"}
         </Button>
       </form>
 
@@ -58,8 +123,8 @@ export function AuthForm() {
         </div>
       </div>
       
-      <Button variant="outline" className="w-full">
-        <GoogleIcon className="mr-2 h-4 w-4" />
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
         Google
       </Button>
 
@@ -70,6 +135,7 @@ export function AuthForm() {
           type="button"
           onClick={() => setIsLogin(!isLogin)}
           className="text-primary"
+          disabled={isLoading}
         >
           {isLogin ? "S'inscrire" : "Se connecter"}
         </Button>
