@@ -2,12 +2,15 @@
 
 import React, { useState } from "react";
 import { useRouter } from 'next/navigation';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { userBadges } from "@/lib/data";
-import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
     { id: 'settings', icon: Settings, text: 'Paramètres', href: '#' },
@@ -30,8 +34,16 @@ export default function ProfilePage() {
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('fr');
 
     const auth = useAuth();
+    const firestore = useFirestore();
+    const { user } = useUser();
     const router = useRouter();
     const { toast } = useToast();
+
+    const userProfileRef = useMemoFirebase(
+      () => (user ? doc(firestore, 'users', user.uid) : null),
+      [user, firestore]
+    );
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
     const languageOptions: { id: Language, name: string, nativeName: string }[] = [
         { id: 'fr', name: 'Français', nativeName: 'Français' },
@@ -57,16 +69,30 @@ export default function ProfilePage() {
         }
     };
 
+    const getInitials = (name: string) => {
+        if (!name) return '';
+        const names = name.split(' ');
+        if (names.length > 1) {
+            return names[0][0] + names[names.length - 1][0];
+        }
+        return name.substring(0, 2);
+    }
 
     return (
         <div className="container mx-auto px-4 md:px-6 py-8">
             <div className="flex flex-col items-center mb-8">
                 <Avatar className="w-24 h-24 mb-4 border-4 border-primary shadow-lg">
-                    <AvatarImage src={userImage?.imageUrl} alt="Fatima Zahra" data-ai-hint={userImage?.imageHint} />
-                    <AvatarFallback>FZ</AvatarFallback>
+                    <AvatarImage src={userProfile?.photoURL || userImage?.imageUrl} alt={userProfile?.name} data-ai-hint={userImage?.imageHint} />
+                    <AvatarFallback>
+                        {isProfileLoading ? <Loader2 className="animate-spin" /> : getInitials(userProfile?.name || user?.email || '')}
+                    </AvatarFallback>
                 </Avatar>
-                <h1 className="text-3xl font-headline font-bold text-primary">Fatima Zahra</h1>
-                <p className="text-muted-foreground">A rejoint il y a 2 mois</p>
+                {isProfileLoading ? (
+                    <Skeleton className="h-9 w-48" />
+                ) : (
+                    <h1 className="text-3xl font-headline font-bold text-primary">{userProfile?.name || 'Utilisateur'}</h1>
+                )}
+                <p className="text-muted-foreground">Membre de la communauté Hanouti</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-8 text-center">
@@ -77,7 +103,11 @@ export default function ProfilePage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold text-accent">1,520</p>
+                        {isProfileLoading ? (
+                            <Skeleton className="h-9 w-24 mx-auto" />
+                        ) : (
+                            <p className="text-3xl font-bold text-accent">{userProfile?.points || 0}</p>
+                        )}
                     </CardContent>
                 </Card>
                  <Card className="bg-primary/10 border-primary/20">
@@ -87,7 +117,11 @@ export default function ProfilePage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold text-primary">152</p>
+                         {isProfileLoading ? (
+                            <Skeleton className="h-9 w-16 mx-auto" />
+                        ) : (
+                            <p className="text-3xl font-bold text-primary">{userProfile?.contributions || 0}</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>
