@@ -41,7 +41,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
                 <h3 className="font-semibold text-primary leading-tight">
                   {contribution.productName}
                 </h3>
-                <p className="text-sm text-accent-foreground/80 font-medium">
+                <p className="text-sm text-accent font-medium">
                   {contribution.storeName}
                 </p>
               </div>
@@ -73,7 +73,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
           )}
           <div className="flex justify-between items-center bg-muted p-3 rounded-lg">
             <div>
-              <p className="text-sm text-muted-foreground">{contribution.storeName}</p>
+              <p className="text-sm text-accent">{contribution.storeName}</p>
               <p className="text-2xl font-bold text-primary">{contribution.price.toFixed(2)} DH</p>
             </div>
             <div className="flex items-center gap-3">
