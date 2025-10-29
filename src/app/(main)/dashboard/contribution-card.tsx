@@ -38,10 +38,10 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-semibold text-foreground leading-tight">
+                <h3 className="font-semibold text-primary leading-tight">
                   {contribution.productName}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-accent-foreground/80 font-medium">
                   {contribution.storeName}
                 </p>
               </div>
