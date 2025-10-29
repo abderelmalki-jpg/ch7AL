@@ -30,7 +30,16 @@ export function MapClient({ apiKey, stores = defaultStores }: MapClientProps) {
   const position = stores.length > 0 ? stores[0].position : { lat: 33.9716, lng: -6.8498 };
   const [openInfoWindow, setOpenInfoWindow] = useState<number | null>(null);
 
-  if (!apiKey) return <div className="flex items-center justify-center h-full bg-muted-foreground/10"><p>La clé API Google Maps est manquante.</p></div>
+  if (!apiKey) {
+    return (
+      <div className="flex items-center justify-center h-full bg-muted/20">
+        <div className="text-center text-muted-foreground p-4">
+          <p className="font-bold">Carte non disponible</p>
+          <p className="text-sm">Veuillez fournir une clé API Google Maps dans votre fichier `.env` pour afficher la carte.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <APIProvider apiKey={apiKey}>

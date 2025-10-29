@@ -10,14 +10,14 @@ import { MapClient } from "../map/map-client";
 import { ContributionCard } from "./contribution-card";
 
 const storesFromContributions = recentContributions.map((c, i) => ({
-  id: c.id,
+  id: Number(c.id),
   name: c.storeName,
   // Dummy positions for now, should be replaced with real data
   position: { lat: 33.9716 - i * 0.001, lng: -6.8498 + i * 0.0015 },
 }));
 
 export default function DashboardPage() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-6 space-y-8">
@@ -65,16 +65,7 @@ export default function DashboardPage() {
           <Card>
               <CardContent className="p-0">
                   <div className="h-[400px] w-full rounded-lg overflow-hidden">
-                     {apiKey ? (
-                        <MapClient apiKey={apiKey} stores={storesFromContributions} />
-                    ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                            <div className="text-center text-muted-foreground">
-                                <p className="font-semibold">Carte non disponible</p>
-                                <p className="text-sm">La clé API Google Maps est manquante.</p>
-                            </div>
-                        </div>
-                    )}
+                    <MapClient apiKey={apiKey} stores={storesFromContributions} />
                   </div>
               </CardContent>
           </Card>
