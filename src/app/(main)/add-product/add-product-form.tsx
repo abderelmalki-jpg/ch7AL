@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { useSearchParams } from 'next/navigation';
 import { getSuggestions, type FormState } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,11 @@ function SubmitButton({ label, loadingLabel }: { label: string; loadingLabel: st
 
 export function AddProductForm() {
     const { toast } = useToast();
+    const searchParams = useSearchParams();
+
+    const productName = searchParams.get('name') || '';
+    const brand = searchParams.get('brand') || '';
+    const category = searchParams.get('category') || '';
 
   const initialState: FormState = { message: '', suggestions: [] };
   const [state, formAction] = useActionState(getSuggestions, initialState);
@@ -47,15 +53,15 @@ export function AddProductForm() {
     <form className="space-y-6">
         <div className="space-y-2">
             <Label htmlFor="product-name">Nom du produit</Label>
-            <Input id="product-name" placeholder="ex: Canette de Coca-Cola" />
+            <Input id="product-name" placeholder="ex: Canette de Coca-Cola" defaultValue={productName} />
         </div>
         <div className="space-y-2">
             <Label htmlFor="brand">Marque</Label>
-            <Input id="brand" placeholder="ex: Coca-Cola" />
+            <Input id="brand" placeholder="ex: Coca-Cola" defaultValue={brand} />
         </div>
         <div className="space-y-2">
             <Label htmlFor="category">Catégorie</Label>
-            <Input id="category" placeholder="ex: Boissons" />
+            <Input id="category" placeholder="ex: Boissons" defaultValue={category} />
         </div>
 
         <Card className="bg-secondary/50">
@@ -70,7 +76,7 @@ export function AddProductForm() {
                         <Label htmlFor="product-description">Description du produit</Label>
                         <Textarea 
                             id="product-description" 
-                            name="product-description" 
+                            name="productDescription" 
                             placeholder="Décrivez le produit pour obtenir des suggestions de noms. Par exemple : 'Une boisson gazeuse populaire, saveur classique, dans une canette rouge.'"
                         />
                          {state.errors?.productDescription && (

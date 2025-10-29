@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 
 export function ProductRecognizer() {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
@@ -38,7 +40,7 @@ export function ProductRecognizer() {
         setHasCameraPermission(false);
         if (err.name === 'NotAllowedError') {
              setError("L'autorisation d'accès à la caméra est requise. Veuillez l'activer dans les paramètres de votre navigateur.");
-        } else if (err.name === 'NotReadableError' || err.name === 'OverconstrainedError') {
+        } else if (err.name === 'NotReadableError' || err.name === 'OverconstrainedError' || err.name === 'DEVICE_IN_USE') {
              setError("La caméra est déjà utilisée par une autre application. Veuillez fermer l'autre application et réessayer.");
         } else {
              setError("Une erreur inattendue est survenue lors de l'accès à la caméra.");
@@ -49,16 +51,9 @@ export function ProductRecognizer() {
     getCameraPermission();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
       if (videoRef.current && videoRef.current.srcObject) {
-         try {
-            const currentStream = videoRef.current.srcObject as MediaStream;
-            currentStream.getTracks().forEach(track => track.stop());
-        } catch (e) {
-            console.error("Erreur lors de l'arrêt du flux vidéo", e);
-        }
+        const currentStream = videoRef.current.srcObject as MediaStream;
+        currentStream.getTracks().forEach(track => track.stop());
         videoRef.current.srcObject = null;
       }
     };
@@ -94,6 +89,16 @@ export function ProductRecognizer() {
     }
     setIsCapturing(false);
   };
+  
+  const handleAddPrice = () => {
+    if (!productInfo) return;
+    const params = new URLSearchParams({
+        name: productInfo.name,
+        brand: productInfo.brand,
+        category: productInfo.category
+    });
+    router.push(`/add-product?${params.toString()}`);
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-900">
@@ -157,7 +162,7 @@ export function ProductRecognizer() {
                             <p><span className="font-semibold">Nom:</span> {productInfo.name}</p>
                             <p><span className="font-semibold">Marque:</span> {productInfo.brand}</p>
                             <p><span className="font-semibold">Catégorie:</span> {productInfo.category}</p>
-                            <Button className="w-full mt-4">Ajouter le prix pour ce produit</Button>
+                            <Button className="w-full mt-4" onClick={handleAddPrice}>Ajouter le prix pour ce produit</Button>
                         </CardContent>
                     </Card>
                 )}
