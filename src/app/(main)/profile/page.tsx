@@ -1,20 +1,23 @@
 'use client';
 
 import React, { useState } from "react";
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { userBadges } from "@/lib/data";
-import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/firebase/provider";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
     { id: 'settings', icon: Settings, text: 'Paramètres', href: '#' },
-    // { id: 'language', icon: Languages, text: 'Langue', href: '#' }, // Replaced by Dialog
     { id: 'privacy', icon: Lock, text: 'Confidentialité', href: '#' },
     { id: 'help', icon: HelpCircle, text: 'Aide', href: '#' },
     { id: 'about', icon: Shield, text: 'À propos', href: '#' },
@@ -26,11 +29,34 @@ export default function ProfilePage() {
     const userImage = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('fr');
 
+    const auth = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+
     const languageOptions: { id: Language, name: string, nativeName: string }[] = [
         { id: 'fr', name: 'Français', nativeName: 'Français' },
         { id: 'ar', name: 'Arabe', nativeName: 'العربية' },
         { id: 'dr', name: 'Darija', nativeName: 'الدارجة' },
     ];
+    
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            toast({
+                title: "Déconnexion réussie",
+                description: "Vous avez été déconnecté.",
+            });
+            router.push('/auth');
+        } catch (error) {
+            console.error("Erreur de déconnexion:", error);
+            toast({
+                variant: "destructive",
+                title: "Erreur",
+                description: "Impossible de se déconnecter. Veuillez réessayer.",
+            });
+        }
+    };
+
 
     return (
         <div className="container mx-auto px-4 md:px-6 py-8">
@@ -132,6 +158,13 @@ export default function ProfilePage() {
                     </Dialog>
                 </CardContent>
             </Card>
+
+            <div className="mt-8">
+                <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
+                    <LogOut className="mr-2 h-5 w-5" />
+                    Se déconnecter
+                </Button>
+            </div>
         </div>
     );
 }
