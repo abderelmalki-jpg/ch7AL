@@ -25,8 +25,8 @@ export type Product = {
   brand: string;
   category: string;
   imageUrl: string;
-  imageHint: string;
-  price: number;
+  imageHint?: string; // imageHint is optional from Firestore
+  price?: number; // Price is optional, as it might not be directly on the product
 };
 
 export type UserProfile = {
