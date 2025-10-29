@@ -33,6 +33,8 @@ const getFirebaseErrorMessage = (errorCode: string) => {
             return 'Cette adresse email est déjà utilisée par un autre compte.';
         case 'auth/weak-password':
             return 'Le mot de passe est trop faible. Il doit contenir au moins 6 caractères.';
+        case 'auth/unauthorized-domain':
+             return 'Le domaine n\'est pas autorisé pour l\'authentification. Veuillez vérifier votre configuration Firebase.';
         default:
             return 'Une erreur est survenue. Veuillez réessayer.';
     }
@@ -60,7 +62,7 @@ export function AuthForm() {
             // We would also update the user's profile with the name here
         }
         toast({ title: isLogin ? 'Connexion réussie !' : 'Compte créé !', description: 'Vous allez être redirigé.' });
-        router.replace('/');
+        router.replace('/dashboard');
     } catch (error: any) {
         const errorMessage = getFirebaseErrorMessage(error.code);
         toast({ variant: 'destructive', title: 'Erreur d\'authentification', description: errorMessage });
@@ -78,13 +80,14 @@ export function AuthForm() {
         });
         await signInWithPopup(auth, provider);
         toast({ title: 'Connexion réussie avec Google !' });
-        router.replace('/');
+        router.replace('/dashboard');
     } catch (error: any) {
         console.error("Erreur de connexion Google :", error);
+        const errorMessage = getFirebaseErrorMessage(error.code);
         toast({ 
             variant: 'destructive', 
             title: 'Erreur Google', 
-            description: error.message || 'Impossible de se connecter avec Google.'
+            description: errorMessage
         });
     } finally {
         setIsLoading(false);
@@ -152,7 +155,3 @@ export function AuthForm() {
     </div>
   );
 }
-
-    
-
-    
