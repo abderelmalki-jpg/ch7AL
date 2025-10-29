@@ -1,21 +1,36 @@
+'use client';
+
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { userBadges } from "@/lib/data";
-import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check } from "lucide-react";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
-    { icon: Settings, text: 'Paramètres', href: '#' },
-    { icon: Languages, text: 'Langue', href: '#' },
-    { icon: Lock, text: 'Confidentialité', href: '#' },
-    { icon: HelpCircle, text: 'Aide', href: '#' },
-    { icon: Shield, text: 'À propos', href: '#' },
+    { id: 'settings', icon: Settings, text: 'Paramètres', href: '#' },
+    // { id: 'language', icon: Languages, text: 'Langue', href: '#' }, // Replaced by Dialog
+    { id: 'privacy', icon: Lock, text: 'Confidentialité', href: '#' },
+    { id: 'help', icon: HelpCircle, text: 'Aide', href: '#' },
+    { id: 'about', icon: Shield, text: 'À propos', href: '#' },
 ]
+
+type Language = 'fr' | 'ar' | 'dr';
 
 export default function ProfilePage() {
     const userImage = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
+    const [selectedLanguage, setSelectedLanguage] = useState<Language>('fr');
+
+    const languageOptions: { id: Language, name: string, nativeName: string }[] = [
+        { id: 'fr', name: 'Français', nativeName: 'Français' },
+        { id: 'ar', name: 'Arabe', nativeName: 'العربية' },
+        { id: 'dr', name: 'Darija', nativeName: 'الدارجة' },
+    ];
 
     return (
         <div className="container mx-auto px-4 md:px-6 py-8">
@@ -72,15 +87,49 @@ export default function ProfilePage() {
             <Card>
                 <CardContent className="p-2">
                     {menuItems.map((item, index) => (
-                        <div key={item.text}>
+                        <>
                             <Link href={item.href} className="flex items-center p-3 rounded-lg hover:bg-secondary transition-colors">
                                 <item.icon className="w-5 h-5 mr-4 text-muted-foreground" />
                                 <span className="flex-1 font-medium">{item.text}</span>
                                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
                             </Link>
-                            {index < menuItems.length - 1 && <Separator className="my-0" />}
-                        </div>
+                            {index < menuItems.length -1 && <Separator className="my-0" />}
+                        </>
                     ))}
+                     <Separator className="my-0" />
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <button className="w-full flex items-center p-3 rounded-lg hover:bg-secondary transition-colors text-left">
+                                <Languages className="w-5 h-5 mr-4 text-muted-foreground" />
+                                <span className="flex-1 font-medium">Langue</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">{languageOptions.find(l => l.id === selectedLanguage)?.name}</span>
+                                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                            </button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Choisissez votre langue</DialogTitle>
+                            </DialogHeader>
+                            <div className="flex flex-col gap-2 pt-4">
+                                {languageOptions.map((lang) => (
+                                    <Button
+                                        key={lang.id}
+                                        variant="outline"
+                                        className={cn(
+                                            "w-full justify-between h-14 text-lg",
+                                            selectedLanguage === lang.id && "border-primary ring-2 ring-primary"
+                                        )}
+                                        onClick={() => setSelectedLanguage(lang.id)}
+                                    >
+                                        <span>{lang.name} <span className="text-muted-foreground">({lang.nativeName})</span></span>
+                                        {selectedLanguage === lang.id && <Check className="w-5 h-5 text-primary" />}
+                                    </Button>
+                                ))}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </CardContent>
             </Card>
         </div>
