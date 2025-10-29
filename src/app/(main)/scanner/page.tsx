@@ -12,6 +12,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ScanLine, Video, VideoOff, Loader2 } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function ScannerPage() {
     const [isScanning, setIsScanning] = useState(true);
@@ -38,6 +39,7 @@ export default function ScannerPage() {
     });
 
     const handleBarcodeScan = async (barcode: string) => {
+        if (!firestore) return;
         setIsSearching(true);
         toast({
             title: 'Code-barres scanné !',
@@ -58,8 +60,8 @@ export default function ScannerPage() {
                 
                 const params = new URLSearchParams();
                 params.set('name', product.name);
-                params.set('brand', product.brand);
-                params.set('category', product.category);
+                if(product.brand) params.set('brand', product.brand);
+                if(product.category) params.set('category', product.category);
                 if (product.imageUrl) {
                     params.set('photoDataUri', product.imageUrl);
                 }
