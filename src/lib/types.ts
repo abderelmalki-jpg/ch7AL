@@ -1,9 +1,12 @@
+
 export type Contribution = {
   id: string;
   productName: string;
   storeName: string;
   price: number;
   date: string;
+  latitude: number;
+  longitude: number;
 };
 
 export type Contributor = {

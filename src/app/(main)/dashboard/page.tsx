@@ -11,8 +11,7 @@ import { ContributionCard } from "./contribution-card";
 const storesFromContributions = recentContributions.map((c, i) => ({
   id: Number(c.id),
   name: c.storeName,
-  // Dummy positions for now, should be replaced with real data
-  position: { lat: 33.9716 - i * 0.001, lng: -6.8498 + i * 0.0015 },
+  position: { lat: c.latitude, lng: c.longitude },
 }));
 
 export default function DashboardPage() {
@@ -50,7 +49,7 @@ export default function DashboardPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {recentContributions.map((contribution) => (
-            <ContributionCard key={contribution.id} contribution={contribution} />
+            <ContributionCard key={contribution.id} contribution={contribution} apiKey={apiKey} />
           ))}
         </div>
       </div>

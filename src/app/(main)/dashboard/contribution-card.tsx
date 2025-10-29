@@ -13,17 +13,23 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, MapPin } from "lucide-react";
 import type { Contribution } from "@/lib/types";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { MapClient } from "../map/map-client";
 
 interface ContributionCardProps {
   contribution: Contribution;
+  apiKey: string;
 }
 
-export function ContributionCard({ contribution }: ContributionCardProps) {
-  // Find a placeholder image. In a real app, this would come from the contribution data.
+export function ContributionCard({ contribution, apiKey }: ContributionCardProps) {
   const productImage = PlaceHolderImages.find(img => img.id === 'product-1');
+  const storeForMap = [{
+    id: Number(contribution.id),
+    name: contribution.storeName,
+    position: { lat: contribution.latitude, lng: contribution.longitude }
+  }];
 
   return (
     <Dialog>
@@ -79,13 +85,28 @@ export function ContributionCard({ contribution }: ContributionCardProps) {
               </Button>
             </div>
           </div>
+
+          <div className="space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-muted-foreground"/>
+                Localisation
+              </h4>
+              <div className="h-48 w-full rounded-lg overflow-hidden">
+                {apiKey ? (
+                    <MapClient apiKey={apiKey} stores={storeForMap} />
+                ) : (
+                    <div className="flex items-center justify-center h-full bg-muted/20">
+                        <p className="text-sm text-muted-foreground">Clé API Google Maps manquante</p>
+                    </div>
+                )}
+              </div>
+          </div>
           
           <div className="space-y-2">
             <h4 className="font-semibold flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-muted-foreground"/>
               Commentaires
             </h4>
-            {/* Comments will be listed here */}
             <div className="text-center text-sm text-muted-foreground py-4">
               Aucun commentaire pour le moment.
             </div>

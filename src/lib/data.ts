@@ -8,6 +8,8 @@ export const recentContributions: Contribution[] = [
     storeName: 'Hanout Omar',
     price: 3.5,
     date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
+    latitude: 33.9716,
+    longitude: -6.8498,
   },
   {
     id: '2',
@@ -15,6 +17,8 @@ export const recentContributions: Contribution[] = [
     storeName: 'Épicerie Al Amal',
     price: 5.0,
     date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
+    latitude: 33.9730,
+    longitude: -6.8520,
   },
   {
     id: '3',
@@ -22,6 +26,8 @@ export const recentContributions: Contribution[] = [
     storeName: 'Chez Hassan',
     price: 6.0,
     date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
+    latitude: 33.9700,
+    longitude: -6.8480,
   },
 ];
 
