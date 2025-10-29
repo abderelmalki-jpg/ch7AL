@@ -1,15 +1,16 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { getSuggestions, type FormState } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb } from 'lucide-react';
+import { Wand2, Loader2, Lightbulb, MapPin, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 function SubmitButton({ label, loadingLabel }: { label: string; loadingLabel: string; }) {
@@ -32,36 +33,117 @@ function SubmitButton({ label, loadingLabel }: { label: string; loadingLabel: st
 
 export function AddProductForm() {
     const { toast } = useToast();
+    const router = useRouter();
     const searchParams = useSearchParams();
 
-    const productName = searchParams.get('name') || '';
-    const brand = searchParams.get('brand') || '';
-    const category = searchParams.get('category') || '';
+    const [productName, setProductName] = useState(searchParams.get('name') || '');
+    const [brand, setBrand] = useState(searchParams.get('brand') || '');
+    const [category, setCategory] = useState(searchParams.get('category') || '');
+    const [photoDataUri, setPhotoDataUri] = useState(searchParams.get('photoDataUri') || '');
 
-  const initialState: FormState = { message: '', suggestions: [] };
-  const [state, formAction] = useActionState(getSuggestions, initialState);
+    const [address, setAddress] = useState('');
+    const [isLocating, setIsLocating] = useState(false);
 
-  const handleCopyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-        title: "Copié dans le presse-papiers !",
-        description: `"${text}" a été copié.`,
-    });
-  }
+    const initialState: FormState = { message: '', suggestions: [] };
+    const [state, formAction] = useActionState(getSuggestions, initialState);
+
+    const handleCopyToClipboard = (text: string) => {
+        setProductName(text);
+        toast({
+            title: "Nom copié et collé !",
+            description: `Le champ "Nom du produit" a été mis à jour.`,
+        });
+    }
+    
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            toast({ variant: 'destructive', title: 'Géolocalisation non supportée', description: 'Votre navigateur ne supporte pas la géolocalisation.' });
+            return;
+        }
+
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                // For now, we just show "Adresse GPS" but this can be expanded with a reverse geocoding API
+                setAddress(`Position GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+                setIsLocating(false);
+                toast({ title: 'Localisation obtenue !' });
+            },
+            () => {
+                setIsLocating(false);
+                toast({ variant: 'destructive', title: 'Erreur de localisation', description: 'Impossible de récupérer votre position. Vérifiez les autorisations.' });
+            }
+        );
+    };
+
+    const removeImage = () => {
+        setPhotoDataUri('');
+        // We also need to remove it from the URL query params
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.delete('photoDataUri');
+        router.replace(`/add-product?${newParams.toString()}`, { scroll: false });
+    }
 
   return (
     <form className="space-y-6">
+
+        {photoDataUri && (
+            <div className="space-y-2">
+                <Label>Aperçu de l'image</Label>
+                <div className="relative aspect-video w-full rounded-lg overflow-hidden border">
+                    <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" />
+                     <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8"
+                        onClick={removeImage}
+                    >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Supprimer l'image</span>
+                    </Button>
+                </div>
+            </div>
+        )}
+        
         <div className="space-y-2">
             <Label htmlFor="product-name">Nom du produit</Label>
-            <Input id="product-name" placeholder="ex: Canette de Coca-Cola" defaultValue={productName} />
+            <Input id="product-name" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} />
         </div>
         <div className="space-y-2">
-            <Label htmlFor="brand">Marque</Label>
-            <Input id="brand" placeholder="ex: Coca-Cola" defaultValue={brand} />
+            <Label htmlFor="price">Prix</Label>
+            <div className="relative">
+                 <Input id="price" type="number" placeholder="0.00" className="pl-4 pr-12"/>
+                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
+                    DH
+                </span>
+            </div>
         </div>
-        <div className="space-y-2">
-            <Label htmlFor="category">Catégorie</Label>
-            <Input id="category" placeholder="ex: Boissons" defaultValue={category} />
+         <div className="space-y-2">
+            <Label htmlFor="store">Lieu (Hanout)</Label>
+            <Input id="store" placeholder="Chercher ou créer un magasin" />
+        </div>
+         <div className="space-y-2">
+            <Label htmlFor="address">Adresse</Label>
+            <div className="flex gap-2">
+                <Input id="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
+                <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
+                    {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4" />}
+                    <span className="sr-only">Géolocaliser</span>
+                </Button>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="brand">Marque</Label>
+                <Input id="brand" placeholder="ex: Coca-Cola" value={brand} onChange={(e) => setBrand(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="category">Catégorie</Label>
+                <Input id="category" placeholder="ex: Boissons" value={category} onChange={(e) => setCategory(e.target.value)} />
+            </div>
         </div>
 
         <Card className="bg-secondary/50">
@@ -112,7 +194,7 @@ export function AddProductForm() {
             </CardContent>
         </Card>
 
-        <SubmitButton label="Ajouter le produit" loadingLabel="Ajout en cours..." />
+        <SubmitButton label="Ajouter le prix" loadingLabel="Ajout en cours..." />
     </form>
   );
 }

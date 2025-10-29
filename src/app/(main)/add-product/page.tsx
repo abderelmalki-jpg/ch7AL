@@ -1,6 +1,15 @@
 import { AddProductForm } from "./add-product-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PackagePlus } from "lucide-react";
+import { Suspense } from "react";
+
+function AddProductFormSuspenseWrapper() {
+    return (
+        <Suspense fallback={<div>Chargement du formulaire...</div>}>
+            <AddProductForm />
+        </Suspense>
+    );
+}
 
 export default function AddProductPage() {
   return (
@@ -10,15 +19,15 @@ export default function AddProductPage() {
                 <div className="flex items-center gap-3">
                     <PackagePlus className="h-8 w-8 text-primary" />
                     <div>
-                        <CardTitle className="font-headline text-2xl">Ajouter un nouveau produit</CardTitle>
+                        <CardTitle className="font-headline text-2xl">Ajouter un prix</CardTitle>
                         <CardDescription>
-                            Contribuez à la communauté en ajoutant un nouveau produit.
+                            Partagez un prix que vous avez vu et aidez la communauté.
                         </CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <AddProductForm />
+                <AddProductFormSuspenseWrapper />
             </CardContent>
         </Card>
     </div>

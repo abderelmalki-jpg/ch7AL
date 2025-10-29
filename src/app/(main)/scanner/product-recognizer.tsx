@@ -15,7 +15,7 @@ export function ProductRecognizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [productInfo, setProductInfo] = useState<{name: string, brand: string, category: string} | null>(null);
+  const [productInfo, setProductInfo] = useState<{name: string, brand: string, category: string, photoDataUri: string} | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { toast } = useToast();
@@ -76,7 +76,7 @@ export function ProductRecognizer() {
         
         try {
             const result = await identifyProduct({ photoDataUri });
-            setProductInfo(result);
+            setProductInfo({...result, photoDataUri });
         } catch (e) {
             console.error(e);
             setError("L'IA n'a pas pu identifier le produit. Réessayez.");
@@ -95,7 +95,8 @@ export function ProductRecognizer() {
     const params = new URLSearchParams({
         name: productInfo.name,
         brand: productInfo.brand,
-        category: productInfo.category
+        category: productInfo.category,
+        photoDataUri: productInfo.photoDataUri
     });
     router.push(`/add-product?${params.toString()}`);
   }
