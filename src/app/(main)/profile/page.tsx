@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
-    { id: 'settings', icon: Settings, text: 'Paramètres', href: '#' },
+    { id: 'settings', icon: Settings, text: 'Paramètres', href: '/settings' },
     { id: 'privacy', icon: Lock, text: 'Confidentialité', href: '#' },
     { id: 'help', icon: HelpCircle, text: 'Aide', href: '#' },
     { id: 'about', icon: Shield, text: 'À propos', href: '#' },
@@ -259,4 +259,4 @@ export default function ProfilePage() {
             </div>
         </div>
     );
-     
+}
