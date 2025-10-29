@@ -87,14 +87,14 @@ export default function ProfilePage() {
             <Card>
                 <CardContent className="p-2">
                     {menuItems.map((item, index) => (
-                        <>
+                        <React.Fragment key={item.id}>
                             <Link href={item.href} className="flex items-center p-3 rounded-lg hover:bg-secondary transition-colors">
                                 <item.icon className="w-5 h-5 mr-4 text-muted-foreground" />
                                 <span className="flex-1 font-medium">{item.text}</span>
                                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
                             </Link>
                             {index < menuItems.length -1 && <Separator className="my-0" />}
-                        </>
+                        </React.Fragment>
                     ))}
                      <Separator className="my-0" />
                      <Dialog>
