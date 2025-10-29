@@ -2,7 +2,7 @@
 
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, type Firestore } from 'firebase/firestore';
 import { getDb } from '@/firebase/server';
 
 
@@ -173,8 +173,9 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
         const storeId = await getOrCreateStore(db, storeName, address, latitude, longitude);
         const productId = await getOrCreateProduct(db, productName, brand, category);
 
-        const priceRecordsRef = collection(db, 'priceRecords');
-        await addDoc(priceRecordsRef, {
+        // Corrected collection name from `priceRecords` to `prices`
+        const pricesRef = collection(db, 'prices');
+        await addDoc(pricesRef, {
             userId,
             productId,
             storeId,
@@ -184,9 +185,16 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
             reports: 0
         });
 
+        // Update user's points and contributions
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            points: increment(10),
+            contributions: increment(1)
+        });
+
         return {
             status: 'success',
-            message: `Prix pour ${productName} ajouté avec succès chez ${storeName} !`,
+            message: `Prix pour ${productName} ajouté avec succès chez ${storeName} ! (+10 points)`,
         };
 
     } catch (error) {
