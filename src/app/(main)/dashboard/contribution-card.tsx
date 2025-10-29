@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect, useActionState, useTransition } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -20,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, MapPin, ImageIcon, Send, Loader2, User as UserIcon } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, MapPin, ImageIcon, Send, Loader2 } from 'lucide-react';
 import { MapClient } from '../map/map-client';
 import { addComment } from '../product/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -204,7 +203,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
                       <div className="flex items-baseline justify-between">
                          <p className="font-semibold text-sm">{comment.userName}</p>
                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date((comment.createdAt as any).seconds * 1000), { locale: fr })}
+                            {formatDistanceToNow(new Date((comment.createdAt as any).seconds * 1000), { locale: fr, addSuffix: true })}
                          </p>
                       </div>
                       <p className="text-sm">{comment.text}</p>
@@ -227,9 +226,8 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
                   onChange={(e) => setCommentText(e.target.value)}
                   disabled={isSubmitting}
                 />
-                <Button className="w-full" disabled={!commentText.trim() || isSubmatting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
-                    Envoyer le commentaire
+                <Button className="w-full" disabled={!commentText.trim() || isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-4 w-4"/> Envoyer le commentaire</>}
                 </Button>
             </form>
           )}
