@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Camera, MapPin, User, Trophy, ScanLine } from "lucide-react";
+import { Home, Search, Camera, User, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Accueil", icon: Home },
   { href: "/search", label: "Recherche", icon: Search },
   { href: "/add-product", label: "Ajouter", icon: Camera, isCentral: true },
-  { href: "/scanner", label: "Scanner", icon: ScanLine },
+  { href: "/leaderboard", label: "Classement", icon: Trophy },
   { href: "/profile", label: "Profil", icon: User },
 ];
 

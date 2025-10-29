@@ -3,6 +3,7 @@
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getSuggestions, addPrice, type SuggestionFormState, type AddPriceFormState } from './actions';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info, ArrowLeft } from 'lucide-react';
+import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info, ArrowLeft, ScanLine } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -198,146 +199,162 @@ export function AddProductForm() {
     const removeImage = () => {
         setPhotoDataUri('');
     }
+    
+    if (isCameraOn) {
+        return (
+             <Card>
+                <CardHeader>
+                    <div className="flex gap-2">
+                        <Button onClick={() => setIsCameraOn(false)} variant="outline">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Retour
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                        <canvas ref={canvasRef} className="hidden" />
+                        {cameraError && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                                <div className="text-center text-white p-4">
+                                    <p>{cameraError}</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full mt-4 bg-accent hover:bg-accent/90">
+                        {isIdentifying ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Analyse en cours...
+                            </>
+                        ) : (
+                            <>
+                                <Zap className="mr-2 h-5 w-5" />
+                                Identifier le Produit
+                            </>
+                        )}
+                    </Button>
+                </CardContent>
+            </Card>
+        )
+    }
 
   return (
     <div className="space-y-8">
-        
-        {/* --- AI Camera Scanner --- */}
-        <Card className="bg-primary/5 border-primary/20">
-             <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-xl text-primary">
-                    <Camera />
-                    Analyse par IA
-                </CardTitle>
-                <CardDescription>Utilisez votre caméra pour identifier un produit et remplir les champs automatiquement.</CardDescription>
+        <Card className="overflow-hidden">
+            <CardHeader className="text-center">
+                 <div className="flex justify-center mb-4">
+                    <div className="p-3 bg-primary/10 rounded-full">
+                         <Camera className="h-8 w-8 text-primary" />
+                    </div>
+                </div>
+                <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
+                <CardDescription>
+                    Identifiez un produit avec votre caméra ou scannez son code-barres.
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                {!isCameraOn && (
-                     <Button onClick={() => setIsCameraOn(true)} className="w-full" variant="outline">
-                        <Camera className="mr-2 h-4 w-4" /> Ouvrir la caméra
+                 <div className="grid grid-cols-2 gap-4 mb-6">
+                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2">
+                        <Camera className="h-6 w-6" />
+                        <span>Analyse IA</span>
                     </Button>
-                )}
-
-                {isCameraOn && (
-                    <div className="space-y-4">
-                         <div className="flex gap-2">
-                             <Button onClick={() => router.back()} variant="outline">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Retour
-                            </Button>
-                             <Button variant="outline" size="icon" onClick={() => setIsCameraOn(false)}>
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Fermer</span>
-                            </Button>
-                        </div>
-                        <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
-                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                            <canvas ref={canvasRef} className="hidden" />
-                            {cameraError && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                                    <div className="text-center text-white p-4">
-                                        <p>{cameraError}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full bg-accent hover:bg-accent/90">
-                            {isIdentifying ? (
-                                <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    Analyse en cours...
-                                </>
-                            ) : (
-                                <>
-                                    <Zap className="mr-2 h-5 w-5" />
-                                    Identifier le Produit
-                                </>
-                            )}
-                        </Button>
+                     <Button asChild variant="outline" size="lg" className="h-auto py-4 flex-col gap-2">
+                        <Link href="/scanner">
+                            <ScanLine className="h-6 w-6" />
+                             <span>Code-barres</span>
+                        </Link>
+                    </Button>
+                </div>
+                 <div className="relative mb-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
                     </div>
-                )}
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">Ou remplir manuellement</span>
+                    </div>
+                </div>
+
+                <form action={handlePriceSubmit} className="space-y-6">
+                    <input type="hidden" name="userId" value={user?.uid || ''} />
+                    <input type="hidden" name="brand" value={brand} />
+                    <input type="hidden" name="category" value={category} />
+                    <input type="hidden" name="latitude" value={latitude ?? ""} />
+                    <input type="hidden" name="longitude" value={longitude ?? ""} />
+                    <input type="hidden" name="photoDataUri" value={photoDataUri} />
+
+                    {priceFormState.errors?.userId && <p className="text-sm font-medium text-destructive">{priceFormState.errors.userId[0]}</p>}
+
+                    {photoDataUri && (
+                        <div className="space-y-2">
+                            <Label>Aperçu de l'image</Label>
+                            <div className="relative aspect-video w-full max-w-sm mx-auto rounded-lg overflow-hidden border">
+                                <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" />
+                                 <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-2 right-2 h-8 w-8"
+                                    onClick={removeImage}
+                                >
+                                    <X className="h-4 w-4" />
+                                    <span className="sr-only">Supprimer l'image</span>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="productName">Nom du produit</Label>
+                            <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
+                            {priceFormState.errors?.productName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.productName[0]}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="price">Prix</Label>
+                            <div className="relative">
+                                <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" className="pl-4 pr-12" required/>
+                                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
+                                    DH
+                                </span>
+                            </div>
+                            {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="storeName">Lieu (Hanout)</Label>
+                            <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" required />
+                            {priceFormState.errors?.storeName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.storeName[0]}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Adresse (Optionnel)</Label>
+                            <div className="flex gap-2">
+                                <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
+                                <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
+                                    {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
+                                    <span className="sr-only">Géolocaliser</span>
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
+                        {isSubmittingPrice ? (
+                            <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Ajout en cours...
+                            </>
+                        ) : (
+                            "Ajouter le prix"
+                        )}
+                    </Button>
+                </form>
             </CardContent>
         </Card>
-
-        {/* --- Product & Price Form --- */}
-        <form action={handlePriceSubmit} className="space-y-6">
-            <input type="hidden" name="userId" value={user?.uid || ''} />
-            <input type="hidden" name="brand" value={brand} />
-            <input type="hidden" name="category" value={category} />
-            <input type="hidden" name="latitude" value={latitude ?? ""} />
-            <input type="hidden" name="longitude" value={longitude ?? ""} />
-            <input type="hidden" name="photoDataUri" value={photoDataUri} />
-
-            <h2 className="text-xl font-bold font-headline border-b pb-2 text-primary">Détails du prix</h2>
-
-            {priceFormState.errors?.userId && <p className="text-sm font-medium text-destructive">{priceFormState.errors.userId[0]}</p>}
-
-            {photoDataUri && (
-                <div className="space-y-2">
-                    <Label>Aperçu de l'image</Label>
-                    <div className="relative aspect-video w-full max-w-sm mx-auto rounded-lg overflow-hidden border">
-                        <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" />
-                         <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-8 w-8"
-                            onClick={removeImage}
-                        >
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">Supprimer l'image</span>
-                        </Button>
-                    </div>
-                </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="productName">Nom du produit</Label>
-                    <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
-                    {priceFormState.errors?.productName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.productName[0]}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="price">Prix</Label>
-                    <div className="relative">
-                        <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" className="pl-4 pr-12" required/>
-                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
-                            DH
-                        </span>
-                    </div>
-                    {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="storeName">Lieu (Hanout)</Label>
-                    <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" required />
-                    {priceFormState.errors?.storeName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.storeName[0]}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="address">Adresse (Optionnel)</Label>
-                    <div className="flex gap-2">
-                        <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
-                        <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
-                            {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
-                            <span className="sr-only">Géolocaliser</span>
-                        </Button>
-                    </div>
-                </div>
-            </div>
-
-            <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
-                {isSubmittingPrice ? (
-                    <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Ajout en cours...
-                    </>
-                ) : (
-                    "Ajouter le prix"
-                )}
-            </Button>
-        </form>
 
         <Card className="bg-accent/10 border-accent/20">
             <CardHeader>
