@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,9 +34,12 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="text-xs text-muted-foreground">{product.brand}</p>
           <div className="flex-grow"></div>
            <div className="flex justify-between items-end mt-2">
-            {product.category && <Badge variant="secondary">{product.category}</Badge>}
+            {product.category && <Badge variant="secondary" className="hidden sm:inline-flex">{product.category}</Badge>}
             {product.price && (
-                <p className="font-bold text-primary">{product.price.toFixed(2)} DH</p>
+                <div className="text-right">
+                    <p className="text-xs text-muted-foreground">dès</p>
+                    <p className="font-bold text-primary leading-none">{product.price.toFixed(2)} DH</p>
+                </div>
             )}
           </div>
         </CardContent>

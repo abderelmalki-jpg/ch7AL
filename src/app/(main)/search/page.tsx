@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import type { Product } from '@/lib/types';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import type { Product, Price } from '@/lib/types';
 import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/product-card";
-import { SearchIcon, Loader2 } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SearchPage() {
@@ -18,22 +18,51 @@ export default function SearchPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchProducts() {
+        async function fetchProductsAndPrices() {
             if (!firestore) return;
             setIsLoading(true);
             try {
+                // 1. Fetch all products
                 const productsRef = collection(firestore, 'products');
-                const querySnapshot = await getDocs(productsRef);
-                const fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-                setProducts(fetchedProducts);
-                setFilteredProducts(fetchedProducts);
+                const productsSnapshot = await getDocs(productsRef);
+                const fetchedProducts = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+
+                // 2. Fetch all prices
+                const pricesRef = collection(firestore, 'prices');
+                const pricesSnapshot = await getDocs(pricesRef);
+                const allPrices = pricesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Price));
+
+                // 3. Create a map of productId -> prices
+                const pricesByProduct = new Map<string, number[]>();
+                allPrices.forEach(price => {
+                    if (!pricesByProduct.has(price.productId)) {
+                        pricesByProduct.set(price.productId, []);
+                    }
+                    pricesByProduct.get(price.productId)!.push(price.price);
+                });
+
+                // 4. Augment products with lowest price
+                const productsWithPrices = fetchedProducts.map(product => {
+                    const productPrices = pricesByProduct.get(product.id);
+                    if (productPrices && productPrices.length > 0) {
+                        return {
+                            ...product,
+                            price: Math.min(...productPrices) // Set lowest price
+                        };
+                    }
+                    return product;
+                });
+
+                setProducts(productsWithPrices);
+                setFilteredProducts(productsWithPrices);
+
             } catch (error) {
-                console.error("Failed to fetch products:", error);
+                console.error("Failed to fetch products and prices:", error);
             } finally {
                 setIsLoading(false);
             }
         }
-        fetchProducts();
+        fetchProductsAndPrices();
     }, [firestore]);
 
     useEffect(() => {
