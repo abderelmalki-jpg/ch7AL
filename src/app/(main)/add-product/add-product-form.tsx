@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFormState } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { getSuggestions, addPrice, type SuggestionFormState, type AddPriceFormState } from './actions';
@@ -10,18 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-function SubmitButton() {
-  // We can't use useFormStatus from 'react-dom' here because there are two forms.
-  // Instead, we will manage a loading state manually.
-  // This part of the code needs to be adjusted based on which form is submitting.
-  // For simplicity, let's assume the parent component handles loading state.
-  return null;
-}
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -31,11 +21,11 @@ export function AddProductForm() {
 
     // Form state for adding a price
     const initialPriceState: AddPriceFormState = { status: 'idle', message: '' };
-    const [priceFormState, addPriceAction] = useFormState(addPrice, initialPriceState);
+    const [priceFormState, addPriceAction] = useActionState(addPrice, initialPriceState);
 
     // Form state for AI suggestions
     const initialSuggestionState: SuggestionFormState = { message: '', suggestions: [] };
-    const [suggestionState, suggestionAction] = useFormState(getSuggestions, initialSuggestionState);
+    const [suggestionState, suggestionAction] = useActionState(getSuggestions, initialSuggestionState);
 
     const [isSubmittingPrice, setIsSubmittingPrice] = useState(false);
     const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false);
