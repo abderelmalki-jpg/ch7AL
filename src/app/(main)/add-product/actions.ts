@@ -2,7 +2,7 @@
 
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 import { getSdks } from '@/firebase';
 
 
@@ -86,7 +86,7 @@ export type AddPriceFormState = {
     }
 }
 
-async function getOrCreateStore(db: any, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
+async function getOrCreateStore(db: Firestore, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
     const storesRef = collection(db, 'stores');
     const q = query(storesRef, where("name", "==", storeName));
     
@@ -113,7 +113,7 @@ async function getOrCreateStore(db: any, storeName: string, address?: string, la
 }
 
 
-async function getOrCreateProduct(db: any, productName: string, brand?: string, category?: string): Promise<string> {
+async function getOrCreateProduct(db: Firestore, productName: string, brand?: string, category?: string): Promise<string> {
      const productsRef = collection(db, 'products');
     const q = query(productsRef, where("name", "==", productName));
     
@@ -137,6 +137,7 @@ async function getOrCreateProduct(db: any, productName: string, brand?: string, 
 
 
 export async function addPrice(prevState: AddPriceFormState, formData: FormData): Promise<AddPriceFormState> {
+    const { firestore: db } = getSdks();
     
     const validatedFields = addPriceSchema.safeParse({
         userId: formData.get('userId'),
@@ -158,7 +159,6 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
         };
     }
     
-    const { firestore: db } = getSdks();
     const { userId, productName, price, storeName, address, latitude, longitude, brand, category } = validatedFields.data;
 
     if (!userId) {
@@ -173,8 +173,8 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
         const storeId = await getOrCreateStore(db, storeName, address, latitude, longitude);
         const productId = await getOrCreateProduct(db, productName, brand, category);
 
-        const pricesRef = collection(db, 'prices');
-        await addDoc(pricesRef, {
+        const priceRecordsRef = collection(db, 'priceRecords');
+        await addDoc(priceRecordsRef, {
             userId,
             productId,
             storeId,
