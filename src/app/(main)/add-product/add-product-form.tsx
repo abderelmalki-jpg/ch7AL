@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { getSuggestions, type FormState } from './actions';
+import { getSuggestions, addPrice, type SuggestionFormState, type AddPriceFormState } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X } from 'lucide-react';
+import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 function SubmitButton({ label, loadingLabel }: { label: string; loadingLabel: string; }) {
   const { pending } = useFormStatus();
@@ -34,18 +35,45 @@ function SubmitButton({ label, loadingLabel }: { label: string; loadingLabel: st
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
+    const { user } = useUser();
     const searchParams = useSearchParams();
+
+    // Form state for adding a price
+    const initialPriceState: AddPriceFormState = { status: 'error', message: '' };
+    const [priceFormState, addPriceAction] = useFormState(addPrice, initialPriceState);
+
+    // Form state for AI suggestions
+    const initialSuggestionState: SuggestionFormState = { message: '', suggestions: [] };
+    const [suggestionState, suggestionAction] = useFormState(getSuggestions, initialSuggestionState);
 
     const [productName, setProductName] = useState(searchParams.get('name') || '');
     const [brand, setBrand] = useState(searchParams.get('brand') || '');
     const [category, setCategory] = useState(searchParams.get('category') || '');
     const [photoDataUri, setPhotoDataUri] = useState(searchParams.get('photoDataUri') || '');
-
     const [address, setAddress] = useState('');
+    const [latitude, setLatitude] = useState<number | null>(null);
+    const [longitude, setLongitude] = useState<number | null>(null);
+
     const [isLocating, setIsLocating] = useState(false);
 
-    const initialState: FormState = { message: '', suggestions: [] };
-    const [state, formAction] = useActionState(getSuggestions, initialState);
+    useEffect(() => {
+        if (priceFormState.status === 'success') {
+            toast({
+                title: 'Succès !',
+                description: priceFormState.message,
+                className: "bg-green-100 border-green-400 text-green-700",
+                duration: 3000,
+            });
+            router.push('/dashboard');
+        } else if (priceFormState.status === 'error' && priceFormState.message) {
+             toast({
+                variant: 'destructive',
+                title: 'Erreur',
+                description: priceFormState.message,
+            });
+        }
+    }, [priceFormState, router, toast]);
+
 
     const handleCopyToClipboard = (text: string) => {
         setProductName(text);
@@ -65,10 +93,11 @@ export function AddProductForm() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                // For now, we just show "Adresse GPS" but this can be expanded with a reverse geocoding API
+                setLatitude(latitude);
+                setLongitude(longitude);
                 setAddress(`Position GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
                 setIsLocating(false);
-                toast({ title: 'Localisation obtenue !' });
+                toast({ title: 'Localisation obtenue !', description: "L'adresse a été mise à jour.", icon: <CheckCircle2 className="text-green-500" /> });
             },
             () => {
                 setIsLocating(false);
@@ -86,7 +115,13 @@ export function AddProductForm() {
     }
 
   return (
-    <form className="space-y-6">
+    <form action={addPriceAction} className="space-y-6">
+        <input type="hidden" name="userId" value={user?.uid} />
+        <input type="hidden" name="brand" value={brand} />
+        <input type="hidden" name="category" value={category} />
+        <input type="hidden" name="latitude" value={latitude ?? ""} />
+        <input type="hidden" name="longitude" value={longitude ?? ""} />
+
 
         {photoDataUri && (
             <div className="space-y-2">
@@ -108,26 +143,29 @@ export function AddProductForm() {
         )}
         
         <div className="space-y-2">
-            <Label htmlFor="product-name">Nom du produit</Label>
-            <Input id="product-name" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} />
+            <Label htmlFor="productName">Nom du produit</Label>
+            <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
+            {priceFormState.errors?.productName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.productName[0]}</p>}
         </div>
         <div className="space-y-2">
             <Label htmlFor="price">Prix</Label>
             <div className="relative">
-                 <Input id="price" type="number" placeholder="0.00" className="pl-4 pr-12"/>
+                 <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" className="pl-4 pr-12" required/>
                  <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
                     DH
                 </span>
             </div>
+             {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
         </div>
          <div className="space-y-2">
-            <Label htmlFor="store">Lieu (Hanout)</Label>
-            <Input id="store" placeholder="Chercher ou créer un magasin" />
+            <Label htmlFor="storeName">Lieu (Hanout)</Label>
+            <Input id="storeName" name="storeName" placeholder="Chercher ou créer un magasin" required />
+            {priceFormState.errors?.storeName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.storeName[0]}</p>}
         </div>
          <div className="space-y-2">
             <Label htmlFor="address">Adresse</Label>
             <div className="flex gap-2">
-                <Input id="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
+                <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
                 <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
                     {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4" />}
                     <span className="sr-only">Géolocaliser</span>
@@ -137,12 +175,12 @@ export function AddProductForm() {
 
         <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor="brand">Marque</Label>
-                <Input id="brand" placeholder="ex: Coca-Cola" value={brand} onChange={(e) => setBrand(e.target.value)} />
+                <Label htmlFor="brandDisplay">Marque</Label>
+                <Input id="brandDisplay" placeholder="ex: Coca-Cola" value={brand} onChange={(e) => setBrand(e.target.value)} disabled />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="category">Catégorie</Label>
-                <Input id="category" placeholder="ex: Boissons" value={category} onChange={(e) => setCategory(e.target.value)} />
+                <Label htmlFor="categoryDisplay">Catégorie</Label>
+                <Input id="categoryDisplay" placeholder="ex: Boissons" value={category} onChange={(e) => setCategory(e.target.value)} disabled/>
             </div>
         </div>
 
@@ -153,7 +191,7 @@ export function AddProductForm() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <form action={formAction} className="space-y-4">
+                <form action={suggestionAction} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="product-description">Description du produit</Label>
                         <Textarea 
@@ -161,8 +199,8 @@ export function AddProductForm() {
                             name="productDescription" 
                             placeholder="Décrivez le produit pour obtenir des suggestions de noms. Par exemple : 'Une boisson gazeuse populaire, saveur classique, dans une canette rouge.'"
                         />
-                         {state.errors?.productDescription && (
-                            <p className="text-sm font-medium text-destructive">{state.errors.productDescription[0]}</p>
+                         {suggestionState.errors?.productDescription && (
+                            <p className="text-sm font-medium text-destructive">{suggestionState.errors.productDescription[0]}</p>
                         )}
                     </div>
                     <Button type="submit" variant="outline">
@@ -171,11 +209,11 @@ export function AddProductForm() {
                     </Button>
                 </form>
                 
-                {state.suggestions.length > 0 && (
+                {suggestionState.suggestions.length > 0 && (
                     <div className="mt-4 space-y-2">
-                        <p className="font-semibold">{state.message}</p>
+                        <p className="font-semibold">{suggestionState.message}</p>
                         <div className="flex flex-wrap gap-2">
-                            {state.suggestions.map((name, index) => (
+                            {suggestionState.suggestions.map((name, index) => (
                                 <button
                                     key={index}
                                     type="button"
@@ -188,8 +226,8 @@ export function AddProductForm() {
                         </div>
                     </div>
                 )}
-                 {state.message && state.suggestions.length === 0 && !state.errors && (
-                     <p className="mt-4 text-sm text-muted-foreground">{state.message}</p>
+                 {suggestionState.message && suggestionState.suggestions.length === 0 && !suggestionState.errors && (
+                     <p className="mt-4 text-sm text-muted-foreground">{suggestionState.message}</p>
                  )}
             </CardContent>
         </Card>
