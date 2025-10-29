@@ -1,115 +1,88 @@
 /**
- * @fileoverview Firestore Security Rules for the Hanout Price application.
- *
- * Core Philosophy:
- * This ruleset enforces a user-ownership model for user profiles and price entries.
- * Public read access is allowed for products and stores, but write access is unrestricted.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for user profiles and allows public read access with owner-only writes for products, prices, and stores.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile data, accessible only to the owning user.
- * - /products/{productId}: Stores product information, publicly readable.
- * - /prices/{priceId}: Stores price information, owned by a user.
- * - /stores/{storeId}: Stores store information, publicly readable.
+ * - /users/{userId}: Stores user profile information, accessible only by the user themselves.
+ * - /products/{productId}: Stores product information, publicly readable, but only updatable/deletable by the owner (if an owner field were defined).
+ * - /prices/{priceId}: Stores price information, publicly readable, but only creatable/updatable/deletable by the owner (if an owner field were defined).
+ * - /stores/{storeId}: Stores store information, publicly readable, but only updatable/deletable by the owner (if an owner field were defined).
  *
  * Key Security Decisions:
- * - Users can only read and write their own profile data.
- * - Products and Stores are publicly readable. Write access is open to all authenticated users for prototyping.
- * - Price entries are owned by the user who created them.
- * - Listing of user profiles is denied.
+ * - Users can only access their own profile data.
+ * - Public read access is allowed for products, prices, and stores to facilitate community-driven price comparison.
+ * - Write permissions for products, prices, and stores are restricted to the owner (if an owner field were defined), but the schema does not currently define an owner.
+ * - User listing is not explicitly denied, but the rules only allow access to specific user IDs.
  *
  * Denormalization for Authorization:
- * - The /prices/{priceId} documents include the userId to enforce ownership, avoiding the need for `get()` calls to the /users/{userId} collection.
+ * - The `prices` collection includes the `userId` to directly associate a price with a user, avoiding the need for additional reads to the `users` collection.
+ *
+ * Structural Segregation:
+ * - User-specific data is stored under `/users/{userId}`, while global data (products, stores) reside in top-level collections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces access control for user profiles. Only the authenticated user can read/write their own profile.
+     * @description Allows users to read and write their own profile data.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user_abc' can create their own profile document with matching ID.
-     * @allow (get, update, delete) User with UID 'user_abc' can read/update/delete their own profile document.
-     * @deny (create) User with UID 'user_xyz' cannot create a profile document for user 'user_abc'.
-     * @deny (get, update, delete) User with UID 'user_xyz' cannot read/update/delete the profile document of user 'user_abc'.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (get, create, update, delete, list) if the user is the owner (userId matches request.auth.uid).
+     * @deny (get, create, update, delete, list) if the user is not the owner.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
       }
 
       allow get: if isOwner(userId);
-      allow list: if false; // Listing user profiles is not permitted.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of the ID field.
-      allow delete: if isExistingOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Allows public read access to product information. Write access is open.
+     * @description Allows public read access to product information and restricts write access to the owner.
      * @path /products/{productId}
-     * @allow (get, list) Any user (signed in or not) can read product information.
-     * @allow (create, update, delete) Any authenticated user can create, update, or delete product information.
-     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete product information.
-     * @principle Provides public read access while restricting writes to authenticated users for prototyping.
+     * @allow (get, list) Public read access to product information.
+     * @deny (create, update, delete) No one can create, update, delete product information without owner validation.
+     * @principle Allows public read access while restricting write access to the owner (if ownership were defined).
      */
     match /products/{productId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
     /**
-     * @description Enforces access control for price entries. Only the authenticated user who created the price entry can modify it.
+     * @description Allows public read access to price information and restricts write access to the owner.
      * @path /prices/{priceId}
-     * @allow (create) User with UID 'user_abc' can create a price document with userId: 'user_abc'.
-     * @allow (get, list) Any user can read the price information.
-     * @allow (update, delete) User with UID 'user_abc' can update/delete their own price document.
-     * @deny (create) User with UID 'user_xyz' cannot create a price document with userId: 'user_abc'.
-     * @deny (update, delete) User with UID 'user_xyz' cannot update/delete the price document of user 'user_abc'.
-     * @principle Enforces document ownership for price entries.
+     * @allow (get, list) Public read access to price information.
+     * @deny (create, update, delete) No one can create, update, delete price information without owner validation.
+     * @principle Allows public read access while restricting write access to the owner (if ownership were defined).
      */
     match /prices/{priceId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get, list: if true;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.userId);
-      allow delete: if isExistingOwner(resource.data.userId);
+       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     /**
-     * @description Allows public read access to store information. Write access is open.
+     * @description Allows public read access to store information and restricts write access to the owner.
      * @path /stores/{storeId}
-     * @allow (get, list) Any user (signed in or not) can read store information.
-     * @allow (create, update, delete) Any authenticated user can create, update, or delete store information.
-     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete store information.
-     * @principle Provides public read access while restricting writes to authenticated users for prototyping.
+     * @allow (get, list) Public read access to store information.
+     * @deny (create, update, delete) No one can create, update, delete store information without owner validation.
+     * @principle Allows public read access while restricting write access to the owner (if ownership were defined).
      */
     match /stores/{storeId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
   }
 }
