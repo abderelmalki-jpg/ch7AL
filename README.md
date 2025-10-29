@@ -10,8 +10,9 @@ This is a NextJS starter in Firebase Studio.
     # Obtenez votre clé API Gemini depuis Google AI Studio : https://aistudio.google.com/app/apikey
     GEMINI_API_KEY="VOTRE_CLE_API_GEMINI_ICI"
 
-    # Obtenez votre clé API Google Maps depuis Google Cloud Console : https://console.cloud.google.com/google/maps-apis/
-    # Assurez-vous d'activer la "Maps JavaScript API".
+    # IMPORTANT: Obtenez votre clé API Google Maps depuis Google Cloud Console : https://console.cloud.google.com/google/maps-apis/
+    # Assurez-vous d'activer la "Maps JavaScript API" pour votre projet.
+    # La carte sur le tableau de bord ne fonctionnera pas sans cette clé.
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="VOTRE_CLE_API_GOOGLE_MAPS_ICI"
     ```
 
@@ -23,4 +24,4 @@ This is a NextJS starter in Firebase Studio.
     
     Ouvrez [http://localhost:9002](http://localhost:9002) avec votre navigateur pour voir le résultat.
 
-Pour commencer à modifier votre application, jetez un œil à `src/app/page.tsx`.
+Pour commencer à modifier votre application, jetez un œil à `src/app/dashboard/page.tsx`.

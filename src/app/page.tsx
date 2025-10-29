@@ -1,23 +1,10 @@
 
 'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { useUser } from '@/firebase/provider';
 
 export default function LandingPage() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
-
   return (
     <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden">
       <video
