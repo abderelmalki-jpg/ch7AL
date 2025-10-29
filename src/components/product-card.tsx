@@ -11,7 +11,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <Link href="#" className="block group">
+    <Link href={`/product/${product.id}`} className="block group">
       <Card className="overflow-hidden transition-all group-hover:shadow-lg group-hover:-translate-y-1 h-full flex flex-col">
         <div className="aspect-square relative bg-muted">
           {product.imageUrl ? (
@@ -33,7 +33,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="text-xs text-muted-foreground">{product.brand}</p>
           <div className="flex-grow"></div>
            <div className="flex justify-between items-end mt-2">
-            <Badge variant="secondary">{product.category}</Badge>
+            {product.category && <Badge variant="secondary">{product.category}</Badge>}
             {product.price && (
                 <p className="font-bold text-primary">{product.price.toFixed(2)} DH</p>
             )}

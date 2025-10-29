@@ -29,6 +29,28 @@ export type Product = {
   price?: number; // Price is optional, as it might not be directly on the product
 };
 
+export type Price = {
+    id: string;
+    productId: string;
+    storeId: string;
+    userId: string;
+    price: number;
+    createdAt: {
+        seconds: number;
+        nanoseconds: number;
+    };
+    verified: boolean;
+    reports: number;
+}
+
+export type Store = {
+    id: string;
+    name: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+}
+
 export type UserProfile = {
     id: string;
     name: string;
