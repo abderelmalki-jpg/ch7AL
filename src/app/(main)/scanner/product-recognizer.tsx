@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Sparkles, Camera, Zap, Loader2, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sparkles, Camera, Zap, Loader2, Info, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 
@@ -103,9 +104,31 @@ export function ProductRecognizer() {
 
   return (
     <div className="flex flex-col h-full bg-gray-900">
-      <div className="p-4 bg-gray-800/50 backdrop-blur-sm text-white text-center z-10">
-        <h1 className="text-2xl font-headline font-bold">Analyse de Produit par IA</h1>
-        <p className="text-white/80">Centrez le produit et prenez une photo claire</p>
+      <div className="p-4 bg-gray-800/50 backdrop-blur-sm text-white text-center z-10 flex justify-between items-center">
+        <div className="flex-1">
+          <h1 className="text-2xl font-headline font-bold">Analyse de Produit par IA</h1>
+          <p className="text-white/80">Centrez le produit et prenez une photo claire</p>
+        </div>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-white/10 text-white hover:bg-white/20">
+                    <Video className="mr-2 h-4 w-4" /> Comment ça marche ?
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Comment analyser un produit ?</DialogTitle>
+                </DialogHeader>
+                <div className="aspect-video rounded-lg overflow-hidden">
+                    <video 
+                        src="https://res.cloudinary.com/dhjwimevi/video/upload/v1761429194/Design_sans_titre_4_witvsw.mp4" 
+                        controls 
+                        autoPlay 
+                        className="w-full h-full object-contain"
+                    />
+                </div>
+            </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-4 relative">
