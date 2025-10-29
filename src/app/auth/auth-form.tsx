@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/firebase/provider";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useAuth, useFirestore } from "@/firebase/provider";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, type User } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -48,21 +49,48 @@ export function AuthForm() {
   const [isLoading, setIsLoading] = useState(false);
   
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  
+  const createUserProfile = async (user: User) => {
+      const userProfileRef = doc(firestore, 'users', user.uid);
+      const userProfileSnap = await getDoc(userProfileRef);
+
+      if (!userProfileSnap.exists()) {
+        const newProfile = {
+          id: user.uid,
+          email: user.email,
+          name: user.displayName || name || user.email?.split('@')[0],
+          createdAt: serverTimestamp(),
+          points: 0,
+          badges: [],
+          contributions: 0,
+          language: 'fr',
+        };
+        await setDoc(userProfileRef, newProfile, { merge: true });
+      }
+  }
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
+        let userCredential;
         if (isLogin) {
-            await signInWithEmailAndPassword(auth, email, password);
+            userCredential = await signInWithEmailAndPassword(auth, email, password);
         } else {
-            await createUserWithEmailAndPassword(auth, email, password);
-            // We would also update the user's profile with the name here
+            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            if (userCredential.user && name) {
+                await updateProfile(userCredential.user, { displayName: name });
+            }
         }
+        
+        await createUserProfile(userCredential.user);
+        
         toast({ title: isLogin ? 'Connexion réussie !' : 'Compte créé !', description: 'Vous allez être redirigé.' });
         router.replace('/dashboard');
+
     } catch (error: any) {
         const errorMessage = getFirebaseErrorMessage(error.code);
         toast({ variant: 'destructive', title: 'Erreur d\'authentification', description: errorMessage });
@@ -78,7 +106,8 @@ export function AuthForm() {
         provider.setCustomParameters({
             prompt: 'select_account'
         });
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        await createUserProfile(result.user);
         toast({ title: 'Connexion réussie avec Google !' });
         router.replace('/dashboard');
     } catch (error: any) {
