@@ -173,7 +173,7 @@ export function AddProductForm() {
                         DH
                     </span>
                 </div>
-                 {priceFormSate.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
+                 {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
             </div>
              <div className="space-y-2">
                 <Label htmlFor="storeName">Lieu (Hanout)</Label>
