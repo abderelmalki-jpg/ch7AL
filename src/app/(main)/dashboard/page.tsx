@@ -1,4 +1,4 @@
-import { HomeClient } from "./home-client";
+import { HomeClient } from "../home-client";
 import Link from "next/link";
 import Image from "next/image";
 import { Camera, Search, MapPin, Plus, Star } from "lucide-react";

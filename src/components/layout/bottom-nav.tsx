@@ -6,7 +6,7 @@ import { Home, Search, Camera, MapPin, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Accueil", icon: Home },
+  { href: "/dashboard", label: "Accueil", icon: Home },
   { href: "/search", label: "Recherche", icon: Search },
   { href: "/scanner", label: "Analyser", icon: Camera, isCentral: true },
   { href: "/map", label: "Carte", icon: MapPin },
@@ -20,8 +20,7 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-card/95 backdrop-blur-sm md:hidden">
       <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
-          const isActive =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const isActive = pathname.startsWith(item.href);
 
           if (item.isCentral) {
             return (
