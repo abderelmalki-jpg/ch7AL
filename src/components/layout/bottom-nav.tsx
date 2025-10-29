@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Camera, MapPin, User } from "lucide-react";
+import { Home, Search, Camera, MapPin, User, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Accueil", icon: Home },
   { href: "/search", label: "Recherche", icon: Search },
   { href: "/add-product", label: "Ajouter", icon: Camera, isCentral: true },
-  { href: "/map", label: "Carte", icon: MapPin },
+  { href: "/leaderboard", label: "Classement", icon: Trophy },
   { href: "/profile", label: "Profil", icon: User },
 ];
 
@@ -44,7 +44,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors",
+                "flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors w-1/5",
                 isActive ? "text-primary" : "hover:text-primary"
               )}
             >

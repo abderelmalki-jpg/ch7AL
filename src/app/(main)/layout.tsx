@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { useUser } from '@/firebase/provider';
 import { Loader2 } from 'lucide-react';
 
-const PROTECTED_ROUTES = ['/profile', '/add-product', '/scanner', '/dashboard'];
+const PROTECTED_ROUTES = ['/profile', '/add-product', '/scanner', '/dashboard', '/leaderboard'];
 
 export default function MainLayout({
   children,
