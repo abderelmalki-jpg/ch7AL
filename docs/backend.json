@@ -17,7 +17,7 @@
         },
         "name": {
           "type": "string",
-          "description": "Display name of the user."
+          "description": "Display name of the user. This can be edited by the user."
         },
         "photoURL": {
           "type": "string",

@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { userBadges } from "@/lib/data";
-import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2 } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2, Pencil, Save } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
@@ -39,11 +40,21 @@ export default function ProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
 
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [displayName, setDisplayName] = useState('');
+    const [isSavingName, setIsSavingName] = useState(false);
+
     const userProfileRef = useMemoFirebase(
       () => (user ? doc(firestore, 'users', user.uid) : null),
       [user, firestore]
     );
     const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+
+    useEffect(() => {
+        if (userProfile) {
+            setDisplayName(userProfile.name || '');
+        }
+    }, [userProfile]);
 
     const languageOptions: { id: Language, name: string, nativeName: string }[] = [
         { id: 'fr', name: 'Français', nativeName: 'Français' },
@@ -69,6 +80,24 @@ export default function ProfilePage() {
         }
     };
 
+    const handleSaveName = async () => {
+        if (!userProfileRef || !displayName.trim()) {
+            toast({ variant: 'destructive', title: 'Le nom ne peut pas être vide.' });
+            return;
+        }
+        setIsSavingName(true);
+        try {
+            await updateDoc(userProfileRef, { name: displayName });
+            toast({ title: 'Nom mis à jour avec succès !' });
+            setIsEditingName(false);
+        } catch (error) {
+            console.error("Erreur de mise à jour du nom:", error);
+            toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de mettre à jour le nom.' });
+        } finally {
+            setIsSavingName(false);
+        }
+    }
+
     const getInitials = (name: string) => {
         if (!name) return '';
         const names = name.split(' ');
@@ -87,10 +116,31 @@ export default function ProfilePage() {
                         {isProfileLoading ? <Loader2 className="animate-spin" /> : getInitials(userProfile?.name || user?.email || '')}
                     </AvatarFallback>
                 </Avatar>
+                
                 {isProfileLoading ? (
                     <Skeleton className="h-9 w-48" />
+                ) : isEditingName ? (
+                     <div className="flex items-center gap-2">
+                        <Input 
+                            value={displayName} 
+                            onChange={(e) => setDisplayName(e.target.value)} 
+                            className="text-2xl font-bold text-center h-12" 
+                            placeholder="Votre nom"
+                        />
+                        <Button onClick={handleSaveName} size="icon" disabled={isSavingName}>
+                            {isSavingName ? <Loader2 className="animate-spin" /> : <Save />}
+                        </Button>
+                        <Button onClick={() => setIsEditingName(false)} size="icon" variant="ghost">
+                            <X />
+                        </Button>
+                    </div>
                 ) : (
-                    <h1 className="text-3xl font-headline font-bold text-primary">{userProfile?.name || 'Utilisateur'}</h1>
+                    <div className="flex items-center gap-2 group">
+                        <h1 className="text-3xl font-headline font-bold text-primary">{userProfile?.name || 'Utilisateur'}</h1>
+                         <Button onClick={() => setIsEditingName(true)} size="icon" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Pencil className="h-5 w-5" />
+                        </Button>
+                    </div>
                 )}
                 <p className="text-muted-foreground">Membre de la communauté Hanouti</p>
             </div>
