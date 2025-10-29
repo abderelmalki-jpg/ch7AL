@@ -1,0 +1,286 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the Hanout Price application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the user."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was created.",
+          "format": "date-time"
+        },
+        "points": {
+          "type": "number",
+          "description": "Number of points the user has accumulated."
+        },
+        "badges": {
+          "type": "array",
+          "description": "List of badges the user has earned.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "contributions": {
+          "type": "number",
+          "description": "Number of contributions the user has made."
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred language of the user (e.g., 'fr', 'ar')."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "createdAt"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product listed in the Hanout Price application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "brand": {
+          "type": "string",
+          "description": "Brand of the product."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the product."
+        },
+        "barcode": {
+          "type": "string",
+          "description": "Barcode of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the product."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product was added.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "barcode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Price": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Price",
+      "type": "object",
+      "description": "Represents a price entry for a product at a specific store.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Price entity."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N Price)"
+        },
+        "storeId": {
+          "type": "string",
+          "description": "Reference to Store. (Relationship: Store 1:N Price)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Price)"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product at the store."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the price was recorded.",
+          "format": "date-time"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Indicates whether the price has been verified by other users."
+        },
+        "reports": {
+          "type": "number",
+          "description": "Number of reports against this price entry."
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "storeId",
+        "userId",
+        "price",
+        "createdAt"
+      ]
+    },
+    "Store": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Store",
+      "type": "object",
+      "description": "Represents a store (Hanout) where products are sold.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Store entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the store."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the store."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude coordinate of the store's location."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude coordinate of the store's location."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the store was added.",
+          "format": "date-time"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Average rating of the store."
+        },
+        "totalRatings": {
+          "type": "number",
+          "description": "Total number of ratings received by the store."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address",
+        "latitude",
+        "longitude",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profiles. Path-based ownership enforced via security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user.  It is equal to the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product information.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier of the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/prices/{priceId}",
+        "definition": {
+          "entityName": "Price",
+          "schema": {
+            "$ref": "#/backend/entities/Price"
+          },
+          "description": "Stores price data. Includes denormalized 'userId', 'productId', and 'storeId' for authorization independence.",
+          "params": [
+            {
+              "name": "priceId",
+              "description": "The unique identifier of the price entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/stores/{storeId}",
+        "definition": {
+          "entityName": "Store",
+          "schema": {
+            "$ref": "#/backend/entities/Store"
+          },
+          "description": "Stores store information.",
+          "params": [
+            {
+              "name": "storeId",
+              "description": "The unique identifier of the store."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, following the core design principles and strategy mandates outlined in the prompt. The design emphasizes authorization independence through denormalization, structural segregation for homogeneous security postures, and consistent access modeling. Here's a breakdown:\n\n*   **Authorization Independence:** The structure avoids hierarchical authorization dependencies (`get()` calls in security rules) by denormalizing authorization-related data. For example, the `prices` collection stores the `userId` to enforce ownership, eliminating the need to fetch the user document in security rules.\n*   **Structural Segregation:**  Each collection is designed to contain documents with the same security requirements. This simplifies security rules.\n*   **Access Modeling:**\n    *   **User Profiles:** User data is stored under `/users/{userId}`, providing clear path-based ownership.\n    *   **Stores:** Stores are in a top-level collection `/stores`. Since any user can add a store, ownership is not enforced at the store level. However, each `price` entry links to a `storeId`.\n    *   **Products:** Products are in a top-level collection `/products`. Similar to Stores, ownership is not enforced at the product level, but each `price` entry links to a `productId`.\n    *   **Prices:** Price data is stored in a top-level `/prices` collection. Each price document contains the `userId`, `productId`, and `storeId`, denormalizing essential information for authorization and querying. A user can create a price entry, so user ID is included in the price data. The 'verified' and 'reports' fields allow community moderation, but security rules should prevent unauthorized modification of these fields.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations:\n\n*   Listing prices requires no `get()` calls because `prices` contains all the necessary information for filtering and authorization.\n*   The segregation of user profiles, products, stores, and price entries into separate collections with consistent security needs enables straightforward and secure listing based on the `request.auth.uid` and the denormalized fields.\n\n**Invariants:**\n\n*   Timestamps (`createdAt`, `updatedAt`) can be enforced via security rules to ensure data integrity.\n*   Ownership is maintained by the `userId` field in the `prices` collection."
+  }
+}
