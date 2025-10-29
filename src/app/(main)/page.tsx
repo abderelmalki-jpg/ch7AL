@@ -1,3 +1,4 @@
+import { HomeClient } from "./home-client";
 import Link from "next/link";
 import Image from "next/image";
 import { Camera, Search, MapPin, Plus, Star } from "lucide-react";
@@ -7,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { recentContributions, topContributors, userBadges } from "@/lib/data";
 import { format } from "date-fns";
-import { HomeClient } from "./home-client";
 
 function getRankEmoji(rank: number) {
     if (rank === 1) return '🥇';
@@ -16,7 +16,7 @@ function getRankEmoji(rank: number) {
     return `${rank}.`;
 }
 
-export default function HomePage() {
+export default function DashboardPage() {
   const heroImage = PlaceHolderImages.find((img) => img.id === "souk-hero");
 
   return (

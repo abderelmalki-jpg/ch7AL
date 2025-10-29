@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { useUser } from '@/firebase/provider';
 import { Loader2 } from 'lucide-react';
 
-const PROTECTED_ROUTES = ['/profile', '/add-product', '/scanner'];
+const PROTECTED_ROUTES = ['/profile', '/add-product', '/scanner', '/'];
 
 export default function MainLayout({
   children,
@@ -21,6 +21,9 @@ export default function MainLayout({
   useEffect(() => {
     if (!isUserLoading && !user && PROTECTED_ROUTES.includes(pathname)) {
       router.replace('/auth');
+    }
+     if (!isUserLoading && user && pathname === '/') {
+      router.replace('/');
     }
   }, [user, isUserLoading, router, pathname]);
 

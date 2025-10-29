@@ -34,8 +34,8 @@ export default function AuthPage() {
         </div>
         <Card className="shadow-2xl rounded-2xl">
             <CardHeader className="text-center">
-                <CardTitle className="font-headline text-3xl">Bienvenue sur Souk Price</CardTitle>
-                <CardDescription>Trouvez les meilleurs prix près de chez vous</CardDescription>
+                <CardTitle className="font-headline text-3xl">Rejoignez la communauté</CardTitle>
+                <CardDescription>Créez un compte ou connectez-vous</CardDescription>
             </CardHeader>
             <CardContent>
                 <AuthForm />
