@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from "next/link";
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, limit, orderBy, query, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { Contribution } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,12 +38,21 @@ export default function DashboardPage() {
             getDoc(doc(firestore, 'stores', priceData.storeId))
           ]);
           
+          let contributionDate: Date;
+          if (priceData.createdAt instanceof Timestamp) {
+            contributionDate = priceData.createdAt.toDate();
+          } else if (typeof priceData.createdAt === 'string') {
+            contributionDate = new Date(priceData.createdAt);
+          } else {
+            contributionDate = new Date(); // Fallback
+          }
+
           return {
             id: priceDoc.id,
             productName: productSnap.data()?.name || 'Produit inconnu',
             storeName: storeSnap.data()?.name || 'Magasin inconnu',
             price: priceData.price,
-            date: priceData.createdAt.toDate().toISOString(),
+            date: contributionDate.toISOString(),
             latitude: storeSnap.data()?.latitude || 0,
             longitude: storeSnap.data()?.longitude || 0,
             imageUrl: productSnap.data()?.imageUrl || undefined
@@ -105,12 +114,21 @@ export default function DashboardPage() {
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
-        ) : (
+        ) : recentContributions.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recentContributions.map((contribution) => (
               <ContributionCard key={contribution.id} contribution={contribution} apiKey={apiKey} />
             ))}
           </div>
+        ) : (
+          <Card>
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              <p>Aucune contribution pour le moment.</p>
+              <Button variant="link" asChild>
+                <Link href="/add-product">Soyez le premier à ajouter un prix !</Link>
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
 
