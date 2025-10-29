@@ -11,21 +11,14 @@ export type Contribution = {
   imageUrl?: string;
 };
 
-export type Contributor = {
-  id: string;
-  name: string;
-  contributions: number;
-  points: number;
-  avatarUrl: string;
-};
-
 export type Product = {
   id: string;
   name: string;
   brand: string;
   category: string;
-  imageUrl: string;
+  imageUrl?: string;
   imageHint?: string; // imageHint is optional from Firestore
+  barcode?: string;
   price?: number; // Price is optional, as it might not be directly on the product
 };
 

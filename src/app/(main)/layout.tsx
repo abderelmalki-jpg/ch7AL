@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
 const PROTECTED_ROUTES = ['/profile', '/add-product', '/scanner', '/dashboard', '/leaderboard'];

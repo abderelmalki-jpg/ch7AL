@@ -34,6 +34,8 @@ const getFirebaseErrorMessage = (errorCode: string) => {
             return 'Cette adresse email est déjà utilisée par un autre compte.';
         case 'auth/weak-password':
             return 'Le mot de passe est trop faible. Il doit contenir au moins 6 caractères.';
+        case 'auth/popup-closed-by-user':
+             return "Le processus de connexion a été annulé.";
         case 'auth/unauthorized-domain':
              return 'Le domaine n\'est pas autorisé pour l\'authentification. Veuillez vérifier votre configuration Firebase.';
         default:
@@ -54,6 +56,7 @@ export function AuthForm() {
   const { toast } = useToast();
   
   const createUserProfile = async (user: User) => {
+      if (!firestore) return;
       const userProfileRef = doc(firestore, 'users', user.uid);
       const userProfileSnap = await getDoc(userProfileRef);
 
@@ -62,6 +65,7 @@ export function AuthForm() {
           id: user.uid,
           email: user.email,
           name: user.displayName || name || user.email?.split('@')[0],
+          photoURL: user.photoURL || '',
           createdAt: serverTimestamp(),
           points: 0,
           badges: [],
@@ -74,6 +78,7 @@ export function AuthForm() {
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) return;
     setIsLoading(true);
     try {
         let userCredential;
@@ -92,6 +97,7 @@ export function AuthForm() {
         router.replace('/dashboard');
 
     } catch (error: any) {
+        console.error("Auth Error:", error, error.code);
         const errorMessage = getFirebaseErrorMessage(error.code);
         toast({ variant: 'destructive', title: 'Erreur d\'authentification', description: errorMessage });
     } finally {
@@ -100,6 +106,7 @@ export function AuthForm() {
   }
   
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     setIsLoading(true);
     try {
         const provider = new GoogleAuthProvider();
@@ -149,7 +156,7 @@ export function AuthForm() {
             </Button>
           </div>
         )}
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+        <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading || !auth}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isLogin ? "Se connecter" : "Créer un compte"}
         </Button>
@@ -164,7 +171,7 @@ export function AuthForm() {
         </div>
       </div>
       
-      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || !auth}>
         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
         Google
       </Button>

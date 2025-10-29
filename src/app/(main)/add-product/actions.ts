@@ -1,9 +1,11 @@
+
 'use server';
 
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, type Firestore } from 'firebase/firestore';
-import { getDb, getStorage } from '@/firebase/server';
+import { getDb } from '@/firebase/server';
+import { getStorage } from 'firebase-admin/storage';
 
 
 // --- AI Suggestions Action ---

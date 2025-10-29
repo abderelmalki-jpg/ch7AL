@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useActionState, useRef } from 'react';
@@ -318,7 +319,7 @@ export function AddProductForm() {
                 </div>
             </div>
 
-            <Button type="submit" disabled={isSubmittingPrice} className="w-full text-lg h-12">
+            <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
                 {isSubmittingPrice ? (
                     <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />

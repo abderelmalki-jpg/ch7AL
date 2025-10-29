@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthForm } from "./auth-form";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthPage() {
@@ -18,7 +19,7 @@ export default function AuthPage() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || user) {
+  if (isUserLoading || (!isUserLoading && user)) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
         <Loader2 className="h-12 w-12 animate-spin text-white" />

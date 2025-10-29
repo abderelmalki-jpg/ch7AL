@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -8,7 +9,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user entity."
+          "description": "Unique identifier for the user entity (matches Firebase Auth UID)."
         },
         "email": {
           "type": "string",
@@ -17,11 +18,12 @@
         },
         "name": {
           "type": "string",
-          "description": "User's display name."
+          "description": "User's display name, modifiable by the user."
         },
-        "phone": {
+        "photoURL": {
           "type": "string",
-          "description": "User's phone number."
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
         },
         "createdAt": {
           "type": "string",
@@ -81,13 +83,9 @@
           "type": "string",
           "description": "Barcode of the product."
         },
-        "description": {
-          "type": "string",
-          "description": "Description of the product."
-        },
         "imageUrl": {
           "type": "string",
-          "description": "URL of the product image.",
+          "description": "URL of the product image, hosted on Firebase Storage.",
           "format": "uri"
         },
         "createdAt": {
@@ -102,17 +100,15 @@
         }
       },
       "required": [
-        "id",
         "name",
-        "category",
-        "barcode"
+        "category"
       ]
     },
     "Price": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Price",
       "type": "object",
-      "description": "Represents a price entry for a product at a specific store.",
+      "description": "Represents a price entry for a product at a specific store, created by a user.",
       "properties": {
         "id": {
           "type": "string",
@@ -120,15 +116,15 @@
         },
         "productId": {
           "type": "string",
-          "description": "Reference to Product. (Relationship: Product 1:N Price)"
+          "description": "Foreign key referencing the 'products' collection."
         },
         "storeId": {
           "type": "string",
-          "description": "Reference to Store. (Relationship: Store 1:N Price)"
+          "description": "Foreign key referencing the 'stores' collection."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Price)"
+          "description": "Foreign key referencing the 'users' collection (the contributor)."
         },
         "price": {
           "type": "number",
@@ -141,26 +137,26 @@
         },
         "verified": {
           "type": "boolean",
-          "description": "Indicates if the price has been verified."
+          "description": "Indicates if the price has been verified by the community."
         },
         "reports": {
           "type": "number",
-          "description": "Number of reports against this price."
+          "description": "Number of reports against this price entry."
         }
       },
       "required": [
-        "id",
         "productId",
         "storeId",
         "userId",
-        "price"
+        "price",
+        "createdAt"
       ]
     },
     "Store": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Store",
       "type": "object",
-      "description": "Represents a physical store location.",
+      "description": "Represents a physical store location ('hanout').",
       "properties": {
         "id": {
           "type": "string",
@@ -180,34 +176,23 @@
         },
         "address": {
           "type": "string",
-          "description": "Address of the store."
+          "description": "Full address of the store."
         },
         "createdAt": {
           "type": "string",
           "description": "Timestamp indicating when the store was added.",
           "format": "date-time"
-        },
-        "rating": {
-          "type": "number",
-          "description": "Average rating of the store."
-        },
-        "totalRatings": {
-          "type": "number",
-          "description": "Number of ratings received by the store."
         }
       },
       "required": [
-        "id",
-        "name",
-        "latitude",
-        "longitude"
+        "name"
       ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "google.com"
     ]
   },
   "firestore": {
@@ -217,15 +202,9 @@
         "definition": {
           "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/entities/User"
           },
-          "description": "Stores user profile information. Path-based ownership for simple security rules.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "description": "Stores public user profile information. Document ID matches Firebase Auth UID."
         }
       },
       {
@@ -233,15 +212,9 @@
         "definition": {
           "entityName": "Product",
           "schema": {
-            "$ref": "#/backend/entities/Product"
+            "$ref": "#/entities/Product"
           },
-          "description": "Stores product information.  The top-level collection simplifies listing and searching products.",
-          "params": [
-            {
-              "name": "productId",
-              "description": "The unique identifier of the product."
-            }
-          ]
+          "description": "A global collection of all unique products."
         }
       },
       {
@@ -249,15 +222,9 @@
         "definition": {
           "entityName": "Price",
           "schema": {
-            "$ref": "#/backend/entities/Price"
+            "$ref": "#/entities/Price"
           },
-          "description": "Stores price entries for products. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "priceId",
-              "description": "The unique identifier of the price entry."
-            }
-          ]
+          "description": "A log of all price submissions from users."
         }
       },
       {
@@ -265,18 +232,11 @@
         "definition": {
           "entityName": "Store",
           "schema": {
-            "$ref": "#/backend/entities/Store"
+            "$ref": "#/entities/Store"
           },
-          "description": "Stores store information. The top-level collection simplifies listing and searching stores.",
-          "params": [
-            {
-              "name": "storeId",
-              "description": "The unique identifier of the store."
-            }
-          ]
+          "description": "A global collection of all unique stores."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to address the error reported (connection issues) by ensuring efficient data retrieval and a scalable architecture. It leverages denormalization and structural segregation to optimize performance and simplify security rules. The design focuses on creating a structure that's easy to debug and maintain, aligning with the project's goals of community-driven price comparison in local 'hanouts'.\n\n1.  **Authorization Independence**:  Denormalization is used to eliminate `get()` calls in security rules.  For example, the `userId` is included in the `prices` collection to directly associate a price with a user. This allows security rules to validate user ownership of price entries without needing to perform additional reads to the `users` collection.\n\n2.  **Structural Segregation**: The structure segregates data based on access patterns. User-specific data (like user profiles) are stored under the `/users/{userId}` path, while global data (products, stores) reside in top-level collections. This simplifies security rules, as each collection has a clear and consistent security posture.\n\n3.  **Access Modeling**:  Path-based ownership is employed for user-related data (e.g., `/users/{userId}`). This is the most secure and efficient way to manage data owned by individual users.  Membership maps are not explicitly needed in this design, because all data is owned and the global roles were not defined in the request.\n\n4.  **QAPs (Rules are not Filters)**:  The structure supports secure `list` operations by ensuring that list queries do not require filtering based on user roles or permissions.  The separation of user-owned data into user-specific subcollections allows for efficient and secure listing of a user's resources.\n\n5.  **Invariants**:  The structure supports data integrity by enforcing clear ownership and timestamp management.  The `createdAt` and `updatedAt` fields in various entities ensure that data creation and modification times are tracked consistently.  This is important for auditing and maintaining data consistency.\n\nThe Firestore paths provided below reflect this design, emphasizing simplicity, security, and scalability."
+    ]
   }
 }

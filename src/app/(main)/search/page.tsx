@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -39,8 +40,8 @@ export default function SearchPage() {
         const lowercasedTerm = searchTerm.toLowerCase();
         const results = products.filter(product =>
             product.name.toLowerCase().includes(lowercasedTerm) ||
-            product.brand.toLowerCase().includes(lowercasedTerm) ||
-            product.category.toLowerCase().includes(lowercasedTerm)
+            (product.brand && product.brand.toLowerCase().includes(lowercasedTerm)) ||
+            (product.category && product.category.toLowerCase().includes(lowercasedTerm))
         );
         setFilteredProducts(results);
     }, [searchTerm, products]);

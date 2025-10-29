@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,7 +23,7 @@ export function HomeClient() {
     return <span>Bienvenue !</span>
   }
 
-  const displayName = user?.displayName?.split(' ')[0] || "Abder";
+  const displayName = user?.displayName?.split(' ')[0] || "cher contributeur";
 
   return <span>{greeting}, {displayName} !</span>;
 }

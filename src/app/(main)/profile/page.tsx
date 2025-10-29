@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from "react";
@@ -8,9 +9,8 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { userBadges } from "@/lib/data";
-import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2, Pencil, Save } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2, Pencil, X, Save } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ const menuItems = [
 type Language = 'fr' | 'ar' | 'dr';
 
 export default function ProfilePage() {
-    const userImage = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
     const [selectedLanguage, setSelectedLanguage] = useState<Language>('fr');
 
     const auth = useAuth();
@@ -63,6 +62,7 @@ export default function ProfilePage() {
     ];
     
     const handleLogout = async () => {
+        if (!auth) return;
         try {
             await signOut(auth);
             toast({
@@ -87,7 +87,8 @@ export default function ProfilePage() {
         }
         setIsSavingName(true);
         try {
-            await updateDoc(userProfileRef, { name: displayName });
+            // Using the non-blocking update function
+            updateDocumentNonBlocking(userProfileRef, { name: displayName });
             toast({ title: 'Nom mis à jour avec succès !' });
             setIsEditingName(false);
         } catch (error) {
@@ -102,16 +103,16 @@ export default function ProfilePage() {
         if (!name) return '';
         const names = name.split(' ');
         if (names.length > 1) {
-            return names[0][0] + names[names.length - 1][0];
+            return (names[0][0] + names[names.length - 1][0]).toUpperCase();
         }
-        return name.substring(0, 2);
+        return name.substring(0, 2).toUpperCase();
     }
 
     return (
         <div className="container mx-auto px-4 md:px-6 py-8">
             <div className="flex flex-col items-center mb-8">
                 <Avatar className="w-24 h-24 mb-4 border-4 border-primary shadow-lg">
-                    <AvatarImage src={userProfile?.photoURL || userImage?.imageUrl} alt={userProfile?.name} data-ai-hint={userImage?.imageHint} />
+                    <AvatarImage src={userProfile?.photoURL} alt={userProfile?.name} />
                     <AvatarFallback>
                         {isProfileLoading ? <Loader2 className="animate-spin" /> : getInitials(userProfile?.name || user?.email || '')}
                     </AvatarFallback>
@@ -142,7 +143,7 @@ export default function ProfilePage() {
                         </Button>
                     </div>
                 )}
-                <p className="text-muted-foreground">Membre de la communauté Hanouti</p>
+                <p className="text-muted-foreground">{userProfile?.email}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-8 text-center">
@@ -183,14 +184,22 @@ export default function ProfilePage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex justify-around items-center">
-                        {userBadges.map(badge => (
-                             <div key={badge.name} className="flex flex-col items-center gap-2">
-                                <span className="text-5xl">{badge.emoji}</span>
-                                <span className="font-medium capitalize text-muted-foreground">{badge.name}</span>
-                            </div>
-                        ))}
-                    </div>
+                     {isProfileLoading ? (
+                         <div className="flex justify-around items-center">
+                            <Skeleton className="h-20 w-16" />
+                            <Skeleton className="h-20 w-16" />
+                            <Skeleton className="h-20 w-16" />
+                         </div>
+                     ): (
+                        <div className="flex justify-around items-center">
+                            {userBadges.map(badge => (
+                                <div key={badge.name} className="flex flex-col items-center gap-2">
+                                    <span className="text-5xl">{badge.emoji}</span>
+                                    <span className="font-medium capitalize text-muted-foreground">{badge.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                     )}
                 </CardContent>
             </Card>
 

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, getDocs, limit, orderBy, query, doc, getDoc } from 'firebase/firestore';
 import type { Contribution } from '@/lib/types';
 import { Button } from "@/components/ui/button";
