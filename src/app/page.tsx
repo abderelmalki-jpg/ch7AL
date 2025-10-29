@@ -24,7 +24,7 @@ export default function LandingPage() {
       <div className="relative z-20 flex flex-col items-center text-center text-white px-4">
         <Logo className="h-28 w-28 mb-4" />
         <h1 className="font-headline text-5xl md:text-6xl font-bold">
-          Souk Price
+          Hanouti
         </h1>
         <p className="mt-4 max-w-xl text-lg md:text-xl text-white/80">
           Comparez les prix. Économisez de l'argent. Partagez avec la communauté.
@@ -39,3 +39,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    

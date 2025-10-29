@@ -47,7 +47,7 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
       <Map
         defaultCenter={position}
         defaultZoom={14}
-        mapId="souk-price-map"
+        mapId="hanouti-map"
         gestureHandling={'cooperative'}
         disableDefaultUI={false}
         zoomControl={true}
@@ -78,3 +78,5 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
     </APIProvider>
   );
 }
+
+    

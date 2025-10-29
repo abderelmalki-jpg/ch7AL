@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Souk Price',
+  title: 'Hanouti',
   description: 'Application de comparaison de prix communautaire',
 };
 
@@ -29,3 +29,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    
