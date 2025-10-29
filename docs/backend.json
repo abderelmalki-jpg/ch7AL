@@ -53,7 +53,6 @@
       "required": [
         "id",
         "email",
-        "name",
         "createdAt"
       ]
     },
@@ -187,6 +186,21 @@
       "required": [
         "name"
       ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment made by a user on a price submission.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the comment." },
+        "userId": { "type": "string", "description": "Foreign key for the user who made the comment." },
+        "userName": { "type": "string", "description": "Display name of the user at the time of commenting." },
+        "userPhotoURL": { "type": "string", "description": "URL of the user's profile picture.", "format": "uri" },
+        "text": { "type": "string", "description": "The content of the comment." },
+        "createdAt": { "type": "string", "description": "Timestamp of when the comment was created.", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "text", "createdAt"]
     }
   },
   "auth": {
@@ -225,6 +239,16 @@
             "$ref": "#/entities/Price"
           },
           "description": "A log of all price submissions from users."
+        }
+      },
+      {
+        "path": "/prices/{priceId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/entities/Comment"
+          },
+          "description": "Stores comments for a specific price submission."
         }
       },
       {

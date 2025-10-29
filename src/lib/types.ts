@@ -1,5 +1,6 @@
 
 
+
 export type Contribution = {
   id: string;
   productName: string;
@@ -9,6 +10,10 @@ export type Contribution = {
   latitude: number;
   longitude: number;
   imageUrl?: string;
+  userId: string;
+  product: Product | null;
+  store: Store | null;
+  user: UserProfile | null;
 };
 
 export type Product = {
@@ -52,4 +57,16 @@ export type UserProfile = {
     points?: number;
     contributions?: number;
     badges?: string[];
+}
+
+export type Comment = {
+    id: string;
+    userId: string;
+    userName: string;
+    userPhotoURL?: string;
+    text: string;
+    createdAt: {
+        seconds: number;
+        nanoseconds: number;
+    } | Date;
 }

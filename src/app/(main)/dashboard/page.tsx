@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
 import { useFirestore } from '@/firebase';
 import { collection, getDocs, limit, orderBy, query, doc, getDoc, Timestamp } from 'firebase/firestore';
-import type { Contribution } from '@/lib/types';
+import type { Contribution, Product, Store, UserProfile } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Map, Search, PlusCircle, Loader2 } from "lucide-react";
@@ -33,14 +34,22 @@ export default function DashboardPage() {
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
           const priceData = priceDoc.data();
 
-          const [productSnap, storeSnap] = await Promise.all([
+          const [productSnap, storeSnap, userSnap] = await Promise.all([
             getDoc(doc(firestore, 'products', priceData.productId)),
-            getDoc(doc(firestore, 'stores', priceData.storeId))
+            getDoc(doc(firestore, 'stores', priceData.storeId)),
+            getDoc(doc(firestore, 'users', priceData.userId)),
           ]);
           
+          const product = productSnap.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : null;
+          const store = storeSnap.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : null;
+          const user = userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : null;
+
+
           let contributionDate: Date;
           if (priceData.createdAt instanceof Timestamp) {
             contributionDate = priceData.createdAt.toDate();
+          } else if (priceData.createdAt && typeof priceData.createdAt.seconds === 'number') {
+            contributionDate = new Timestamp(priceData.createdAt.seconds, priceData.createdAt.nanoseconds).toDate();
           } else if (typeof priceData.createdAt === 'string') {
             contributionDate = new Date(priceData.createdAt);
           } else {
@@ -49,13 +58,17 @@ export default function DashboardPage() {
 
           return {
             id: priceDoc.id,
-            productName: productSnap.data()?.name || 'Produit inconnu',
-            storeName: storeSnap.data()?.name || 'Magasin inconnu',
+            productName: product?.name || 'Produit inconnu',
+            storeName: store?.name || 'Magasin inconnu',
             price: priceData.price,
             date: contributionDate.toISOString(),
-            latitude: storeSnap.data()?.latitude || 0,
-            longitude: storeSnap.data()?.longitude || 0,
-            imageUrl: productSnap.data()?.imageUrl || undefined
+            latitude: store?.latitude || 0,
+            longitude: store?.longitude || 0,
+            imageUrl: product?.imageUrl || undefined,
+            userId: priceData.userId,
+            product,
+            store,
+            user,
           };
         });
 
