@@ -2,10 +2,7 @@
 
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
-import { auth } from 'firebase-admin';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, query, where, getDocs, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getSdks } from '@/firebase';
 
 
@@ -67,21 +64,22 @@ export async function getSuggestions(
 // --- Add Price Action ---
 
 const addPriceSchema = z.object({
-    userId: z.string(),
+    userId: z.string().min(1, 'ID utilisateur manquant.'),
     productName: z.string().min(1, 'Le nom du produit est requis.'),
     price: z.coerce.number().positive('Le prix doit être un nombre positif.'),
     storeName: z.string().min(1, 'Le nom du magasin est requis.'),
     address: z.string().optional(),
     latitude: z.coerce.number().optional(),
     longitude: z.coerce.number().optional(),
-_brand: z.string().optional(),
-_category: z.string().optional(),
+    brand: z.string().optional(),
+    category: z.string().optional(),
 });
 
 export type AddPriceFormState = {
-    status: 'success' | 'error';
+    status: 'idle' | 'success' | 'error';
     message: string;
     errors?: {
+        userId?: string[];
         productName?: string[];
         price?: string[];
         storeName?: string[];
@@ -101,6 +99,8 @@ async function getOrCreateStore(db: any, storeName: string, address?: string, la
             name: storeName,
             address: address || '',
             createdAt: serverTimestamp(),
+            rating: 0,
+            totalRatings: 0,
         };
         if(latitude && longitude) {
             newStoreData.latitude = latitude;
@@ -129,6 +129,7 @@ async function getOrCreateProduct(db: any, productName: string, brand?: string, 
             barcode: `generated-${Date.now()}`, // Placeholder barcode
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            // imageUrl will be added if available from the form
         });
         return newProductRef.id;
     }
@@ -145,24 +146,32 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
         address: formData.get('address'),
         latitude: formData.get('latitude'),
         longitude: formData.get('longitude'),
-        _brand: formData.get('brand'),
-        _category: formData.get('category'),
+        brand: formData.get('brand'),
+        category: formData.get('category'),
     });
 
     if (!validatedFields.success) {
         return {
             status: 'error',
-            message: 'La validation a échoué.',
+            message: 'La validation a échoué. Veuillez vérifier les champs.',
             errors: validatedFields.error.flatten().fieldErrors,
         };
     }
     
     const { firestore: db } = getSdks();
-    const { userId, productName, price, storeName, address, latitude, longitude, _brand, _category } = validatedFields.data;
+    const { userId, productName, price, storeName, address, latitude, longitude, brand, category } = validatedFields.data;
+
+    if (!userId) {
+         return {
+            status: 'error',
+            message: "Vous devez être connecté pour ajouter un prix.",
+            errors: { userId: ["Utilisateur non authentifié."]}
+        };
+    }
 
     try {
         const storeId = await getOrCreateStore(db, storeName, address, latitude, longitude);
-        const productId = await getOrCreateProduct(db, productName, _brand, _category);
+        const productId = await getOrCreateProduct(db, productName, brand, category);
 
         const pricesRef = collection(db, 'prices');
         await addDoc(pricesRef, {
@@ -177,14 +186,14 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
 
         return {
             status: 'success',
-            message: `Prix de ${price} DH pour ${productName} ajouté avec succès !`,
+            message: `Prix pour ${productName} ajouté avec succès chez ${storeName} !`,
         };
 
     } catch (error) {
         console.error('Error adding price:', error);
         return {
             status: 'error',
-            message: "Une erreur est survenue lors de l'ajout du prix."
+            message: "Une erreur est survenue lors de l'ajout du prix à la base de données."
         };
     }
 }
