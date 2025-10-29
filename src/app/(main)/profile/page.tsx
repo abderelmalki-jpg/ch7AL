@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +87,6 @@ export default function ProfilePage() {
         }
         setIsSavingName(true);
         try {
-            // Using the non-blocking update function
             updateDocumentNonBlocking(userProfileRef, { name: displayName });
             toast({ title: 'Nom mis à jour avec succès !' });
             setIsEditingName(false);
@@ -109,8 +108,8 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="flex flex-col items-center mb-8">
+        <div className="container mx-auto max-w-2xl px-4 py-8 space-y-8">
+            <div className="flex flex-col items-center">
                 <Avatar className="w-24 h-24 mb-4 border-4 border-primary shadow-lg">
                     <AvatarImage src={userProfile?.photoURL} alt={userProfile?.name} />
                     <AvatarFallback>
@@ -146,7 +145,7 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground">{userProfile?.email}</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-8 text-center">
+            <div className="grid grid-cols-2 gap-4 text-center">
                 <Card className="bg-accent/10 border-accent/20">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-center gap-2 text-accent-foreground">
@@ -177,7 +176,7 @@ export default function ProfilePage() {
                 </Card>
             </div>
 
-            <Card className="mb-8">
+            <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-primary">
                          <Award className="w-6 h-6 text-accent" /> Badges
@@ -252,7 +251,7 @@ export default function ProfilePage() {
                 </CardContent>
             </Card>
 
-            <div className="mt-8">
+            <div className="mt-4">
                 <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
                     <LogOut className="mr-2 h-5 w-5" />
                     Se déconnecter
@@ -260,4 +259,4 @@ export default function ProfilePage() {
             </div>
         </div>
     );
-}
+     
