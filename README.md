@@ -4,23 +4,23 @@ This is a NextJS starter in Firebase Studio.
 
 ## Getting Started
 
-1.  **Set up Environment Variables**: Create a `.env` file in the root of the project by copying the example below. You'll need to add your own API keys from Google AI Studio and Google Cloud Console.
+1.  **Configurer les variables d'environnement**: Créez un fichier `.env` à la racine de votre projet. Vous devrez y ajouter vos propres clés API.
 
     ```.env
-    # Get your Gemini API key from Google AI Studio: https://aistudio.google.com/app/apikey
-    GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
+    # Obtenez votre clé API Gemini depuis Google AI Studio : https://aistudio.google.com/app/apikey
+    GEMINI_API_KEY="VOTRE_CLE_API_GEMINI_ICI"
 
-    # Get your Google Maps API key from Google Cloud Console: https://console.cloud.google.com/google/maps-apis/
-    # Make sure to enable the "Maps JavaScript API".
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="YOUR_GOOGLE_MAPS_API_KEY_HERE"
+    # Obtenez votre clé API Google Maps depuis Google Cloud Console : https://console.cloud.google.com/google/maps-apis/
+    # Assurez-vous d'activer la "Maps JavaScript API".
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="VOTRE_CLE_API_GOOGLE_MAPS_ICI"
     ```
 
-2.  **Run the development server**:
+2.  **Lancer le serveur de développement**:
     
     ```bash
     npm run dev
     ```
     
-    Open [http://localhost:9002](http://localhost:9002) with your browser to see the result.
+    Ouvrez [http://localhost:9002](http://localhost:9002) avec votre navigateur pour voir le résultat.
 
-To get started editing your app, take a look at `src/app/page.tsx`.
+Pour commencer à modifier votre application, jetez un œil à `src/app/page.tsx`.
