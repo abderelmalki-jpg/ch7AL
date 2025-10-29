@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import Link from "next/link";
 import { useFirestore } from '@/firebase';
 import { collection, getDocs, limit, orderBy, query, doc, getDoc, Timestamp } from 'firebase/firestore';
-import type { Contribution, Product, Store, UserProfile } from '@/lib/types';
+import type { Contribution, Product, Store, UserProfile, Price } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Map, Search, PlusCircle, Loader2 } from "lucide-react";
@@ -32,7 +32,7 @@ export default function DashboardPage() {
         const priceSnap = await getDocs(q);
 
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
-          const priceData = priceDoc.data();
+          const priceData = priceDoc.data() as Price;
 
           const [productSnap, storeSnap, userSnap] = await Promise.all([
             getDoc(doc(firestore, 'products', priceData.productId)),
@@ -43,7 +43,6 @@ export default function DashboardPage() {
           const product = productSnap.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : null;
           const store = storeSnap.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : null;
           const user = userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : null;
-
 
           let contributionDate: Date;
           if (priceData.createdAt instanceof Timestamp) {
@@ -69,6 +68,9 @@ export default function DashboardPage() {
             product,
             store,
             user,
+            upvotes: priceData.upvotes || [],
+            downvotes: priceData.downvotes || [],
+            voteScore: priceData.voteScore || 0,
           };
         });
 

@@ -1,6 +1,5 @@
 
 
-
 export type Contribution = {
   id: string;
   productName: string;
@@ -14,6 +13,9 @@ export type Contribution = {
   product: Product | null;
   store: Store | null;
   user: UserProfile | null;
+  upvotes: string[];
+  downvotes: string[];
+  voteScore: number;
 };
 
 export type Product = {
@@ -39,6 +41,9 @@ export type Price = {
     };
     verified: boolean;
     reports: number;
+    upvotes: string[];
+    downvotes: string[];
+    voteScore: number;
 }
 
 export type Store = {

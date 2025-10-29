@@ -138,9 +138,19 @@
           "type": "boolean",
           "description": "Indicates if the price has been verified by the community."
         },
-        "reports": {
-          "type": "number",
-          "description": "Number of reports against this price entry."
+        "upvotes": {
+          "type": "array",
+          "description": "Array of user IDs who upvoted this price.",
+          "items": { "type": "string" }
+        },
+        "downvotes": {
+          "type": "array",
+          "description": "Array of user IDs who downvoted this price.",
+          "items": { "type": "string" }
+        },
+        "voteScore": {
+            "type": "number",
+            "description": "The calculated score based on upvotes and downvotes."
         }
       },
       "required": [

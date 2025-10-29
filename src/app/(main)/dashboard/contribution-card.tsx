@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState, useMemo } from 'react';
 import Image from 'next/image';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
-import type { Contribution, Comment as CommentType } from '@/lib/types';
-
+import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
+import type { Contribution, Comment as CommentType, Price } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ThumbsUp, ThumbsDown, MessageSquare, MapPin, ImageIcon, Send, Loader2 } from 'lucide-react';
 import { MapClient } from '../map/map-client';
 import { addComment } from '../product/actions';
+import { handleVote } from '../product/vote-actions';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -35,16 +36,26 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  
+  // States
   const [commentText, setCommentText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // --- Data Fetching ---
-  const commentsQuery = useMemoFirebase(
-    () => open && firestore ? query(collection(firestore, 'prices', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null,
-    [open, firestore, contribution.id]
-  );
+  // Memoized references
+  const priceRef = useMemoFirebase(() => open && firestore ? doc(firestore, 'prices', contribution.id) : null, [open, firestore, contribution.id]);
+  const commentsQuery = useMemoFirebase(() => open && firestore ? query(collection(firestore, 'prices', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null, [open, firestore, contribution.id]);
+
+  // Data fetching hooks
+  const { data: priceData, isLoading: isLoadingPrice } = useDoc<Price>(priceRef);
   const { data: comments, isLoading: isLoadingComments } = useCollection<CommentType>(commentsQuery);
+  
+  const upvotes = useMemo(() => priceData?.upvotes || contribution.upvotes || [], [priceData, contribution.upvotes]);
+  const downvotes = useMemo(() => priceData?.downvotes || contribution.downvotes || [], [priceData, contribution.downvotes]);
+
+  const hasUpvoted = user && upvotes.includes(user.uid);
+  const hasDownvoted = user && downvotes.includes(user.uid);
 
   const storeForMap = [{
     id: contribution.id,
@@ -56,7 +67,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
     e.preventDefault();
     if (!user || !commentText.trim()) return;
 
-    setIsSubmitting(true);
+    setIsSubmittingComment(true);
     const formData = new FormData();
     formData.append('priceId', contribution.id);
     formData.append('userId', user.uid);
@@ -64,23 +75,32 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
     formData.append('userPhotoURL', user.photoURL || '');
     formData.append('text', commentText);
 
-    try {
-        const result = await addComment({ status: 'idle', message: '', errors: {} }, formData);
+    const result = await addComment({ status: 'idle', message: '', errors: {} }, formData);
 
-        if (result.status === 'success') {
-            toast({ title: 'Commentaire ajouté !' });
-            setCommentText('');
-        } else {
-            toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        }
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Erreur', description: "Impossible d'ajouter le commentaire." });
-        console.error(error);
-    } finally {
-        setIsSubmitting(false);
+    if (result.status === 'success') {
+        toast({ title: 'Commentaire ajouté !' });
+        setCommentText('');
+    } else {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
     }
+    setIsSubmittingComment(false);
   };
   
+  const onVote = async (voteType: 'upvote' | 'downvote') => {
+      if (!user) {
+          toast({ variant: 'destructive', description: "Vous devez être connecté pour voter."});
+          return;
+      };
+      setIsVoting(true);
+      const formData = new FormData();
+      formData.append('priceId', contribution.id);
+      formData.append('userId', user.uid);
+      formData.append('voteType', voteType);
+
+      await handleVote({status: 'idle', message: ''}, formData);
+      setIsVoting(false);
+  }
+
   const getInitials = (name: string) => {
     if (!name) return '';
     const names = name.split(' ');
@@ -158,13 +178,15 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
               <p className="text-sm text-accent">{contribution.storeName}</p>
               <p className="text-2xl font-bold text-primary">{contribution.price.toFixed(2)} DH</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" className="hover:bg-green-100 hover:text-green-600">
-                <ThumbsUp className="h-5 w-5" />
-              </Button>
-              <Button variant="outline" size="icon" className="hover:bg-red-100 hover:text-red-600">
-                <ThumbsDown className="h-5 w-5" />
-              </Button>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => onVote('upvote')} disabled={isVoting} className={cn('h-10 w-12 flex gap-1', hasUpvoted && 'bg-green-100 text-green-600 border-green-300 hover:bg-green-200 hover:text-green-700')}>
+                    <ThumbsUp className="h-5 w-5" />
+                    <span className="text-sm font-bold">{upvotes.length}</span>
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => onVote('downvote')} disabled={isVoting} className={cn('h-10 w-12 flex gap-1', hasDownvoted && 'bg-red-100 text-red-600 border-red-300 hover:bg-red-200 hover:text-red-700')}>
+                    <ThumbsDown className="h-5 w-5" />
+                     <span className="text-sm font-bold">{downvotes.length}</span>
+                </Button>
             </div>
           </div>
 
@@ -224,10 +246,10 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
                   placeholder="Ajouter un commentaire..." 
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  disabled={isSubmitting}
+                  disabled={isSubmittingComment}
                 />
-                <Button className="w-full" disabled={!commentText.trim() || isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-4 w-4"/> Envoyer le commentaire</>}
+                <Button className="w-full" disabled={!commentText.trim() || isSubmittingComment}>
+                    {isSubmittingComment ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-4 w-4"/> Envoyer le commentaire</>}
                 </Button>
             </form>
           )}
