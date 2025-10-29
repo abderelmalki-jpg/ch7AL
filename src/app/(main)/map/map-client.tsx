@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -9,15 +10,15 @@ import {
 } from '@vis.gl/react-google-maps';
 import { useState } from 'react';
 
-type Store = {
-  id: string; // Changed to string to match contribution ID
+type StoreForMap = {
+  id: string; 
   name: string;
   position: { lat: number; lng: number };
 }
 
 interface MapClientProps {
     apiKey: string;
-    stores?: Store[];
+    stores?: StoreForMap[];
 }
 
 export function MapClient({ apiKey, stores }: MapClientProps) {
@@ -32,27 +33,26 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
     );
   }
 
-  const position = stores && stores.length > 0 ? stores[0].position : { lat: 33.9716, lng: -6.8498 };
   const [openInfoWindow, setOpenInfoWindow] = useState<string | null>(null);
 
-  const defaultStores: Store[] = stores && stores.length > 0 ? stores : [
-    { id: '1', name: 'Hanout Omar', position: { lat: 33.9716, lng: -6.8498 } },
-    { id: '2', name: 'Epicerie Al Amal', position: { lat: 33.9730, lng: -6.8520 } },
-    { id: '3', name: 'Chez Hassan', position: { lat: 33.9700, lng: -6.8480 } },
-  ];
+  const defaultCenter = stores && stores.length > 0 
+    ? stores[0].position 
+    : { lat: 33.9716, lng: -6.8498 };
+
+  const validStores = stores && stores.length > 0 ? stores : [];
 
 
   return (
     <APIProvider apiKey={apiKey}>
       <Map
-        defaultCenter={position}
-        defaultZoom={14}
+        defaultCenter={defaultCenter}
+        defaultZoom={12}
         mapId="hanouti-map"
         gestureHandling={'cooperative'}
         disableDefaultUI={false}
         zoomControl={true}
       >
-        {defaultStores.map(store => (
+        {validStores.map(store => (
             <AdvancedMarker 
                 key={store.id} 
                 position={store.position}
@@ -66,12 +66,12 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
             </AdvancedMarker>
         ))}
 
-        {openInfoWindow && defaultStores.find(s => s.id === openInfoWindow) && (
+        {openInfoWindow && validStores.find(s => s.id === openInfoWindow) && (
             <InfoWindow 
-                position={defaultStores.find(s => s.id === openInfoWindow)?.position}
+                position={validStores.find(s => s.id === openInfoWindow)!.position}
                 onCloseClick={() => setOpenInfoWindow(null)}
             >
-                <p className="font-bold">{defaultStores.find(s => s.id === openInfoWindow)?.name}</p>
+                <p className="font-bold">{validStores.find(s => s.id === openInfoWindow)!.name}</p>
             </InfoWindow>
         )}
       </Map>
