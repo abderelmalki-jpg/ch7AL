@@ -1,15 +1,16 @@
 
+
 import { HomeClient } from "../home-client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { recentContributions } from "@/lib/data";
-import { format } from "date-fns";
 import { Map, Search, PlusCircle } from "lucide-react";
 import { MapClient } from "../map/map-client";
+import { ContributionCard } from "./contribution-card";
 
 const storesFromContributions = recentContributions.map((c, i) => ({
-  id: i + 1,
+  id: c.id,
   name: c.storeName,
   // Dummy positions for now, should be replaced with real data
   position: { lat: 33.9716 - i * 0.001, lng: -6.8498 + i * 0.0015 },
@@ -50,26 +51,7 @@ export default function DashboardPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {recentContributions.map((contribution) => (
-            <Card key={contribution.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h3 className="font-semibold text-foreground leading-tight">
-                        {contribution.productName}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                        {contribution.storeName}
-                        </p>
-                    </div>
-                    <p className="text-xl font-bold text-primary whitespace-nowrap">
-                        {contribution.price.toFixed(2)} DH
-                    </p>
-                </div>
-                 <p className="text-xs text-muted-foreground mt-2">
-                    Ajouté le {format(new Date(contribution.date), "d MMM yyyy")}
-                </p>
-              </CardContent>
-            </Card>
+            <ContributionCard key={contribution.id} contribution={contribution} />
           ))}
         </div>
       </div>
