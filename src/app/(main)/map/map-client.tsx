@@ -10,7 +10,7 @@ import {
 import { useState } from 'react';
 
 type Store = {
-  id: number;
+  id: string; // Changed to string to match contribution ID
   name: string;
   position: { lat: number; lng: number };
 }
@@ -33,12 +33,12 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
   }
 
   const position = stores && stores.length > 0 ? stores[0].position : { lat: 33.9716, lng: -6.8498 };
-  const [openInfoWindow, setOpenInfoWindow] = useState<number | null>(null);
+  const [openInfoWindow, setOpenInfoWindow] = useState<string | null>(null);
 
-  const defaultStores: Store[] = stores || [
-    { id: 1, name: 'Hanout Omar', position: { lat: 33.9716, lng: -6.8498 } },
-    { id: 2, name: 'Epicerie Al Amal', position: { lat: 33.9730, lng: -6.8520 } },
-    { id: 3, name: 'Chez Hassan', position: { lat: 33.9700, lng: -6.8480 } },
+  const defaultStores: Store[] = stores && stores.length > 0 ? stores : [
+    { id: '1', name: 'Hanout Omar', position: { lat: 33.9716, lng: -6.8498 } },
+    { id: '2', name: 'Epicerie Al Amal', position: { lat: 33.9730, lng: -6.8520 } },
+    { id: '3', name: 'Chez Hassan', position: { lat: 33.9700, lng: -6.8480 } },
   ];
 
 
@@ -78,5 +78,3 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
     </APIProvider>
   );
 }
-
-    

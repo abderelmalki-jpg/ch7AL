@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ThumbsUp, ThumbsDown, MessageSquare, MapPin } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, MapPin, ImageIcon } from "lucide-react";
 import type { Contribution } from "@/lib/types";
 import { MapClient } from "../map/map-client";
 
@@ -25,7 +25,7 @@ interface ContributionCardProps {
 
 export function ContributionCard({ contribution, apiKey }: ContributionCardProps) {
   const storeForMap = [{
-    id: Number(contribution.id),
+    id: contribution.id,
     name: contribution.storeName,
     position: { lat: contribution.latitude, lng: contribution.longitude }
   }];
@@ -33,7 +33,16 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
+            {contribution.imageUrl ? (
+                 <div className="relative aspect-video w-full">
+                    <Image src={contribution.imageUrl} alt={contribution.productName} fill className="object-cover" />
+                </div>
+            ) : (
+                 <div className="relative aspect-video w-full bg-muted flex items-center justify-center">
+                    <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
+                </div>
+            )}
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div>
@@ -59,7 +68,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
           <DialogTitle>{contribution.productName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {contribution.imageUrl && (
+          {contribution.imageUrl ? (
             <div className="relative aspect-video w-full rounded-lg overflow-hidden border">
                 <Image 
                     src={contribution.imageUrl} 
@@ -67,6 +76,10 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
                     fill 
                     className="object-contain" 
                 />
+            </div>
+          ) : (
+             <div className="relative aspect-video w-full rounded-lg overflow-hidden border bg-muted flex items-center justify-center">
+                <ImageIcon className="w-12 h-12 text-muted-foreground/40" />
             </div>
           )}
           <div className="flex justify-between items-center bg-muted p-3 rounded-lg">

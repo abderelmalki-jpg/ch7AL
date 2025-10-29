@@ -46,7 +46,7 @@ export default function DashboardPage() {
             date: priceData.createdAt.toDate().toISOString(),
             latitude: storeSnap.data()?.latitude || 0,
             longitude: storeSnap.data()?.longitude || 0,
-            imageUrl: productSnap.data()?.imageUrl
+            imageUrl: productSnap.data()?.imageUrl || undefined
           };
         });
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
   const storesForMap = recentContributions
     .filter(c => c.latitude && c.longitude)
     .map((c) => ({
-      id: Number(c.id), // Using number conversion for ID, ensure uniqueness if IDs are strings
+      id: c.id,
       name: c.storeName,
       position: { lat: c.latitude, lng: c.longitude },
   }));

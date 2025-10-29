@@ -28,3 +28,13 @@ export type Product = {
   imageHint: string;
   price: number;
 };
+
+export type UserProfile = {
+    id: string;
+    name: string;
+    email: string;
+    photoURL?: string;
+    points?: number;
+    contributions?: number;
+    badges?: string[];
+}

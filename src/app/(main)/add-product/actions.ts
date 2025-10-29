@@ -3,7 +3,7 @@
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, type Firestore } from 'firebase/firestore';
-import { getDb } from '@/firebase/server';
+import { getDb, getStorage } from '@/firebase/server';
 
 
 // --- AI Suggestions Action ---
@@ -73,6 +73,7 @@ const addPriceSchema = z.object({
     longitude: z.coerce.number().optional(),
     brand: z.string().optional(),
     category: z.string().optional(),
+    photoDataUri: z.string().optional(),
 });
 
 export type AddPriceFormState = {
@@ -113,26 +114,55 @@ async function getOrCreateStore(db: Firestore, storeName: string, address?: stri
 }
 
 
-async function getOrCreateProduct(db: Firestore, productName: string, brand?: string, category?: string): Promise<string> {
+async function getOrCreateProduct(db: Firestore, productName: string, brand?: string, category?: string, imageUrl?: string): Promise<string> {
      const productsRef = collection(db, 'products');
-    const q = query(productsRef, where("name", "==", productName));
+    const q = query(productsRef, where("name", "==", productName), where("brand", "==", brand || ''));
     
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-        return querySnapshot.docs[0].id;
+        const productId = querySnapshot.docs[0].id;
+        // If an image is provided and the product doesn't have one, update it.
+        if (imageUrl && !querySnapshot.docs[0].data().imageUrl) {
+            await updateDoc(doc(db, 'products', productId), { imageUrl });
+        }
+        return productId;
     } else {
         const newProductRef = await addDoc(productsRef, {
             name: productName,
             brand: brand || '',
             category: category || '',
             barcode: `generated-${Date.now()}`, // Placeholder barcode
+            imageUrl: imageUrl || '',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-            // imageUrl will be added if available from the form
         });
         return newProductRef.id;
     }
+}
+
+async function uploadImageToStorage(photoDataUri: string, userId: string): Promise<string> {
+    const storage = getStorage();
+    const bucket = storage.bucket();
+
+    const fileExtension = photoDataUri.substring("data:image/".length, photoDataUri.indexOf(";base64"));
+    const fileName = `products/${userId}/${Date.now()}.${fileExtension}`;
+    const file = bucket.file(fileName);
+
+    const buffer = Buffer.from(photoDataUri.split(',')[1], 'base64');
+    
+    await file.save(buffer, {
+        metadata: {
+            contentType: `image/${fileExtension}`,
+        },
+    });
+    
+    const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '03-09-2491' // Far future expiration
+    });
+
+    return url;
 }
 
 
@@ -149,6 +179,7 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
         longitude: formData.get('longitude'),
         brand: formData.get('brand'),
         category: formData.get('category'),
+        photoDataUri: formData.get('photoDataUri'),
     });
 
     if (!validatedFields.success) {
@@ -159,7 +190,7 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
         };
     }
     
-    const { userId, productName, price, storeName, address, latitude, longitude, brand, category } = validatedFields.data;
+    const { userId, productName, price, storeName, address, latitude, longitude, brand, category, photoDataUri } = validatedFields.data;
 
     if (!userId) {
          return {
@@ -170,10 +201,14 @@ export async function addPrice(prevState: AddPriceFormState, formData: FormData)
     }
 
     try {
-        const storeId = await getOrCreateStore(db, storeName, address, latitude, longitude);
-        const productId = await getOrCreateProduct(db, productName, brand, category);
+        let imageUrl: string | undefined = undefined;
+        if (photoDataUri) {
+            imageUrl = await uploadImageToStorage(photoDataUri, userId);
+        }
 
-        // Corrected collection name from `priceRecords` to `prices`
+        const storeId = await getOrCreateStore(db, storeName, address, latitude, longitude);
+        const productId = await getOrCreateProduct(db, productName, brand, category, imageUrl);
+
         const pricesRef = collection(db, 'prices');
         await addDoc(pricesRef, {
             userId,
