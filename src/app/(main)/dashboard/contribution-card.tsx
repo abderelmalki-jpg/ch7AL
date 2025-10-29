@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useActionState, useMemo } from 'react';
+import { useState, useEffect, useActionState, useMemo, useTransition } from 'react';
 import Image from 'next/image';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contribution, Comment as CommentType, Price } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ThumbsUp, ThumbsDown, MessageSquare, MapPin, ImageIcon, Send, Loader2 } from 'lucide-react';
 import { MapClient } from '../map/map-client';
-import { addComment } from '../product/actions';
 import { handleVote } from '../product/vote-actions';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,8 +38,8 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   
   // States
   const [commentText, setCommentText] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [isVoting, setIsVoting] = useState(false);
+  const [isSubmittingComment, startCommentTransition] = useTransition();
+  const [isVoting, startVoteTransition] = useTransition();
   const [open, setOpen] = useState(false);
 
   // Memoized references
@@ -65,40 +64,42 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !commentText.trim()) return;
+    if (!user || !commentText.trim() || !firestore) return;
 
-    setIsSubmittingComment(true);
-    const formData = new FormData();
-    formData.append('priceId', contribution.id);
-    formData.append('userId', user.uid);
-    formData.append('userName', user.displayName || 'Anonyme');
-    formData.append('userPhotoURL', user.photoURL || '');
-    formData.append('text', commentText);
-
-    const result = await addComment({ status: 'idle', message: '', errors: {} }, formData);
-
-    if (result.status === 'success') {
-        toast({ title: 'Commentaire ajouté !' });
-        setCommentText('');
-    } else {
-        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-    }
-    setIsSubmittingComment(false);
+    startCommentTransition(async () => {
+        try {
+            const commentRef = collection(firestore, 'prices', contribution.id, 'comments');
+            await addDoc(commentRef, {
+                userId: user.uid,
+                userName: user.displayName || 'Anonyme',
+                userPhotoURL: user.photoURL || '',
+                text: commentText,
+                createdAt: serverTimestamp(),
+            });
+            setCommentText('');
+            toast({ title: 'Commentaire ajouté !' });
+        } catch (error) {
+            console.error("Error adding comment:", error);
+            toast({ variant: 'destructive', title: 'Erreur', description: "Impossible d'ajouter le commentaire." });
+        }
+    });
   };
   
   const onVote = async (voteType: 'upvote' | 'downvote') => {
-      if (!user) {
+      if (!user || !firestore) {
           toast({ variant: 'destructive', description: "Vous devez être connecté pour voter."});
           return;
       };
-      setIsVoting(true);
-      const formData = new FormData();
-      formData.append('priceId', contribution.id);
-      formData.append('userId', user.uid);
-      formData.append('voteType', voteType);
-
-      await handleVote({status: 'idle', message: ''}, formData);
-      setIsVoting(false);
+      startVoteTransition(async () => {
+        const result = await handleVote(firestore, {
+            priceId: contribution.id,
+            userId: user.uid,
+            voteType: voteType
+        });
+        if (result.status === 'error') {
+             toast({ variant: 'destructive', title: 'Erreur de vote', description: result.message});
+        }
+      });
   }
 
   const getInitials = (name: string) => {

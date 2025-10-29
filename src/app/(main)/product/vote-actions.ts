@@ -1,7 +1,6 @@
 'use server';
 
-import { getDb } from '@/firebase/server';
-import { doc, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, runTransaction, type Firestore } from 'firebase/firestore';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
@@ -17,15 +16,11 @@ export type VoteFormState = {
 }
 
 export async function handleVote(
-    prevState: VoteFormState,
-    formData: FormData
+    db: Firestore,
+    data: z.infer<typeof voteSchema>
 ): Promise<VoteFormState> {
 
-    const validatedFields = voteSchema.safeParse({
-        priceId: formData.get('priceId'),
-        userId: formData.get('userId'),
-        voteType: formData.get('voteType'),
-    });
+    const validatedFields = voteSchema.safeParse(data);
 
     if (!validatedFields.success) {
         return {
@@ -35,7 +30,6 @@ export async function handleVote(
     }
 
     const { priceId, userId, voteType } = validatedFields.data;
-    const db = getDb();
     const priceRef = doc(db, 'prices', priceId);
 
     try {
@@ -45,9 +39,9 @@ export async function handleVote(
                 throw new Error("La soumission de prix n'existe pas.");
             }
 
-            const data = priceDoc.data();
-            let upvotes: string[] = data.upvotes || [];
-            let downvotes: string[] = data.downvotes || [];
+            const priceData = priceDoc.data();
+            let upvotes: string[] = priceData.upvotes || [];
+            let downvotes: string[] = priceData.downvotes || [];
 
             const hasUpvoted = upvotes.includes(userId);
             const hasDownvoted = downvotes.includes(userId);
@@ -90,6 +84,9 @@ export async function handleVote(
 
     } catch (error) {
         console.error("Erreur lors du vote:", error);
+        if (error instanceof Error) {
+            return { status: 'error', message: error.message };
+        }
         return { status: 'error', message: 'Une erreur est survenue.' };
     }
 }

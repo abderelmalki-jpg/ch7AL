@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useActionState, useRef } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getSuggestions, addPrice, type SuggestionFormState, type AddPriceFormState } from './actions';
+import { getSuggestions, addPrice } from './actions';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,33 +14,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info, ArrowLeft, ScanLine } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
+    const firestore = useFirestore();
     const searchParams = useSearchParams();
 
     // Form states
-    const initialPriceState: AddPriceFormState = { status: 'idle', message: '' };
-    const [priceFormState, addPriceAction] = useActionState(addPrice, initialPriceState);
-
-    const initialSuggestionState: SuggestionFormState = { message: '', suggestions: [] };
-    const [suggestionState, suggestionAction] = useActionState(getSuggestions, initialSuggestionState);
+    const [suggestionState, setSuggestionState] = useState<{message: string, suggestions: string[]}>({ message: '', suggestions: [] });
 
     // Submission states
-    const [isSubmittingPrice, setIsSubmittingPrice] = useState(false);
-    const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false);
+    const [isSubmittingPrice, startPriceTransition] = useTransition();
+    const [isSubmittingSuggestion, startSuggestionTransition] = useTransition();
+
 
     // Form fields
     const [productName, setProductName] = useState(searchParams.get('name') || '');
+    const [price, setPrice] = useState('');
+    const [storeName, setStoreName] = useState('');
     const [brand, setBrand] = useState(searchParams.get('brand') || '');
     const [category, setCategory] = useState(searchParams.get('category') || '');
     const [photoDataUri, setPhotoDataUri] = useState(searchParams.get('photoDataUri') || '');
     const [address, setAddress] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
+    
+    // UI Errors
+    const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
 
     // Location state
     const [isLocating, setIsLocating] = useState(false);
@@ -130,41 +133,62 @@ export function AddProductForm() {
         setIsIdentifying(false);
     };
 
-    useEffect(() => {
-        if (priceFormState.status === 'success') {
-            toast({
-                title: 'Succès !',
-                description: priceFormState.message,
-                duration: 4000,
-            });
-            setTimeout(() => router.push('/dashboard'), 1000);
-        } else if (priceFormState.status === 'error') {
-             toast({
-                variant: 'destructive',
-                title: 'Erreur de soumission',
-                description: priceFormState.message,
-            });
-        }
-        if(priceFormState.status !== 'idle') {
-            setIsSubmittingPrice(false);
-        }
-    }, [priceFormState, router, toast]);
 
-    const handlePriceSubmit = (formData: FormData) => {
-        setIsSubmittingPrice(true);
-        addPriceAction(formData);
+    const handlePriceSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        
+        const errors: {productName?: string, price?: string, storeName?: string, userId?: string} = {};
+        if (!productName) errors.productName = "Le nom du produit est requis.";
+        if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
+        if (!storeName) errors.storeName = "Le nom du magasin est requis.";
+        if (!user) errors.userId = "Vous devez être connecté.";
+
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            return;
+        }
+
+        startPriceTransition(async () => {
+            const result = await addPrice(firestore, {
+                userId: user!.uid,
+                productName,
+                price: Number(price),
+                storeName,
+                address: address || undefined,
+                latitude: latitude || undefined,
+                longitude: longitude || undefined,
+                brand: brand || undefined,
+                category: category || undefined,
+                photoDataUri: photoDataUri || undefined
+            });
+
+            if (result.status === 'success') {
+                toast({
+                    title: 'Succès !',
+                    description: result.message,
+                    duration: 4000,
+                });
+                router.push('/dashboard');
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Erreur de soumission',
+                    description: result.message,
+                });
+            }
+        });
     }
     
-    const handleSuggestionSubmit = (formData: FormData) => {
-        setIsSubmittingSuggestion(true);
-        suggestionAction(formData);
+    const handleSuggestionSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        const formData = new FormData(event.target as HTMLFormElement);
+        
+        startSuggestionTransition(async () => {
+            const result = await getSuggestions(formData);
+            setSuggestionState(result);
+        });
     }
 
-    useEffect(() => {
-        if (suggestionState.message) {
-            setIsSubmittingSuggestion(false);
-        }
-    }, [suggestionState]);
 
     const handleCopyToClipboard = (text: string) => {
         setProductName(text);
@@ -277,15 +301,8 @@ export function AddProductForm() {
                     </div>
                 </div>
 
-                <form action={handlePriceSubmit} className="space-y-6">
-                    <input type="hidden" name="userId" value={user?.uid || ''} />
-                    <input type="hidden" name="brand" value={brand} />
-                    <input type="hidden" name="category" value={category} />
-                    <input type="hidden" name="latitude" value={latitude ?? ""} />
-                    <input type="hidden" name="longitude" value={longitude ?? ""} />
-                    <input type="hidden" name="photoDataUri" value={photoDataUri} />
-
-                    {priceFormState.errors?.userId && <p className="text-sm font-medium text-destructive">{priceFormState.errors.userId[0]}</p>}
+                <form onSubmit={handlePriceSubmit} className="space-y-6">
+                    {formErrors.userId && <p className="text-sm font-medium text-destructive">{formErrors.userId}</p>}
 
                     {photoDataUri && (
                         <div className="space-y-2">
@@ -310,25 +327,25 @@ export function AddProductForm() {
                         <div className="space-y-2">
                             <Label htmlFor="productName">Nom du produit</Label>
                             <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
-                            {priceFormState.errors?.productName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.productName[0]}</p>}
+                            {formErrors.productName && <p className="text-sm font-medium text-destructive">{formErrors.productName}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="price">Prix</Label>
                             <div className="relative">
-                                <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" className="pl-4 pr-12" required/>
+                                <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12" required/>
                                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
                                     DH
                                 </span>
                             </div>
-                            {priceFormState.errors?.price && <p className="text-sm font-medium text-destructive">{priceFormState.errors.price[0]}</p>}
+                            {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="storeName">Lieu (Hanout)</Label>
-                            <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" required />
-                            {priceFormState.errors?.storeName && <p className="text-sm font-medium text-destructive">{priceFormState.errors.storeName[0]}</p>}
+                            <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
+                            {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="address">Adresse (Optionnel)</Label>
@@ -364,7 +381,7 @@ export function AddProductForm() {
                  <CardDescription className="text-accent-foreground/80">Décrivez le produit pour obtenir des suggestions de noms de la part de l'IA.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form action={handleSuggestionSubmit} className="space-y-4">
+                <form onSubmit={handleSuggestionSubmit} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="product-description" className="text-accent-foreground/90">Description du produit</Label>
                         <Textarea 
