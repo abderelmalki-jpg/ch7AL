@@ -1,5 +1,4 @@
 
-
 import { HomeClient } from "../home-client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -65,7 +64,16 @@ export default function DashboardPage() {
           <Card>
               <CardContent className="p-0">
                   <div className="h-[400px] w-full rounded-lg overflow-hidden">
-                    <MapClient apiKey={apiKey} stores={storesFromContributions} />
+                    {apiKey ? (
+                        <MapClient apiKey={apiKey} stores={storesFromContributions} />
+                    ) : (
+                        <div className="flex items-center justify-center h-full bg-muted/20">
+                            <div className="text-center text-muted-foreground p-4">
+                                <p className="font-bold">Carte non disponible</p>
+                                <p className="text-sm">Veuillez fournir une clé API Google Maps dans votre fichier `.env` pour afficher la carte.</p>
+                            </div>
+                        </div>
+                    )}
                   </div>
               </CardContent>
           </Card>
