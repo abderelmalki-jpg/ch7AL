@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import type { Product, Price, Store } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
                 // Fetch prices for this product
                 const pricesQuery = query(
-                    collection(firestore, 'prices'),
+                    collection(firestore, 'priceRecords'),
                     where('productId', '==', productId),
                     orderBy('createdAt', 'desc')
                 );
@@ -50,17 +50,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
                 const pricesData = await Promise.all(pricesSnap.docs.map(async (priceDoc) => {
                     const price = { id: priceDoc.id, ...priceDoc.data() } as Price;
-                    
-                    let storeName = 'Magasin inconnu';
-                    if (price.storeId) {
-                        const storeRef = doc(firestore, 'stores', price.storeId);
-                        const storeSnap = await getDoc(storeRef);
-                        if (storeSnap.exists()) {
-                            storeName = (storeSnap.data() as Store).name;
-                        }
-                    }
-                    
-                    return { ...price, storeName };
+                    // storeName is already on the price record
+                    return { ...price, storeName: price.storeName };
                 }));
                 
                 setPrices(pricesData);
@@ -75,6 +66,19 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         fetchProductAndPrices();
 
     }, [firestore, productId]);
+    
+    const getFormattedDate = (timestamp: Timestamp | { seconds: number; nanoseconds: number; }) => {
+        let date: Date;
+        if (timestamp instanceof Timestamp) {
+            date = timestamp.toDate();
+        } else if (timestamp && typeof timestamp.seconds === 'number') {
+            date = new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+        } else {
+            return "Date invalide";
+        }
+        return format(date, "d MMMM yyyy", { locale: fr });
+    };
+
 
     if (isLoading) {
         return (
@@ -143,7 +147,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 <div className="space-y-1">
                                     <p className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground"/> {price.storeName}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        le {format(new Date(price.createdAt.seconds * 1000), "d MMMM yyyy", { locale: fr })}
+                                        le {getFormattedDate(price.createdAt)}
                                     </p>
                                 </div>
                                 <div className="text-right">

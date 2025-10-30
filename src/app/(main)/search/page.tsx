@@ -28,7 +28,7 @@ export default function SearchPage() {
                 const fetchedProducts = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
 
                 // 2. Fetch all prices
-                const pricesRef = collection(firestore, 'prices');
+                const pricesRef = collection(firestore, 'priceRecords');
                 const pricesSnapshot = await getDocs(pricesRef);
                 const allPrices = pricesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Price));
 

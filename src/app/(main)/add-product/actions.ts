@@ -49,37 +49,41 @@ export async function addPrice(data: any) {
 
     // 1. Gérer la collection `stores`
     const storeRef = adminDb.collection('stores').doc(storeName);
-    const storeData = {
-        name: storeName,
-        address: address || '',
-        location: JSON.stringify({ lat: latitude || null, lng: longitude || null }),
-        updatedAt: timestamp,
-        // Ces champs ne sont ajoutés qu'à la création
-        ...(await adminDb.doc(`stores/${storeName}`).get().then(doc => !doc.exists ? {
+    const storeDoc = await storeRef.get();
+    
+    let storeData:any = { name: storeName, updatedAt: timestamp };
+    if (address) storeData.address = address;
+    if (latitude && longitude) storeData.location = JSON.stringify({ lat: latitude, lng: longitude });
+
+    if (!storeDoc.exists) {
+        storeData = {
+            ...storeData,
             addedBy: userEmail,
             createdAt: timestamp,
             city: '' // Vous pouvez ajouter une logique pour extraire la ville de l'adresse plus tard
-        } : {}))
-    };
+        };
+    }
     batch.set(storeRef, storeData, { merge: true });
+
 
     // 2. Gérer la collection `products`
     const productRef = adminDb.collection('products').doc(productName);
+    const productDoc = await productRef.get();
+
     const productData: any = {
         name: productName,
         brand: brand || '',
         category: category || '',
         barcode: barcode || '',
         updatedAt: timestamp,
-        // Ces champs ne sont ajoutés qu'à la création
-        ...(await adminDb.doc(`products/${productName}`).get().then(doc => !doc.exists ? {
-            description: '', // description initiale
-            uploadedBy: userEmail,
-            createdAt: timestamp,
-        } : {}))
     };
      if (imageUrl) {
         productData.imageUrl = imageUrl;
+    }
+    if (!productDoc.exists) {
+        productData.description = ''; // description initiale
+        productData.uploadedBy = userEmail;
+        productData.createdAt = timestamp;
     }
     batch.set(productRef, productData, { merge: true });
     
@@ -123,3 +127,4 @@ export async function addPrice(data: any) {
     return { status: "error", message: errorMessage };
   }
 }
+

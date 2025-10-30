@@ -1,3 +1,4 @@
+
 'use server';
 
 import { doc, runTransaction, type Firestore } from 'firebase/firestore';
@@ -30,7 +31,7 @@ export async function handleVote(
     }
 
     const { priceId, userId, voteType } = validatedFields.data;
-    const priceRef = doc(db, 'prices', priceId);
+    const priceRef = doc(db, 'priceRecords', priceId);
 
     try {
         await runTransaction(db, async (transaction) => {

@@ -1,5 +1,7 @@
 
 
+import type { Timestamp } from 'firebase/firestore';
+
 export type Contribution = {
   id: string;
   productName: string;
@@ -9,7 +11,7 @@ export type Contribution = {
   latitude: number;
   longitude: number;
   imageUrl?: string;
-  userId: string;
+  userId: string; // email in this case from priceRecord
   product: Product | null;
   store: Store | null;
   user: UserProfile | null;
@@ -27,31 +29,39 @@ export type Product = {
   imageHint?: string; // imageHint is optional from Firestore
   barcode?: string;
   price?: number; // Price is optional, as it might not be directly on the product
+  uploadedBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  description: string;
 };
 
 export type Price = {
     id: string;
     productId: string;
-    storeId: string;
-    userId: string;
+    storeName: string;
+    reportedBy: string; // user email
     price: number;
-    createdAt: {
-        seconds: number;
-        nanoseconds: number;
-    };
-    verified: boolean;
-    reports: number;
-    upvotes: string[];
-    downvotes: string[];
-    voteScore: number;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    barcode: string;
+    currency: string;
+    location: string; // JSON string
+    verificationCount: number;
+    verifiedBy: string; // JSON string array of emails
+    upvotes?: string[];
+    downvotes?: string[];
+    voteScore?: number;
 }
 
 export type Store = {
     id: string;
     name: string;
     address?: string;
-    latitude?: number;
-    longitude?: number;
+    addedBy: string; // user email
+    city: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    location: string; // JSON stringified {lat, lng}
 }
 
 export type UserProfile = {
@@ -62,6 +72,8 @@ export type UserProfile = {
     points?: number;
     contributions?: number;
     badges?: string[];
+    language: string;
+    createdAt: Timestamp;
 }
 
 export type Comment = {

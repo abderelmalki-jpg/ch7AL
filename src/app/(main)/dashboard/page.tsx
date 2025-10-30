@@ -27,33 +27,46 @@ export default function DashboardPage() {
       
       setIsLoading(true);
       try {
-        const pricesRef = collection(firestore, 'prices');
+        const pricesRef = collection(firestore, 'priceRecords');
         const q = query(pricesRef, orderBy('createdAt', 'desc'), limit(6));
         const priceSnap = await getDocs(q);
 
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
           const priceData = priceDoc.data() as Price;
 
-          const [productSnap, storeSnap, userSnap] = await Promise.all([
+          const [productSnap, storeSnap] = await Promise.all([
             getDoc(doc(firestore, 'products', priceData.productId)),
-            getDoc(doc(firestore, 'stores', priceData.storeId)),
-            getDoc(doc(firestore, 'users', priceData.userId)),
+            getDoc(doc(firestore, 'stores', priceData.storeName)),
           ]);
           
+          // Note: reportedBy is an email, not a userId. Fetching user profile by email is not efficient.
+          // For simplicity, we will leave the user field null for now.
+          const user = null; 
+
           const product = productSnap.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : null;
           const store = storeSnap.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : null;
-          const user = userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : null;
 
           let contributionDate: Date;
-          if (priceData.createdAt instanceof Timestamp) {
-            contributionDate = priceData.createdAt.toDate();
-          } else if (priceData.createdAt && typeof priceData.createdAt.seconds === 'number') {
-            contributionDate = new Timestamp(priceData.createdAt.seconds, priceData.createdAt.nanoseconds).toDate();
-          } else if (typeof priceData.createdAt === 'string') {
-            contributionDate = new Date(priceData.createdAt);
+          const createdAt = priceData.createdAt as any;
+          if (createdAt instanceof Timestamp) {
+            contributionDate = createdAt.toDate();
+          } else if (createdAt && typeof createdAt.seconds === 'number') {
+            contributionDate = new Timestamp(createdAt.seconds, createdAt.nanoseconds).toDate();
+          } else if (typeof createdAt === 'string') {
+            contributionDate = new Date(createdAt);
           } else {
             contributionDate = new Date(); // Fallback
           }
+          
+          let location = { lat: 0, lng: 0 };
+          try {
+            if(store?.location) {
+                const parsedLoc = JSON.parse(store.location as string);
+                location.lat = parsedLoc.lat;
+                location.lng = parsedLoc.lng;
+            }
+          } catch(e) { /* ignore parse error */ }
+
 
           return {
             id: priceDoc.id,
@@ -61,10 +74,10 @@ export default function DashboardPage() {
             storeName: store?.name || 'Magasin inconnu',
             price: priceData.price,
             date: contributionDate.toISOString(),
-            latitude: store?.latitude || 0,
-            longitude: store?.longitude || 0,
+            latitude: location.lat,
+            longitude: location.lng,
             imageUrl: product?.imageUrl || undefined,
-            userId: priceData.userId,
+            userId: priceData.reportedBy, // This is an email
             product,
             store,
             user,
@@ -75,7 +88,7 @@ export default function DashboardPage() {
         });
 
         const contributions = await Promise.all(contributionsPromises);
-        setRecentContributions(contributions);
+        setRecentContributions(contributions as Contribution[]);
 
       } catch (error) {
         console.error("Erreur de chargement des contributions:", error);

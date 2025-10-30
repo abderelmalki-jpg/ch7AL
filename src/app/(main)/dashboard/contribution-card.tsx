@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useActionState, useMemo, useTransition } from 'react';
+import { useState, useEffect, useMemo, useTransition } from 'react';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -43,8 +43,8 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   const [open, setOpen] = useState(false);
 
   // Memoized references
-  const priceRef = useMemoFirebase(() => open && firestore ? doc(firestore, 'prices', contribution.id) : null, [open, firestore, contribution.id]);
-  const commentsQuery = useMemoFirebase(() => open && firestore ? query(collection(firestore, 'prices', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null, [open, firestore, contribution.id]);
+  const priceRef = useMemoFirebase(() => open && firestore ? doc(firestore, 'priceRecords', contribution.id) : null, [open, firestore, contribution.id]);
+  const commentsQuery = useMemoFirebase(() => open && firestore ? query(collection(firestore, 'priceRecords', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null, [open, firestore, contribution.id]);
 
   // Data fetching hooks
   const { data: priceData, isLoading: isLoadingPrice } = useDoc<Price>(priceRef);
@@ -68,7 +68,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
 
     startCommentTransition(async () => {
         try {
-            const commentRef = collection(firestore, 'prices', contribution.id, 'comments');
+            const commentRef = collection(firestore, 'priceRecords', contribution.id, 'comments');
             await addDoc(commentRef, {
                 userId: user.uid,
                 userName: user.displayName || 'Anonyme',
@@ -103,13 +103,15 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   }
 
   const getInitials = (name: string) => {
-    if (!name) return '';
+    if (!name) return '?';
     const names = name.split(' ');
     if (names.length > 1) {
-        return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+        return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   }
+
+  const userDisplayName = contribution.user?.name || contribution.userId.split('@')[0];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -147,9 +149,9 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Avatar className="h-5 w-5">
                     <AvatarImage src={contribution.user?.photoURL} />
-                    <AvatarFallback className="text-[8px]">{getInitials(contribution.user?.name || '')}</AvatarFallback>
+                    <AvatarFallback className="text-[8px]">{getInitials(userDisplayName)}</AvatarFallback>
                 </Avatar>
-                <span className="truncate max-w-[80px]">{contribution.user?.name}</span>
+                <span className="truncate max-w-[80px]">{userDisplayName}</span>
               </div>
             </div>
           </CardContent>
