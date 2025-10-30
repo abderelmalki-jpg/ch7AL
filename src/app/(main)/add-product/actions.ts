@@ -116,7 +116,6 @@ export async function addPrice(data: any) {
     const storeId = await getOrCreateStore(storeName, address, latitude, longitude);
     const productId = await getOrCreateProduct(productName, brand, category, barcode, imageUrl);
     
-    // Utiliser la collection "prices" pour la cohérence
     const pricesRef = adminDb.collection('prices');
 
     await pricesRef.add({
