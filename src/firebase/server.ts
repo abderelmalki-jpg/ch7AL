@@ -3,13 +3,14 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
 let app: App;
+const storageBucket = 'hanouti-6ce26.appspot.com';
 
 if (!getApps().length) {
   try {
     // Attempt to initialize with Application Default Credentials (ADC)
     // This works in Cloud Run, Cloud Functions, GKE, etc.
     app = initializeApp({
-        storageBucket: `hanouti-6ce26.appspot.com`
+        storageBucket,
     });
   } catch (e) {
     // If ADC fails (e.g., local dev without gcloud auth), fall back to service account if available
@@ -20,7 +21,7 @@ if (!getApps().length) {
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
                 privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
             }),
-            storageBucket: `hanouti-6ce26.appspot.com`
+            storageBucket,
         });
     } else {
         console.error("🔴 Firebase Admin SDK initialization failed. Neither Application Default Credentials nor a service account key were found.");

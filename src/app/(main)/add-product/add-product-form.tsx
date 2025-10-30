@@ -159,6 +159,15 @@ setIsCameraOn(false);
             return;
         }
 
+        if (!user || !firestore) {
+            toast({
+                variant: 'destructive',
+                title: 'Erreur',
+                description: "Vous devez être connecté et les services Firebase doivent être disponibles.",
+            });
+            return;
+        }
+        
         startPriceTransition(() => {
             (async () => {
                 try {
@@ -176,7 +185,7 @@ setIsCameraOn(false);
                         brand,
                         category,
                         barcode,
-                        photoDataUri, // Send the data URI to the server
+                        photoDataUri,
                       }),
                     });
 
@@ -367,7 +376,7 @@ setIsCameraOn(false);
                         </div>
                     </div>
 
-                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
+                    <Button type="submit" disabled={isSubmittingPrice || !user || !firestore} className="w-full text-lg h-12">
                         {isSubmittingPrice ? (
                             <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -383,5 +392,3 @@ setIsCameraOn(false);
     </div>
   );
 }
-
-    
