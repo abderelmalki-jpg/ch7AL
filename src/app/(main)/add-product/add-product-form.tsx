@@ -337,7 +337,7 @@ export function AddProductForm() {
                         <Camera className="h-6 w-6" />
                         <span>Analyse IA</span>
                     </Button>
-                     <Button asChild variant="secondary" size="lg" className="h-auto py-4 flex-col gap-2">
+                     <Button asChild size="lg" className="h-auto py-4 flex-col gap-2">
                         <Link href="/scanner">
                             <ScanLine className="h-6 w-6" />
                              <span>Code-barres</span>
