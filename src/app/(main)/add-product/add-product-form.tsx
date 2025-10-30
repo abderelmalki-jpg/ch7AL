@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useTransition } from 'react';
@@ -13,85 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, serverTimestamp, increment, runTransaction, doc, addDoc, type Firestore, setDoc } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
-
-// Client-side function to get or create a store
-async function getOrCreateStore(db: Firestore, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
-    const storesRef = collection(db, 'stores');
-    const q = query(storesRef, where("name", "==", storeName), where("address", "==", address || ''));
-    
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-        return querySnapshot.docs[0].id;
-    } else {
-        const newStoreData: any = {
-            name: storeName,
-            address: address || '',
-            createdAt: serverTimestamp(),
-        };
-        if(latitude && longitude) {
-            newStoreData.latitude = latitude;
-            newStoreData.longitude = longitude;
-        }
-
-        const newStoreRef = await addDoc(storesRef, newStoreData);
-        return newStoreRef.id;
-    }
-}
-
-// Client-side function to get or create a product
-async function getOrCreateProduct(db: Firestore, productName: string, brand?: string, category?: string, barcode?: string, imageUrl?: string): Promise<string> {
-    const productsRef = collection(db, 'products');
-    const q = query(productsRef, where("name", "==", productName), where("brand", "==", brand || ''));
-    
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-        const productDoc = querySnapshot.docs[0];
-        const productId = productDoc.id;
-        
-        const updateData: { imageUrl?: string, barcode?: string } = {};
-        if (imageUrl && !productDoc.data().imageUrl) {
-            updateData.imageUrl = imageUrl;
-        }
-        if (barcode && !productDoc.data().barcode) {
-             updateData.barcode = barcode;
-        }
-        
-        if (Object.keys(updateData).length > 0) {
-            const productRef = doc(db, 'products', productId);
-            await setDoc(productRef, updateData, { merge: true });
-        }
-        return productId;
-    } else {
-        const newProductRef = await addDoc(productsRef, {
-            name: productName,
-            brand: brand || '',
-            category: category || '',
-            barcode: barcode || `generated-${Date.now()}`,
-            imageUrl: imageUrl || '',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        });
-        return newProductRef.id;
-    }
-}
-
-// Client-side function to upload image
-async function uploadImageToStorage(photoDataUri: string, userId: string): Promise<string> {
-    const storage = getStorage();
-    const mimeType = photoDataUri.substring("data:".length, photoDataUri.indexOf(";base64"));
-    const fileExtension = mimeType.split('/')[1] || 'jpg';
-    const filePath = `product-images/${userId}/${Date.now()}.${fileExtension}`;
-    const fileRef = storageRef(storage, filePath);
-
-    await uploadString(fileRef, photoDataUri, 'data_url');
-    const downloadUrl = await getDownloadURL(fileRef);
-    return downloadUrl;
-}
-
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -207,7 +127,7 @@ export function AddProductForm() {
                 setBrand(result.brand);
                 setCategory(result.category);
                 setPhotoDataUri(dataUri);
-                setIsCameraOn(false); // Turn off camera after capture
+setIsCameraOn(false);
                 toast({
                     title: "Produit Identifié!",
                     description: `C'est un(e) ${result.name}.`,
@@ -228,11 +148,6 @@ export function AddProductForm() {
     const handlePriceSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         
-        if (!firestore) {
-             toast({ variant: 'destructive', title: 'Erreur', description: 'Service de base de données non disponible. Veuillez patienter.' });
-             return;
-        }
-        
         const errors: {productName?: string, price?: string, storeName?: string, userId?: string} = {};
         if (!productName) errors.productName = "Le nom du produit est requis.";
         if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
@@ -247,36 +162,29 @@ export function AddProductForm() {
         startPriceTransition(() => {
             (async () => {
                 try {
-                    let imageUrl: string | undefined = undefined;
-                    if (photoDataUri && photoDataUri.startsWith('data:image')) {
-                        imageUrl = await uploadImageToStorage(photoDataUri, user!.uid);
-                    } else if (photoDataUri) {
-                        imageUrl = photoDataUri; // It's already a URL from a previous search
-                    }
-
-                    const storeId = await getOrCreateStore(firestore, storeName, address, latitude || undefined, longitude || undefined);
-                    const productId = await getOrCreateProduct(firestore, productName, brand, category, barcode, imageUrl);
-
-                    await runTransaction(firestore, async (transaction) => {
-                        const priceDocRef = doc(collection(firestore, 'priceRecords'));
-                        const userRef = doc(firestore, 'users', user!.uid);
-
-                        transaction.set(priceDocRef, {
-                            userId: user!.uid,
-                            productId,
-                            storeId,
-                            price: Number(price),
-                            createdAt: serverTimestamp(),
-                            storeName: storeName,
-                            productName: productName,
-                            ...(barcode && { barcode }),
-                        });
-
-                        transaction.update(userRef, {
-                            points: increment(10),
-                            contributions: increment(1)
-                        });
+                    const response = await fetch('/api/add-price', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        userId: user!.uid,
+                        productName,
+                        price: Number(price),
+                        storeName,
+                        address,
+                        latitude,
+                        longitude,
+                        brand,
+                        category,
+                        barcode,
+                        photoDataUri, // Send the data URI to the server
+                      }),
                     });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Une erreur est survenue.');
+                    }
                     
                     toast({
                         title: 'Succès !',
@@ -290,7 +198,7 @@ export function AddProductForm() {
                     toast({
                         variant: 'destructive',
                         title: 'Erreur de soumission',
-                        description: "Une erreur est survenue lors de l'ajout du prix.",
+                        description: (error as Error).message || "Une erreur est survenue lors de l'ajout du prix.",
                     });
                 }
             })();
@@ -459,7 +367,7 @@ export function AddProductForm() {
                         </div>
                     </div>
 
-                    <Button type="submit" disabled={isSubmittingPrice || !user || !firestore} className="w-full text-lg h-12">
+                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
                         {isSubmittingPrice ? (
                             <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
