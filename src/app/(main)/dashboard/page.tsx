@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { useFirestore } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, getDocs, limit, orderBy, query, doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { Contribution, Product, Store, UserProfile, Price } from '@/lib/types';
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,13 @@ import { Map, Search, PlusCircle, Loader2 } from "lucide-react";
 import { MapClient } from "../map/map-client";
 import { ContributionCard } from "./contribution-card";
 import { HomeClient } from '../home-client';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function DashboardPage() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [recentContributions, setRecentContributions] = useState<Contribution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,11 +28,11 @@ export default function DashboardPage() {
       if (!firestore) return;
       
       setIsLoading(true);
-      try {
-        const pricesRef = collection(firestore, 'priceRecords');
-        const q = query(pricesRef, orderBy('createdAt', 'desc'), limit(6));
-        const priceSnap = await getDocs(q);
+      
+      const pricesRef = collection(firestore, 'priceRecords');
+      const q = query(pricesRef, orderBy('createdAt', 'desc'), limit(6));
 
+      getDocs(q).then(priceSnap => {
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
           const priceData = priceDoc.data() as Price;
 
@@ -87,17 +89,28 @@ export default function DashboardPage() {
           };
         });
 
-        const contributions = await Promise.all(contributionsPromises);
-        setRecentContributions(contributions as Contribution[]);
+        Promise.all(contributionsPromises).then(contributions => {
+            setRecentContributions(contributions as Contribution[]);
+        }).finally(() => {
+            setIsLoading(false);
+        });
 
-      } catch (error) {
-        console.error("Erreur de chargement des contributions:", error);
-      } finally {
+      }).catch(error => {
+        if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: pricesRef.path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Erreur de chargement des contributions:", error);
+            toast({ variant: 'destructive', title: 'Erreur', description: "Impossible de charger les contributions."});
+        }
         setIsLoading(false);
-      }
+      });
     }
     fetchRecentContributions();
-  }, [firestore]);
+  }, [firestore, toast]);
   
   const storesForMap = recentContributions
     .filter(c => c.latitude && c.longitude)
