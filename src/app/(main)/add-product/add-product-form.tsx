@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useTransition } from 'react';
@@ -24,7 +25,7 @@ export function AddProductForm() {
     const searchParams = useSearchParams();
 
     // Form states
-    const [suggestionState, setSuggestionState] = useState<{message: string, suggestions: string[]}>({ message: '', suggestions: [] });
+    const [suggestionState, setSuggestionState] = useState<{message: string, suggestions: string[], errors?: any}>({ message: '', suggestions: [] });
 
     // Submission states
     const [isSubmittingPrice, startPriceTransition] = useTransition();
@@ -32,12 +33,12 @@ export function AddProductForm() {
 
 
     // Form fields
-    const [productName, setProductName] = useState(searchParams.get('name') || '');
+    const [productName, setProductName] = useState('');
     const [price, setPrice] = useState('');
     const [storeName, setStoreName] = useState('');
-    const [brand, setBrand] = useState(searchParams.get('brand') || '');
-    const [category, setCategory] = useState(searchParams.get('category') || '');
-    const [photoDataUri, setPhotoDataUri] = useState(searchParams.get('photoDataUri') || '');
+    const [brand, setBrand] = useState('');
+    const [category, setCategory] = useState('');
+    const [photoDataUri, setPhotoDataUri] = useState('');
     const [address, setAddress] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
@@ -54,6 +55,14 @@ export function AddProductForm() {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
+
+    // FIX: Read searchParams only once inside useEffect to avoid re-render loops
+    useEffect(() => {
+        setProductName(searchParams.get('name') || '');
+        setBrand(searchParams.get('brand') || '');
+        setCategory(searchParams.get('category') || '');
+        setPhotoDataUri(searchParams.get('photoDataUri') || '');
+    }, [searchParams]);
 
      useEffect(() => {
         let stream: MediaStream | null = null;
@@ -149,6 +158,14 @@ export function AddProductForm() {
         }
 
         startPriceTransition(async () => {
+            if (!firestore) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Erreur',
+                    description: 'La connexion à la base de données n\'est pas disponible.',
+                });
+                return;
+            }
             const result = await addPrice(firestore, {
                 userId: user!.uid,
                 productName,
@@ -434,3 +451,5 @@ export function AddProductForm() {
     </div>
   );
 }
+
+    

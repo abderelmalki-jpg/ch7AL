@@ -1,10 +1,11 @@
+
 'use server';
 
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, type Firestore, runTransaction } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
-import { initializeFirebase } from '@/firebase';
+import { getSdks, initializeFirebase } from '@/firebase';
 
 
 // --- AI Suggestions Action ---
@@ -21,6 +22,7 @@ export type SuggestionFormState = {
 }
 
 export async function getSuggestions(
+    prevState: SuggestionFormState,
     formData: FormData
 ): Promise<SuggestionFormState> {
     const validatedFields = suggestionSchema.safeParse({
@@ -141,6 +143,7 @@ async function getOrCreateProduct(db: Firestore, productName: string, brand?: st
 }
 
 async function uploadImageToStorage(photoDataUri: string, userId: string): Promise<string> {
+    // This now relies on the client-side Firebase instance
     const { firebaseApp } = initializeFirebase();
     const storage = getStorage(firebaseApp);
     
@@ -190,11 +193,11 @@ export async function addPrice(
         const productId = await getOrCreateProduct(db, productName, brand, category, imageUrl);
 
         await runTransaction(db, async (transaction) => {
-            const pricesRef = collection(db, 'prices');
+            const priceDocRef = doc(collection(db, 'prices')); // Create a new doc ref for the price
             const userRef = doc(db, 'users', userId);
 
             // 1. Add the new price
-            transaction.set(doc(pricesRef), {
+            transaction.set(priceDocRef, {
                 userId,
                 productId,
                 storeId,
@@ -227,3 +230,5 @@ export async function addPrice(
         };
     }
 }
+
+    
