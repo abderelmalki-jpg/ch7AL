@@ -105,16 +105,16 @@ export default function DashboardPage() {
         </h1>
         <p className="text-muted-foreground mb-6">Que voulez-vous faire aujourd'hui ?</p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Button asChild size="lg" className="h-14 text-lg">
-            <Link href="/search">
-              <Search className="mr-2 h-5 w-5" />
-              Rechercher un prix
-            </Link>
-          </Button>
            <Button asChild size="lg" className="h-14 text-lg bg-accent text-accent-foreground hover:bg-accent/90">
             <Link href="/add-product">
                 <PlusCircle className="mr-2 h-5 w-5" />
                 Contribuer un prix
+            </Link>
+          </Button>
+          <Button asChild size="lg" className="h-14 text-lg">
+            <Link href="/search">
+              <Search className="mr-2 h-5 w-5" />
+              Rechercher un prix
             </Link>
           </Button>
         </div>
