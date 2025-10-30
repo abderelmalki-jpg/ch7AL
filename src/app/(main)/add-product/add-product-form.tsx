@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { addPrice } from './actions';
+import { addPrice, getSuggestions } from './actions';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkl
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { getSuggestions } from './actions';
 
 
 export function AddProductForm() {
@@ -32,7 +31,6 @@ export function AddProductForm() {
     // Submission states
     const [isSubmittingPrice, startPriceTransition] = useTransition();
     const [isSubmittingSuggestion, startSuggestionTransition] = useTransition();
-
 
     // Form fields
     const [productName, setProductName] = useState('');
@@ -58,17 +56,20 @@ export function AddProductForm() {
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
 
-    const nameParam = searchParams.get('name');
-    const brandParam = searchParams.get('brand');
-    const categoryParam = searchParams.get('category');
-    const photoParam = searchParams.get('photoDataUri');
-
     useEffect(() => {
-        setProductName(nameParam || '');
-        setBrand(brandParam || '');
-        setCategory(categoryParam || '');
-        setPhotoDataUri(photoParam || '');
-    }, [nameParam, brandParam, categoryParam, photoParam]);
+        const nameParam = searchParams.get('name');
+        const brandParam = searchParams.get('brand');
+        const categoryParam = searchParams.get('category');
+        const photoParam = searchParams.get('photoDataUri');
+
+        if (nameParam || brandParam || categoryParam || photoParam) {
+            setProductName(nameParam ?? '');
+            setBrand(brandParam ?? '');
+            setCategory(categoryParam ?? '');
+            setPhotoDataUri(photoParam ?? '');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
      useEffect(() => {
         let stream: MediaStream | null = null;
@@ -163,42 +164,61 @@ export function AddProductForm() {
             return;
         }
 
-        startPriceTransition(async () => {
-            if (!firestore) {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Erreur',
-                    description: 'La connexion à la base de données n\'est pas disponible.',
+        startPriceTransition(() => {
+            (async () => {
+                if (!firestore) {
+                     toast({
+                        variant: 'destructive',
+                        title: 'Erreur',
+                        description: 'La connexion à la base de données n\'est pas disponible.',
+                    });
+                    return;
+                }
+                const result = await addPrice(firestore, {
+                    userId: user!.uid,
+                    productName,
+                    price: Number(price),
+                    storeName,
+                    address: address || undefined,
+                    latitude: latitude || undefined,
+                    longitude: longitude || undefined,
+                    brand: brand || undefined,
+                    category: category || undefined,
+                    photoDataUri: photoDataUri || undefined
                 });
-                return;
-            }
-            const result = await addPrice(firestore, {
-                userId: user!.uid,
-                productName,
-                price: Number(price),
-                storeName,
-                address: address || undefined,
-                latitude: latitude || undefined,
-                longitude: longitude || undefined,
-                brand: brand || undefined,
-                category: category || undefined,
-                photoDataUri: photoDataUri || undefined
-            });
 
-            if (result.status === 'success') {
-                toast({
-                    title: 'Succès !',
-                    description: result.message,
-                    duration: 4000,
-                });
-                router.push('/dashboard');
-            } else {
+                if (result.status === 'success') {
+                    setProductName('');
+                    setPrice('');
+                    setStoreName('');
+                    setAddress('');
+                    setLatitude(null);
+                    setLongitude(null);
+                    setBrand('');
+                    setCategory('');
+                    setPhotoDataUri('');
+                    
+                    toast({
+                        title: 'Succès !',
+                        description: result.message,
+                        duration: 4000,
+                    });
+                    router.push('/dashboard');
+                } else {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erreur de soumission',
+                        description: result.message,
+                    });
+                }
+            })().catch((err) => {
+                console.error("Erreur inattendue lors de l'ajout du prix:", err);
                 toast({
                     variant: 'destructive',
-                    title: 'Erreur de soumission',
-                    description: result.message,
-                });
-            }
+                    title: 'Erreur Serveur',
+                    description: "Une erreur inattendue est survenue. Veuillez réessayer."
+                })
+            });
         });
     }
     
@@ -206,9 +226,18 @@ export function AddProductForm() {
         event.preventDefault();
         const formData = new FormData(event.target as HTMLFormElement);
         
-        startSuggestionTransition(async () => {
-            const result = await getSuggestions(suggestionState, formData);
-            setSuggestionState(result);
+        startSuggestionTransition(() => {
+            (async () => {
+                const result = await getSuggestions(suggestionState, formData);
+                setSuggestionState(result);
+            })().catch((err) => {
+                 console.error("Erreur inattendue lors de la suggestion:", err);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erreur IA',
+                    description: "Une erreur inattendue est survenue avec le service de suggestion."
+                })
+            });
         });
     }
 
