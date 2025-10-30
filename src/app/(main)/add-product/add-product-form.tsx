@@ -58,7 +58,6 @@ export function AddProductForm() {
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
 
-    // FIX: Read searchParams only once inside useEffect to avoid re-render loops
     const nameParam = searchParams.get('name');
     const brandParam = searchParams.get('brand');
     const categoryParam = searchParams.get('category');
@@ -458,4 +457,3 @@ export function AddProductForm() {
     </div>
   );
 }
-
