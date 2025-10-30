@@ -55,13 +55,13 @@ export function AddProductForm() {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    
+    const nameParam = searchParams.get('name');
+    const brandParam = searchParams.get('brand');
+    const categoryParam = searchParams.get('category');
+    const photoParam = searchParams.get('photoDataUri');
 
     useEffect(() => {
-        const nameParam = searchParams.get('name');
-        const brandParam = searchParams.get('brand');
-        const categoryParam = searchParams.get('category');
-        const photoParam = searchParams.get('photoDataUri');
-
         if (nameParam || brandParam || categoryParam || photoParam) {
             setProductName(nameParam ?? '');
             setBrand(brandParam ?? '');
@@ -69,7 +69,7 @@ export function AddProductForm() {
             setPhotoDataUri(photoParam ?? '');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [nameParam, brandParam, categoryParam, photoParam]);
 
      useEffect(() => {
         let stream: MediaStream | null = null;
@@ -333,11 +333,11 @@ export function AddProductForm() {
             </CardHeader>
             <CardContent>
                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2">
+                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
                         <Camera className="h-6 w-6" />
                         <span>Analyse IA</span>
                     </Button>
-                     <Button asChild variant="secondary" size="lg" className="h-auto py-4 flex-col gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+                     <Button asChild variant="secondary" size="lg" className="h-auto py-4 flex-col gap-2">
                         <Link href="/scanner">
                             <ScanLine className="h-6 w-6" />
                              <span>Code-barres</span>
@@ -486,3 +486,5 @@ export function AddProductForm() {
     </div>
   );
 }
+
+    
