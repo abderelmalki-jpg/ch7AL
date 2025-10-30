@@ -5,7 +5,6 @@ import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getSuggestions } from './actions';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +25,6 @@ export function AddProductForm() {
 
     // Submission states
     const [isSubmittingPrice, startPriceTransition] = useTransition();
-    const [isSubmittingSuggestion, startSuggestionTransition] = useTransition();
 
     // Form fields
     const [productName, setProductName] = useState('');
@@ -38,7 +36,6 @@ export function AddProductForm() {
     const [address, setAddress] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
-    const [suggestionState, setSuggestionState] = useState<{message: string, suggestions: string[], errors?: any}>({ message: '', suggestions: [] });
     
     // UI Errors
     const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
@@ -204,7 +201,7 @@ export function AddProductForm() {
                     toast({
                         variant: 'destructive',
                         title: 'Erreur de soumission',
-                        description: result.message,
+                        description: result.message || "Une erreur inconnue est survenue.",
                     });
                 }
             })().catch((err) => {
@@ -217,34 +214,7 @@ export function AddProductForm() {
             });
         });
     }
-    
-    const handleSuggestionSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
-        const formData = new FormData(event.target as HTMLFormElement);
-        
-        startSuggestionTransition(() => {
-            (async () => {
-                const result = await getSuggestions(suggestionState, formData);
-                setSuggestionState(result);
-            })().catch((err) => {
-                 console.error("Erreur inattendue lors de la suggestion:", err);
-                toast({
-                    variant: 'destructive',
-                    title: 'Erreur IA',
-                    description: "Une erreur inattendue est survenue avec le service de suggestion."
-                })
-            });
-        });
-    }
 
-
-    const handleCopyToClipboard = (text: string) => {
-        setProductName(text);
-        toast({
-            description: `Nom du produit mis à jour avec "${text}".`,
-        });
-    }
-    
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
             toast({ variant: 'destructive', title: 'Géolocalisation non supportée' });
@@ -418,65 +388,6 @@ export function AddProductForm() {
                         )}
                     </Button>
                 </form>
-            </CardContent>
-        </Card>
-
-        <Card className="bg-accent/10 border-accent/20">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-xl text-accent-foreground">
-                    <Wand2 className="text-accent" /> Pas sûr du nom ?
-                </CardTitle>
-                 <CardDescription className="text-accent-foreground/80">Décrivez le produit pour obtenir des suggestions de noms de la part de l'IA.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSuggestionSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="product-description" className="text-accent-foreground/90">Description du produit</Label>
-                        <Textarea 
-                            id="product-description" 
-                            name="productDescription" 
-                            placeholder="ex: 'Une boisson gazeuse populaire dans une canette rouge...'"
-                            className="bg-background/50"
-                        />
-                         {suggestionState.errors?.productDescription && (
-                            <p className="text-sm font-medium text-destructive">{suggestionState.errors.productDescription[0]}</p>
-                        )}
-                    </div>
-                    <Button type="submit" variant="outline" disabled={isSubmittingSuggestion}>
-                        {isSubmittingSuggestion ? (
-                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Recherche...
-                            </>
-                        ) : (
-                            <>
-                                <Lightbulb className="mr-2 h-4 w-4"/>
-                                Suggérer des noms
-                            </>
-                        )}
-                    </Button>
-                </form>
-                
-                {suggestionState.suggestions.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                        <p className="font-semibold text-accent-foreground/90">{suggestionState.message}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {suggestionState.suggestions.map((name, index) => (
-                                <button
-                                    key={index}
-                                    type="button"
-                                    onClick={() => handleCopyToClipboard(name)}
-                                    className="bg-accent/20 text-accent-foreground py-1 px-3 rounded-full text-sm hover:bg-accent/30 transition-colors"
-                                >
-                                    {name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                 {suggestionState.message && suggestionState.suggestions.length === 0 && !suggestionState.errors && (
-                     <p className="mt-4 text-sm text-muted-foreground">{suggestionState.message}</p>
-                 )}
             </CardContent>
         </Card>
     </div>

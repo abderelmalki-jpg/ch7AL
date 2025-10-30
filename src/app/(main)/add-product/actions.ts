@@ -5,8 +5,6 @@ import { z } from 'zod';
 import { serverTimestamp, increment } from 'firebase/firestore';
 import { getDb, getStorageAdmin } from '@/firebase/server';
 
-
-// --- Add Price Action ---
 const addPriceSchema = z.object({
     userId: z.string().min(1, 'ID utilisateur manquant.'),
     productName: z.string().min(1, 'Le nom du produit est requis.'),
@@ -67,7 +65,6 @@ async function getOrCreateProduct(db: FirebaseFirestore.Firestore, productName: 
     if (!querySnapshot.empty) {
         const productDoc = querySnapshot.docs[0];
         const productId = productDoc.id;
-        // If an image is provided and the product doesn't have one, update it.
         if (imageUrl && !productDoc.data().imageUrl) {
             await db.collection('products').doc(productId).update({ imageUrl });
         }
@@ -102,7 +99,6 @@ async function uploadImageToStorage(photoDataUri: string, userId: string): Promi
         },
     });
 
-    // Make the file public and get the URL
     await file.makePublic();
     return file.publicUrl();
 }
@@ -146,10 +142,9 @@ export async function addPrice(
         const productId = await getOrCreateProduct(db, productName, brand, category, imageUrl);
 
         await db.runTransaction(async (transaction) => {
-            const priceDocRef = db.collection('prices').doc(); // Create a new doc ref for the price
+            const priceDocRef = db.collection('prices').doc();
             const userRef = db.collection('users').doc(userId);
 
-            // 1. Add the new price
             transaction.set(priceDocRef, {
                 userId,
                 productId,
@@ -165,7 +160,6 @@ export async function addPrice(
 
             const userDoc = await transaction.get(userRef);
             if(userDoc.exists) {
-                 // 2. Update user's points and contributions
                 transaction.update(userRef, {
                     points: increment(10),
                     contributions: increment(1)
@@ -180,9 +174,15 @@ export async function addPrice(
 
     } catch (error) {
         console.error('Error adding price:', error);
+        let errorMessage = "Une erreur est survenue lors de l'ajout du prix à la base de données.";
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
         return {
             status: 'error',
-            message: "Une erreur est survenue lors de l'ajout du prix à la base de données."
+            message: errorMessage
         };
     }
 }
+
+    
