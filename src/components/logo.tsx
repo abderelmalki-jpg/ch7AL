@@ -18,6 +18,7 @@ export function Logo({ className }: { className?: string }) {
             alt={logoImage.description}
             data-ai-hint={logoImage.imageHint}
             fill
+            sizes="(max-width: 768px) 10vw, 5vw"
             className="object-contain"
         />
     </div>

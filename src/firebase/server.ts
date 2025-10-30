@@ -8,7 +8,9 @@ if (!getApps().length) {
   try {
     // Attempt to initialize with Application Default Credentials (ADC)
     // This works in Cloud Run, Cloud Functions, GKE, etc.
-    app = initializeApp();
+    app = initializeApp({
+        storageBucket: `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.appspot.com`
+    });
   } catch (e) {
     // If ADC fails (e.g., local dev without gcloud auth), fall back to service account if available
     if (process.env.FIREBASE_PRIVATE_KEY) {
