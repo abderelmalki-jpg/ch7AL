@@ -45,6 +45,7 @@ export async function addPrice(data: any) {
     }
 
     const batch = adminDb.batch();
+    const timestamp = FieldValue.serverTimestamp();
 
     // 1. Gérer la collection `stores`
     const storeRef = adminDb.collection('stores').doc(storeName);
@@ -52,33 +53,35 @@ export async function addPrice(data: any) {
         name: storeName,
         address: address || '',
         location: JSON.stringify({ lat: latitude || null, lng: longitude || null }),
-        updatedAt: FieldValue.serverTimestamp(),
+        updatedAt: timestamp,
+        // Ces champs ne sont ajoutés qu'à la création
+        ...(await adminDb.doc(`stores/${storeName}`).get().then(doc => !doc.exists ? {
+            addedBy: userEmail,
+            createdAt: timestamp,
+            city: '' // Vous pouvez ajouter une logique pour extraire la ville de l'adresse plus tard
+        } : {}))
     };
-    // Créer le magasin s'il n'existe pas, sinon mettre à jour `updatedAt`
-    batch.set(storeRef, { 
-      ...storeData,
-      // `addedBy` et `createdAt` uniquement à la création
-      addedBy: userEmail,
-      createdAt: FieldValue.serverTimestamp()
-    }, { merge: true });
-
+    batch.set(storeRef, storeData, { merge: true });
 
     // 2. Gérer la collection `products`
     const productRef = adminDb.collection('products').doc(productName);
-    const newProductData: any = {
+    const productData: any = {
         name: productName,
         brand: brand || '',
         category: category || '',
         barcode: barcode || '',
-        updatedAt: FieldValue.serverTimestamp(),
-        uploadedBy: userEmail
+        updatedAt: timestamp,
+        // Ces champs ne sont ajoutés qu'à la création
+        ...(await adminDb.doc(`products/${productName}`).get().then(doc => !doc.exists ? {
+            description: '', // description initiale
+            uploadedBy: userEmail,
+            createdAt: timestamp,
+        } : {}))
     };
-
-    if (imageUrl) {
-        newProductData.imageUrl = imageUrl;
+     if (imageUrl) {
+        productData.imageUrl = imageUrl;
     }
-    // Utiliser `set` avec `merge: true` pour créer/mettre à jour
-    batch.set(productRef, newProductData, { merge: true });
+    batch.set(productRef, productData, { merge: true });
     
     // 3. Gérer la collection `priceRecords`
     const priceRecordRef = adminDb.collection('priceRecords').doc(); // ID auto-généré
@@ -89,16 +92,16 @@ export async function addPrice(data: any) {
     };
     const newPriceRecord = {
         barcode: barcode || '',
-        createdAt: FieldValue.serverTimestamp(),
+        createdAt: timestamp,
         currency: "MAD",
         location: JSON.stringify(locationData),
         price: Number(price),
         productId: productName, // Utilisation directe du nom du produit
         reportedBy: userEmail,
         storeName: storeName,
-        updatedAt: FieldValue.serverTimestamp(),
+        updatedAt: timestamp,
         verificationCount: 0,
-        verifiedBy: JSON.stringify([]),
+        verifiedBy: JSON.stringify([]), // Tableau vide sous forme de string
     };
     batch.set(priceRecordRef, newPriceRecord);
     
