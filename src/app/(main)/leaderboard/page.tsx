@@ -45,18 +45,16 @@ export default function LeaderboardPage() {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <Card className="overflow-hidden">
-        <CardHeader className="bg-primary/5">
-            <div className="flex items-start gap-4">
+        <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
                 <div className="p-3 bg-primary/10 rounded-full">
-                     <Trophy className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                    <CardTitle className="font-headline text-2xl text-primary">Classement</CardTitle>
-                    <CardDescription>
-                        Découvrez les champions de la communauté qui partagent le plus.
-                    </CardDescription>
+                     <Trophy className="h-8 w-8 text-primary" />
                 </div>
             </div>
+            <CardTitle className="font-headline text-3xl text-primary">Classement</CardTitle>
+            <CardDescription>
+                Les champions de la communauté qui partagent le plus.
+            </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (

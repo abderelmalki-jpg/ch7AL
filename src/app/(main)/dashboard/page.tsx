@@ -149,8 +149,7 @@ export default function DashboardPage() {
 
       {/* Map of recent stores */}
       <div>
-          <h2 className="text-2xl font-headline font-bold text-foreground mb-4 flex items-center gap-2">
-            <Map className="h-6 w-6 text-primary"/>
+          <h2 className="text-2xl font-headline font-bold text-foreground mb-4 text-center">
             Derniers magasins répertoriés
           </h2>
           <Card>

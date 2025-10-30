@@ -132,8 +132,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </Card>
 
             <div>
-                <h2 className="text-2xl font-headline font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Tag className="w-6 h-6 text-accent"/>
+                <h2 className="text-2xl font-headline font-bold text-foreground mb-4 text-center">
                     Prix signalés
                 </h2>
 
