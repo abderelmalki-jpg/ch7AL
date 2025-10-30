@@ -258,7 +258,7 @@ export function AddProductForm() {
                     const productId = await getOrCreateProduct(firestore, productName, brand, category, barcode, imageUrl);
 
                     await runTransaction(firestore, async (transaction) => {
-                        const priceDocRef = doc(collection(firestore, 'prices'));
+                        const priceDocRef = doc(collection(firestore, 'priceRecords'));
                         const userRef = doc(firestore, 'users', user!.uid);
 
                         transaction.set(priceDocRef, {
@@ -267,11 +267,9 @@ export function AddProductForm() {
                             storeId,
                             price: Number(price),
                             createdAt: serverTimestamp(),
-                            verified: false,
-                            reports: 0,
-                            upvotes: [],
-                            downvotes: [],
-                            voteScore: 0,
+                            storeName: storeName,
+                            productName: productName,
+                            ...(barcode && { barcode }),
                         });
 
                         transaction.update(userRef, {
@@ -461,7 +459,7 @@ export function AddProductForm() {
                         </div>
                     </div>
 
-                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
+                    <Button type="submit" disabled={isSubmittingPrice || !user || !firestore} className="w-full text-lg h-12">
                         {isSubmittingPrice ? (
                             <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -477,3 +475,5 @@ export function AddProductForm() {
     </div>
   );
 }
+
+    
