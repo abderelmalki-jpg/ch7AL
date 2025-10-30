@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useTransition } from 'react';
@@ -12,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
+import { addPrice } from './actions';
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -164,27 +166,22 @@ export function AddProductForm() {
         startPriceTransition(() => {
             (async () => {
                 try {
-                    const response = await fetch('/api/add-price', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        userId: user!.uid,
-                        productName,
-                        price: Number(price),
-                        storeName,
-                        address,
-                        latitude,
-                        longitude,
-                        brand,
-                        category,
-                        barcode,
-                        photoDataUri,
-                      }),
+                    const result = await addPrice({
+                      userId: user!.uid,
+                      userEmail: user!.email,
+                      productName,
+                      price: Number(price),
+                      storeName,
+                      address,
+                      latitude,
+                      longitude,
+                      brand,
+                      category,
+                      barcode,
+                      photoDataUri,
                     });
 
-                    const result = await response.json();
-
-                    if (!response.ok) {
+                    if (result.status === 'error') {
                         throw new Error(result.message || 'Une erreur est survenue.');
                     }
                     
