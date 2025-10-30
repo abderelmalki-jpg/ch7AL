@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getSuggestions, addPrice } from './actions';
+import { addPrice } from './actions';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,8 @@ import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkl
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
+import { getSuggestions } from './actions';
+
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -57,12 +59,17 @@ export function AddProductForm() {
     const [cameraError, setCameraError] = useState<string | null>(null);
 
     // FIX: Read searchParams only once inside useEffect to avoid re-render loops
+    const nameParam = searchParams.get('name');
+    const brandParam = searchParams.get('brand');
+    const categoryParam = searchParams.get('category');
+    const photoParam = searchParams.get('photoDataUri');
+
     useEffect(() => {
-        setProductName(searchParams.get('name') || '');
-        setBrand(searchParams.get('brand') || '');
-        setCategory(searchParams.get('category') || '');
-        setPhotoDataUri(searchParams.get('photoDataUri') || '');
-    }, [searchParams]);
+        setProductName(nameParam || '');
+        setBrand(brandParam || '');
+        setCategory(categoryParam || '');
+        setPhotoDataUri(photoParam || '');
+    }, [nameParam, brandParam, categoryParam, photoParam]);
 
      useEffect(() => {
         let stream: MediaStream | null = null;
@@ -201,7 +208,7 @@ export function AddProductForm() {
         const formData = new FormData(event.target as HTMLFormElement);
         
         startSuggestionTransition(async () => {
-            const result = await getSuggestions(formData);
+            const result = await getSuggestions(suggestionState, formData);
             setSuggestionState(result);
         });
     }
@@ -452,4 +459,3 @@ export function AddProductForm() {
   );
 }
 
-    
