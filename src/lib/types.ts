@@ -75,3 +75,16 @@ export type Comment = {
         nanoseconds: number;
     } | Date;
 }
+
+export type LeaderboardEntry = {
+    id: string;
+    userId: string;
+    username: string;
+    points: number;
+    rank: number;
+    avatar: string;
+    badges: string; // JSON string array
+    period: 'all_time' | 'monthly' | 'weekly';
+    createdAt: any;
+    updatedAt: any;
+};

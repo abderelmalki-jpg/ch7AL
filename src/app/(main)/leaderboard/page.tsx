@@ -3,15 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/types';
+import { collection, query, orderBy, getDocs, limit, where } from 'firebase/firestore';
+import type { LeaderboardEntry } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, Star, BarChart3, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function LeaderboardPage() {
   const firestore = useFirestore();
-  const [contributors, setContributors] = useState<UserProfile[]>([]);
+  const [contributors, setContributors] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -19,10 +19,10 @@ export default function LeaderboardPage() {
       if (!firestore) return;
       setIsLoading(true);
       try {
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, orderBy('points', 'desc'), limit(50));
+        const leaderboardRef = collection(firestore, 'leaderboard');
+        const q = query(leaderboardRef, where('period', '==', 'all_time'), orderBy('rank', 'asc'), limit(50));
         const querySnapshot = await getDocs(q);
-        const fetchedContributors = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+        const fetchedContributors = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LeaderboardEntry));
         setContributors(fetchedContributors);
       } catch (error) {
         console.error("Failed to fetch leaderboard data:", error);
@@ -37,9 +37,9 @@ export default function LeaderboardPage() {
     if (!name) return '';
     const names = name.split(' ');
     if (names.length > 1) {
-        return names[0][0] + names[names.length - 1][0];
+        return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
     }
-    return name.substring(0, 2);
+    return name.substring(0, 2).toUpperCase();
   }
 
   return (
@@ -65,27 +65,23 @@ export default function LeaderboardPage() {
             <ul className="divide-y">
               {contributors.map((contributor, index) => (
                 <li key={contributor.id} className="p-4 flex items-center gap-4 hover:bg-secondary transition-colors">
-                  <span className="text-xl font-bold text-muted-foreground w-6 text-center">{index + 1}</span>
+                  <span className="text-xl font-bold text-muted-foreground w-6 text-center">{contributor.rank}</span>
                   <Avatar className="h-12 w-12 border-2 border-primary">
-                    <AvatarImage src={contributor.photoURL} alt={contributor.name} />
-                    <AvatarFallback>{getInitials(contributor.name)}</AvatarFallback>
+                    <AvatarImage src={contributor.avatar} alt={contributor.username} />
+                    <AvatarFallback>{getInitials(contributor.username)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <p className="font-semibold text-primary">{contributor.name}</p>
+                    <p className="font-semibold text-primary">{contributor.username}</p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-accent" />
                         {contributor.points || 0}
                       </span>
-                       <span className="flex items-center gap-1">
-                        <BarChart3 className="w-4 h-4" />
-                        {contributor.contributions || 0}
-                      </span>
                     </div>
                   </div>
-                  {index < 3 && (
+                  {contributor.rank < 4 && (
                     <span className="text-3xl">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                      {contributor.rank === 1 ? '🥇' : contributor.rank === 2 ? '🥈' : '🥉'}
                     </span>
                   )}
                 </li>
