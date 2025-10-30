@@ -1,67 +1,9 @@
 
 'use server';
 
-import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
-import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
-import { getDb } from '@/firebase/server';
-import { getStorageAdmin } from '@/firebase/server';
-
-
-// --- AI Suggestions Action ---
-const suggestionSchema = z.object({
-    productDescription: z.string().min(10, { message: 'La description doit contenir au moins 10 caractères.' }),
-});
-
-export type SuggestionFormState = {
-    message: string;
-    suggestions: string[];
-    errors?: {
-        productDescription?: string[];
-    }
-}
-
-export async function getSuggestions(
-    prevState: SuggestionFormState,
-    formData: FormData
-): Promise<SuggestionFormState> {
-    const validatedFields = suggestionSchema.safeParse({
-        productDescription: formData.get('productDescription'),
-    });
-
-    if (!validatedFields.success) {
-        return {
-            message: 'La validation a échoué.',
-            suggestions: [],
-            errors: validatedFields.error.flatten().fieldErrors,
-        };
-    }
-
-    try {
-        const { suggestedProductNames } = await suggestAlternativeProducts({
-            productDescription: validatedFields.data.productDescription,
-        });
-
-        if (suggestedProductNames && suggestedProductNames.length > 0) {
-            return {
-                message: 'Voici quelques suggestions :',
-                suggestions: suggestedProductNames,
-            };
-        } else {
-             return {
-                message: 'Impossible de générer des suggestions basées sur la description.',
-                suggestions: [],
-            };
-        }
-    } catch (error) {
-        console.error("AI Suggestion Error:", error);
-        return {
-            message: 'Une erreur est survenue lors de la génération des suggestions.',
-            suggestions: [],
-        };
-    }
-}
+import { serverTimestamp, increment } from 'firebase/firestore';
+import { getDb, getStorageAdmin } from '@/firebase/server';
 
 
 // --- Add Price Action ---
@@ -244,5 +186,3 @@ export async function addPrice(
         };
     }
 }
-
-    

@@ -2,7 +2,7 @@
 // IMPORTANT: This file is for server-side use only.
 // It must NOT be imported into any client-side components.
 
-import { initializeApp, getApps, getApp, type FirebaseOptions, cert, App } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp, type FirebaseOptions, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import { firebaseConfig } from './config';
@@ -12,27 +12,27 @@ let db: Firestore | null = null;
 let storage: Storage | null = null;
 
 function initializeAdminSDK() {
-    // Only initialize if the admin SDK config is present in environment variables
-    if (process.env.FIREBASE_ADMIN_SDK_CONFIG) {
-        const firebaseAdminConfig = {
-            credential: cert(JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG as string)),
-            storageBucket: 'hanouti-6ce26.appspot.com',
-        };
-
-        if (getApps().length === 0) {
-            adminApp = initializeApp(firebaseAdminConfig);
-        } else {
-            adminApp = getApp();
+    if (getApps().some(app => app.name === 'admin-sdk')) {
+        adminApp = getApp('admin-sdk');
+    } else {
+        // In a real Google Cloud environment, service account credentials would be automatically discovered.
+        // For local development with Studio, we must provide some config.
+        // We can reuse the client-side config's project ID.
+        try {
+            adminApp = initializeApp({
+                projectId: firebaseConfig.projectId,
+                storageBucket: `${firebaseConfig.projectId}.appspot.com`,
+            }, 'admin-sdk');
+        } catch (error) {
+            console.error("Failed to initialize Firebase Admin SDK:", error);
+            // Don't throw here, let getDb/getStorage handle the uninitialized state.
+            return;
         }
-        
-        if (adminApp) {
-            db = getFirestore(adminApp);
-            storage = getStorage(adminApp);
-        }
-    } else if (process.env.NODE_ENV !== 'production') {
-        // Fallback for local development if env var is not set
-        // This might happen in environments without `dotenv` setup for server files
-        console.warn("FIREBASE_ADMIN_SDK_CONFIG env var not set. Firebase Admin SDK not initialized.");
+    }
+    
+    if (adminApp) {
+        db = getFirestore(adminApp);
+        storage = getStorage(adminApp);
     }
 }
 
@@ -45,7 +45,11 @@ initializeAdminSDK();
  */
 export function getDb(): Firestore {
   if (!db) {
-    throw new Error("Firebase Admin SDK not initialized. Check server environment variables.");
+    // Attempt to re-initialize if it failed on first load
+    initializeAdminSDK();
+    if (!db) {
+        throw new Error("Firebase Admin SDK not initialized. Check server logs for initialization errors.");
+    }
   }
   return db;
 }
@@ -56,9 +60,11 @@ export function getDb(): Firestore {
  */
 export function getStorageAdmin(): Storage {
     if (!storage) {
-        throw new Error("Firebase Admin SDK not initialized. Check server environment variables.");
+       // Attempt to re-initialize if it failed on first load
+        initializeAdminSDK();
+        if (!storage) {
+            throw new Error("Firebase Admin SDK not initialized. Check server logs for initialization errors.");
+        }
     }
     return storage;
 }
-
-    
