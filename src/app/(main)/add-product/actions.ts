@@ -41,10 +41,10 @@ export async function addPrice(data: any) {
 
     let imageUrl: string | undefined = undefined;
     if (photoDataUri && photoDataUri.startsWith('data:image')) {
-        // Le téléversement ne doit se produire que si une NOUVELLE image est capturée.
         imageUrl = await uploadImage(photoDataUri, userId); 
     }
 
+    // 1. Logique pour la collection `priceRecords`
     const priceRecordsRef = adminDb.collection('priceRecords');
     
     const locationData = {
@@ -59,30 +59,37 @@ export async function addPrice(data: any) {
         currency: "MAD",
         location: JSON.stringify(locationData),
         price: Number(price),
-        productId: productName, // Utilisation directe du nom du produit comme dans votre schéma
-        reportedBy: userEmail, // Utilisation de l'email de l'utilisateur
+        productId: productName, // Utilisation directe du nom du produit
+        reportedBy: userEmail,
         storeName: storeName,
         updatedAt: FieldValue.serverTimestamp(),
         verificationCount: 0,
         verifiedBy: JSON.stringify([]),
-        // Le champ 'brand' n'est pas dans votre schéma `priceRecords` mais dans `products`
-        // Nous l'omettons ici pour correspondre à votre structure `priceRecords`
     };
 
     await priceRecordsRef.add(newPriceRecord);
 
-    // Optionnel : Vous pourriez vouloir mettre à jour un produit dans la collection `products`
-    const productRef = adminDb.collection('products').doc(productName); // Utilise le nom comme ID
-    await productRef.set({
+    // 2. Logique pour la collection `products`
+    const productRef = adminDb.collection('products').doc(productName); // Utilise le nom comme ID unique
+    
+    const newProductData: any = {
         name: productName,
         brand: brand || '',
         category: category || '',
         barcode: barcode || '',
-        imageUrl: imageUrl, // Mettre à jour l'image du produit
-        updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+        updatedAt: FieldValue.serverTimestamp(),
+        uploadedBy: userEmail
+    };
+
+    if (imageUrl) {
+        newProductData.imageUrl = imageUrl;
+    }
     
-    // Mettre à jour les points de l'utilisateur
+    // Utiliser `set` avec `merge: true` pour créer le produit s'il n'existe pas,
+    // ou mettre à jour les champs modifiés (comme `updatedAt` ou `imageUrl`) s'il existe.
+    await productRef.set(newProductData, { merge: true });
+    
+    // 3. Mettre à jour les points de l'utilisateur
     const userRef = adminDb.collection('users').doc(userId);
     await userRef.update({
         points: FieldValue.increment(10),
