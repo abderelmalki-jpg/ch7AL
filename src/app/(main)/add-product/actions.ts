@@ -44,15 +44,49 @@ export async function addPrice(data: any) {
         imageUrl = await uploadImage(photoDataUri, userId); 
     }
 
-    // 1. Logique pour la collection `priceRecords`
-    const priceRecordsRef = adminDb.collection('priceRecords');
+    const batch = adminDb.batch();
+
+    // 1. Gérer la collection `stores`
+    const storeRef = adminDb.collection('stores').doc(storeName);
+    const storeData = {
+        name: storeName,
+        address: address || '',
+        location: JSON.stringify({ lat: latitude || null, lng: longitude || null }),
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+    // Créer le magasin s'il n'existe pas, sinon mettre à jour `updatedAt`
+    batch.set(storeRef, { 
+      ...storeData,
+      // `addedBy` et `createdAt` uniquement à la création
+      addedBy: userEmail,
+      createdAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+
+
+    // 2. Gérer la collection `products`
+    const productRef = adminDb.collection('products').doc(productName);
+    const newProductData: any = {
+        name: productName,
+        brand: brand || '',
+        category: category || '',
+        barcode: barcode || '',
+        updatedAt: FieldValue.serverTimestamp(),
+        uploadedBy: userEmail
+    };
+
+    if (imageUrl) {
+        newProductData.imageUrl = imageUrl;
+    }
+    // Utiliser `set` avec `merge: true` pour créer/mettre à jour
+    batch.set(productRef, newProductData, { merge: true });
     
+    // 3. Gérer la collection `priceRecords`
+    const priceRecordRef = adminDb.collection('priceRecords').doc(); // ID auto-généré
     const locationData = {
         lat: latitude || null,
         lng: longitude || null,
         address: address || ''
     };
-
     const newPriceRecord = {
         barcode: barcode || '',
         createdAt: FieldValue.serverTimestamp(),
@@ -66,35 +100,17 @@ export async function addPrice(data: any) {
         verificationCount: 0,
         verifiedBy: JSON.stringify([]),
     };
-
-    await priceRecordsRef.add(newPriceRecord);
-
-    // 2. Logique pour la collection `products`
-    const productRef = adminDb.collection('products').doc(productName); // Utilise le nom comme ID unique
+    batch.set(priceRecordRef, newPriceRecord);
     
-    const newProductData: any = {
-        name: productName,
-        brand: brand || '',
-        category: category || '',
-        barcode: barcode || '',
-        updatedAt: FieldValue.serverTimestamp(),
-        uploadedBy: userEmail
-    };
-
-    if (imageUrl) {
-        newProductData.imageUrl = imageUrl;
-    }
-    
-    // Utiliser `set` avec `merge: true` pour créer le produit s'il n'existe pas,
-    // ou mettre à jour les champs modifiés (comme `updatedAt` ou `imageUrl`) s'il existe.
-    await productRef.set(newProductData, { merge: true });
-    
-    // 3. Mettre à jour les points de l'utilisateur
+    // 4. Mettre à jour les points de l'utilisateur
     const userRef = adminDb.collection('users').doc(userId);
-    await userRef.update({
+    batch.update(userRef, {
         points: FieldValue.increment(10),
         contributions: FieldValue.increment(1)
     });
+
+    // Exécuter toutes les opérations en une seule transaction
+    await batch.commit();
     
     return { status: "success", message: "Prix ajouté avec succès !" };
 
