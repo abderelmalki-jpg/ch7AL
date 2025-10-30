@@ -25,9 +25,6 @@ export function AddProductForm() {
     const firestore = useFirestore();
     const searchParams = useSearchParams();
 
-    // Form states
-    const [suggestionState, setSuggestionState] = useState<{message: string, suggestions: string[], errors?: any}>({ message: '', suggestions: [] });
-
     // Submission states
     const [isSubmittingPrice, startPriceTransition] = useTransition();
     const [isSubmittingSuggestion, startSuggestionTransition] = useTransition();
@@ -42,6 +39,7 @@ export function AddProductForm() {
     const [address, setAddress] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
+    const [suggestionState, setSuggestionState] = useState<{message: string, suggestions: string[], errors?: any}>({ message: '', suggestions: [] });
     
     // UI Errors
     const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
@@ -52,6 +50,7 @@ export function AddProductForm() {
     // Camera and AI state
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -69,44 +68,47 @@ export function AddProductForm() {
             setPhotoDataUri(photoParam ?? '');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [nameParam, brandParam, categoryParam, photoParam]);
+    }, []);
 
      useEffect(() => {
-        let stream: MediaStream | null = null;
-        async function getCameraPermission() {
-          if (!isCameraOn) {
-            if (videoRef.current && videoRef.current.srcObject) {
-              const currentStream = videoRef.current.srcObject as MediaStream;
-              currentStream.getTracks().forEach(track => track.stop());
-              videoRef.current.srcObject = null;
+        async function setupCamera() {
+          if (isCameraOn) {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+              setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
+              return;
             }
-            return;
-          };
-
-          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
-            return;
-          }
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+              streamRef.current = stream;
+              if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+              }
+              setCameraError(null);
+            } catch (err: any) {
+              console.error('Erreur accès caméra:', err);
+              if (err.name === 'NotAllowedError') {
+                   setCameraError("L'autorisation d'accès à la caméra est requise.");
+              } else {
+                   setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
+              }
+              setIsCameraOn(false);
             }
-            setCameraError(null);
-          } catch (err: any) {
-            console.error('Erreur accès caméra:', err);
-            if (err.name === 'NotAllowedError') {
-                 setCameraError("L'autorisation d'accès à la caméra est requise.");
-            } else {
-                 setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
+          } else {
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop());
+              streamRef.current = null;
             }
-            setIsCameraOn(false);
+             if (videoRef.current) {
+                videoRef.current.srcObject = null;
+            }
           }
         }
-        getCameraPermission();
+
+        setupCamera();
+
         return () => {
-          if (stream) {
-            stream.getTracks().forEach(track => track.stop());
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
           }
         };
     }, [isCameraOn]);
