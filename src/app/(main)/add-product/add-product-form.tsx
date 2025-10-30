@@ -8,19 +8,87 @@ import Link from 'next/link';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, getDocs, serverTimestamp, increment, runTransaction, doc } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
+
+async function getOrCreateStore(db: any, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
+    const storesRef = collection(db, 'stores');
+    const q = query(storesRef, where("name", "==", storeName));
+    
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].id;
+    } else {
+        const newStoreData: any = {
+            name: storeName,
+            address: address || '',
+            createdAt: serverTimestamp(),
+        };
+        if(latitude && longitude) {
+            newStoreData.latitude = latitude;
+            newStoreData.longitude = longitude;
+        }
+
+        const newStoreRef = await addDocumentNonBlocking(storesRef, newStoreData);
+        return newStoreRef.id;
+    }
+}
+
+
+async function getOrCreateProduct(db: any, productName: string, brand?: string, category?: string, imageUrl?: string): Promise<string> {
+    const productsRef = collection(db, 'products');
+    const q = query(productsRef, where("name", "==", productName), where("brand", "==", brand || ''));
+    
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        const productDoc = querySnapshot.docs[0];
+        const productId = productDoc.id;
+        // If an image is provided and the product doesn't have one, update it.
+        if (imageUrl && !productDoc.data().imageUrl) {
+            const productRef = doc(db, 'products', productId);
+            setDocumentNonBlocking(productRef, { imageUrl }, { merge: true });
+        }
+        return productId;
+    } else {
+        const newProductRef = await addDocumentNonBlocking(productsRef, {
+            name: productName,
+            brand: brand || '',
+            category: category || '',
+            barcode: `generated-${Date.now()}`, // Placeholder barcode
+            imageUrl: imageUrl || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+        return newProductRef.id;
+    }
+}
+
+async function uploadImageToStorage(photoDataUri: string, userId: string): Promise<string> {
+    const storage = getStorage();
+    
+    const mimeType = photoDataUri.substring("data:".length, photoDataUri.indexOf(";base64"));
+    const fileExtension = mimeType.split('/')[1] || 'jpg';
+    const filePath = `products/${userId}/${Date.now()}.${fileExtension}`;
+    const fileRef = storageRef(storage, filePath);
+
+    await uploadString(fileRef, photoDataUri, 'data_url');
+    const downloadUrl = await getDownloadURL(fileRef);
+    return downloadUrl;
+}
 
 
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
+    const firestore = useFirestore();
     const searchParams = useSearchParams();
 
     // Submission states
@@ -57,11 +125,12 @@ export function AddProductForm() {
     const photoParam = searchParams.get('photoDataUri');
 
     useEffect(() => {
-        if (nameParam) setProductName(nameParam);
-        if (brandParam) setBrand(brandParam);
-        if (categoryParam) setCategory(categoryParam);
-        if (photoParam) setPhotoDataUri(photoParam);
-    }, [nameParam, brandParam, categoryParam, photoParam]);
+      if (nameParam) setProductName(nameParam);
+      if (brandParam) setBrand(brandParam);
+      if (categoryParam) setCategory(categoryParam);
+      if (photoParam) setPhotoDataUri(photoParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
      useEffect(() => {
         async function setupCamera() {
@@ -130,7 +199,6 @@ export function AddProductForm() {
                 toast({
                     title: "Produit Identifié!",
                     description: `C'est un(e) ${result.name}.`,
-                    icon: <Sparkles className="text-accent" />
                 })
             } catch (e) {
                 console.error(e);
@@ -148,6 +216,11 @@ export function AddProductForm() {
     const handlePriceSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         
+        if (!firestore) {
+             toast({ variant: 'destructive', title: 'Erreur', description: 'Service de base de données non disponible.' });
+             return;
+        }
+        
         const errors: {productName?: string, price?: string, storeName?: string, userId?: string} = {};
         if (!productName) errors.productName = "Le nom du produit est requis.";
         if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
@@ -161,26 +234,40 @@ export function AddProductForm() {
 
         startPriceTransition(() => {
             (async () => {
-                 const response = await fetch('/api/add-price', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: user!.uid,
-                        productName,
-                        price: Number(price),
-                        storeName,
-                        address: address || undefined,
-                        latitude: latitude || undefined,
-                        longitude: longitude || undefined,
-                        brand: brand || undefined,
-                        category: category || undefined,
-                        photoDataUri: photoDataUri || undefined
-                    }),
-                });
+                try {
+                    let imageUrl: string | undefined = undefined;
+                    if (photoDataUri && photoDataUri.startsWith('data:image')) {
+                        imageUrl = await uploadImageToStorage(photoDataUri, user!.uid);
+                    } else if (photoDataUri) {
+                        imageUrl = photoDataUri; // It's already a URL from a previous search
+                    }
 
-                const result = await response.json();
+                    const storeId = await getOrCreateStore(firestore, storeName, address, latitude || undefined, longitude || undefined);
+                    const productId = await getOrCreateProduct(firestore, productName, brand, category, imageUrl);
 
-                if (result.status === 'success') {
+                    await runTransaction(firestore, async (transaction) => {
+                        const priceDocRef = doc(collection(firestore, 'prices'));
+                        const userRef = doc(firestore, 'users', user!.uid);
+
+                        transaction.set(priceDocRef, {
+                            userId: user!.uid,
+                            productId,
+                            storeId,
+                            price: Number(price),
+                            createdAt: serverTimestamp(),
+                            verified: false,
+                            reports: 0,
+                            upvotes: [],
+                            downvotes: [],
+                            voteScore: 0,
+                        });
+
+                        transaction.update(userRef, {
+                            points: increment(10),
+                            contributions: increment(1)
+                        });
+                    });
+                    
                     setProductName('');
                     setPrice('');
                     setStoreName('');
@@ -193,23 +280,25 @@ export function AddProductForm() {
                     
                     toast({
                         title: 'Succès !',
-                        description: result.message,
+                        description: `Prix pour ${productName} ajouté avec succès chez ${storeName} ! (+10 points)`,
                         duration: 4000,
                     });
                     router.push('/dashboard');
-                } else {
+
+                } catch (error) {
+                    console.error("Erreur lors de l'ajout du prix:", error);
                     toast({
                         variant: 'destructive',
                         title: 'Erreur de soumission',
-                        description: result.message || "Une erreur inconnue est survenue.",
+                        description: "Une erreur est survenue lors de l'ajout du prix.",
                     });
                 }
             })().catch((err) => {
-                console.error("Erreur inattendue lors de l'ajout du prix:", err);
+                console.error("Erreur inattendue:", err);
                 toast({
                     variant: 'destructive',
-                    title: 'Erreur Serveur',
-                    description: "Une erreur inattendue est survenue. Veuillez réessayer."
+                    title: 'Erreur Inattendue',
+                    description: "Une erreur grave est survenue. Veuillez réessayer."
                 })
             });
         });
@@ -229,7 +318,7 @@ export function AddProductForm() {
                 setLongitude(longitude);
                 setAddress(`Position GPS : ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
                 setIsLocating(false);
-                toast({ title: 'Localisation obtenue !', icon: <CheckCircle2 className="text-green-500" /> });
+                toast({ title: 'Localisation obtenue !' });
             },
             () => {
                 setIsLocating(false);
@@ -265,7 +354,7 @@ export function AddProductForm() {
                             </div>
                         )}
                     </div>
-                    <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full mt-4 bg-accent hover:bg-accent/90">
+                    <Button onClick={handleCapture} disabled={isIdentifying || !!cameraError} className="w-full mt-4">
                         {isIdentifying ? (
                             <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -393,5 +482,3 @@ export function AddProductForm() {
     </div>
   );
 }
-
-    
