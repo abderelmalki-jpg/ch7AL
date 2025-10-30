@@ -5,24 +5,23 @@ import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { addPrice, getSuggestions } from './actions';
+import { getSuggestions } from './actions';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, Info, ArrowLeft, ScanLine } from 'lucide-react';
+import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 
 
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
-    const firestore = useFirestore();
     const searchParams = useSearchParams();
 
     // Submission states
@@ -61,14 +60,11 @@ export function AddProductForm() {
     const photoParam = searchParams.get('photoDataUri');
 
     useEffect(() => {
-        if (nameParam || brandParam || categoryParam || photoParam) {
-            setProductName(nameParam ?? '');
-            setBrand(brandParam ?? '');
-            setCategory(categoryParam ?? '');
-            setPhotoDataUri(photoParam ?? '');
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (nameParam) setProductName(nameParam);
+        if (brandParam) setBrand(brandParam);
+        if (categoryParam) setCategory(categoryParam);
+        if (photoParam) setPhotoDataUri(photoParam);
+    }, [nameParam, brandParam, categoryParam, photoParam]);
 
      useEffect(() => {
         async function setupCamera() {
@@ -168,26 +164,24 @@ export function AddProductForm() {
 
         startPriceTransition(() => {
             (async () => {
-                if (!firestore) {
-                     toast({
-                        variant: 'destructive',
-                        title: 'Erreur',
-                        description: 'La connexion à la base de données n\'est pas disponible.',
-                    });
-                    return;
-                }
-                const result = await addPrice(firestore, {
-                    userId: user!.uid,
-                    productName,
-                    price: Number(price),
-                    storeName,
-                    address: address || undefined,
-                    latitude: latitude || undefined,
-                    longitude: longitude || undefined,
-                    brand: brand || undefined,
-                    category: category || undefined,
-                    photoDataUri: photoDataUri || undefined
+                 const response = await fetch('/api/add-price', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user!.uid,
+                        productName,
+                        price: Number(price),
+                        storeName,
+                        address: address || undefined,
+                        latitude: latitude || undefined,
+                        longitude: longitude || undefined,
+                        brand: brand || undefined,
+                        category: category || undefined,
+                        photoDataUri: photoDataUri || undefined
+                    }),
                 });
+
+                const result = await response.json();
 
                 if (result.status === 'success') {
                     setProductName('');
@@ -488,3 +482,5 @@ export function AddProductForm() {
     </div>
   );
 }
+
+    

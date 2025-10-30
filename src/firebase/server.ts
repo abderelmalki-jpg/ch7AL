@@ -11,25 +11,33 @@ let adminApp: App | null = null;
 let db: Firestore | null = null;
 let storage: Storage | null = null;
 
-// Only initialize if the admin SDK config is present
-if (process.env.FIREBASE_ADMIN_SDK_CONFIG) {
-    const firebaseAdminConfig = {
-        credential: cert(JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG as string)),
-        storageBucket: 'hanouti-6ce26.appspot.com',
-    };
+function initializeAdminSDK() {
+    // Only initialize if the admin SDK config is present in environment variables
+    if (process.env.FIREBASE_ADMIN_SDK_CONFIG) {
+        const firebaseAdminConfig = {
+            credential: cert(JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG as string)),
+            storageBucket: 'hanouti-6ce26.appspot.com',
+        };
 
-    if (getApps().length === 0) {
-        adminApp = initializeApp(firebaseAdminConfig);
-    } else {
-        adminApp = getApp();
-    }
-    
-    if (adminApp) {
-        db = getFirestore(adminApp);
-        storage = getStorage(adminApp);
+        if (getApps().length === 0) {
+            adminApp = initializeApp(firebaseAdminConfig);
+        } else {
+            adminApp = getApp();
+        }
+        
+        if (adminApp) {
+            db = getFirestore(adminApp);
+            storage = getStorage(adminApp);
+        }
+    } else if (process.env.NODE_ENV !== 'production') {
+        // Fallback for local development if env var is not set
+        // This might happen in environments without `dotenv` setup for server files
+        console.warn("FIREBASE_ADMIN_SDK_CONFIG env var not set. Firebase Admin SDK not initialized.");
     }
 }
 
+// Initialize on module load
+initializeAdminSDK();
 
 /**
  * Gets the server-side Firestore instance.
@@ -52,3 +60,5 @@ export function getStorageAdmin(): Storage {
     }
     return storage;
 }
+
+    

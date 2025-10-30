@@ -3,9 +3,10 @@
 
 import { suggestAlternativeProducts } from '@/ai/flows/suggest-alternative-products';
 import { z } from 'zod';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, type Firestore, runTransaction } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
-import { getSdks, initializeFirebase } from '@/firebase';
+import { getDb } from '@/firebase/server';
+import { getStorageAdmin } from '@/firebase/server';
 
 
 // --- AI Suggestions Action ---
@@ -88,11 +89,11 @@ export type AddPriceFormState = {
     }
 }
 
-async function getOrCreateStore(db: Firestore, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
-    const storesRef = collection(db, 'stores');
-    const q = query(storesRef, where("name", "==", storeName));
+async function getOrCreateStore(db: FirebaseFirestore.Firestore, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
+    const storesRef = db.collection('stores');
+    const q = storesRef.where("name", "==", storeName);
     
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
 
     if (!querySnapshot.empty) {
         return querySnapshot.docs[0].id;
@@ -109,27 +110,28 @@ async function getOrCreateStore(db: Firestore, storeName: string, address?: stri
             newStoreData.longitude = longitude;
         }
 
-        const newStoreRef = await addDoc(storesRef, newStoreData);
+        const newStoreRef = await storesRef.add(newStoreData);
         return newStoreRef.id;
     }
 }
 
 
-async function getOrCreateProduct(db: Firestore, productName: string, brand?: string, category?: string, imageUrl?: string): Promise<string> {
-     const productsRef = collection(db, 'products');
-    const q = query(productsRef, where("name", "==", productName), where("brand", "==", brand || ''));
+async function getOrCreateProduct(db: FirebaseFirestore.Firestore, productName: string, brand?: string, category?: string, imageUrl?: string): Promise<string> {
+    const productsRef = db.collection('products');
+    const q = productsRef.where("name", "==", productName).where("brand", "==", brand || '');
     
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
 
     if (!querySnapshot.empty) {
-        const productId = querySnapshot.docs[0].id;
+        const productDoc = querySnapshot.docs[0];
+        const productId = productDoc.id;
         // If an image is provided and the product doesn't have one, update it.
-        if (imageUrl && !querySnapshot.docs[0].data().imageUrl) {
-            await updateDoc(doc(db, 'products', productId), { imageUrl });
+        if (imageUrl && !productDoc.data().imageUrl) {
+            await db.collection('products').doc(productId).update({ imageUrl });
         }
         return productId;
     } else {
-        const newProductRef = await addDoc(productsRef, {
+        const newProductRef = await productsRef.add({
             name: productName,
             brand: brand || '',
             category: category || '',
@@ -143,21 +145,28 @@ async function getOrCreateProduct(db: Firestore, productName: string, brand?: st
 }
 
 async function uploadImageToStorage(photoDataUri: string, userId: string): Promise<string> {
-    // This now relies on the client-side Firebase instance
-    const { firebaseApp } = initializeFirebase();
-    const storage = getStorage(firebaseApp);
+    const storage = getStorageAdmin().bucket();
     
-    const fileExtension = photoDataUri.substring("data:image/".length, photoDataUri.indexOf(";base64"));
-    const imageRef = ref(storage, `products/${userId}/${Date.now()}.${fileExtension}`);
+    const mimeType = photoDataUri.substring("data:".length, photoDataUri.indexOf(";base64"));
+    const fileExtension = mimeType.split('/')[1] || 'jpg';
+    const filePath = `products/${userId}/${Date.now()}.${fileExtension}`;
+    const file = storage.file(filePath);
 
-    await uploadString(imageRef, photoDataUri, 'data_url');
-    const url = await getDownloadURL(imageRef);
-    return url;
+    const buffer = Buffer.from(photoDataUri.split(',')[1], 'base64');
+
+    await file.save(buffer, {
+        metadata: {
+            contentType: mimeType,
+        },
+    });
+
+    // Make the file public and get the URL
+    await file.makePublic();
+    return file.publicUrl();
 }
 
 
 export async function addPrice(
-    db: Firestore, 
     data: z.infer<typeof addPriceSchema>
 ): Promise<AddPriceFormState> {
     
@@ -180,6 +189,8 @@ export async function addPrice(
             errors: { userId: ["Utilisateur non authentifié."]}
         };
     }
+    
+    const db = getDb();
 
     try {
         let imageUrl: string | undefined = undefined;
@@ -192,9 +203,9 @@ export async function addPrice(
         const storeId = await getOrCreateStore(db, storeName, address, latitude, longitude);
         const productId = await getOrCreateProduct(db, productName, brand, category, imageUrl);
 
-        await runTransaction(db, async (transaction) => {
-            const priceDocRef = doc(collection(db, 'prices')); // Create a new doc ref for the price
-            const userRef = doc(db, 'users', userId);
+        await db.runTransaction(async (transaction) => {
+            const priceDocRef = db.collection('prices').doc(); // Create a new doc ref for the price
+            const userRef = db.collection('users').doc(userId);
 
             // 1. Add the new price
             transaction.set(priceDocRef, {
@@ -210,11 +221,14 @@ export async function addPrice(
                 voteScore: 0,
             });
 
-            // 2. Update user's points and contributions
-            transaction.update(userRef, {
-                points: increment(10),
-                contributions: increment(1)
-            });
+            const userDoc = await transaction.get(userRef);
+            if(userDoc.exists) {
+                 // 2. Update user's points and contributions
+                transaction.update(userRef, {
+                    points: increment(10),
+                    contributions: increment(1)
+                });
+            }
         });
 
         return {
@@ -230,3 +244,5 @@ export async function addPrice(
         };
     }
 }
+
+    
