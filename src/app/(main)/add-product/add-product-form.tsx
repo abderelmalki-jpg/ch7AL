@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, getDocs, serverTimestamp, increment, runTransaction, doc, addDoc, type Firestore } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, query, where, getDocs, serverTimestamp, increment, runTransaction, doc, addDoc, type Firestore, setDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
 // Client-side function to get or create a store
@@ -62,7 +62,7 @@ async function getOrCreateProduct(db: Firestore, productName: string, brand?: st
         
         if (Object.keys(updateData).length > 0) {
             const productRef = doc(db, 'products', productId);
-            await setDocumentNonBlocking(productRef, updateData, { merge: true });
+            await setDoc(productRef, updateData, { merge: true });
         }
         return productId;
     } else {
@@ -229,7 +229,7 @@ export function AddProductForm() {
         event.preventDefault();
         
         if (!firestore) {
-             toast({ variant: 'destructive', title: 'Erreur', description: 'Service de base de données non disponible.' });
+             toast({ variant: 'destructive', title: 'Erreur', description: 'Service de base de données non disponible. Veuillez patienter.' });
              return;
         }
         
