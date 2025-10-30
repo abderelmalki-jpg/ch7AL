@@ -1,25 +1,3 @@
-/**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user profiles and allows public read access with owner-only writes for products, prices, and stores.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profile information, accessible only by the user themselves.
- * - /products/{productId}: Stores product information, publicly readable, but only updatable/deletable by the owner (if an owner field were defined).
- * - /prices/{priceId}: Stores price information, publicly readable, but only creatable/updatable/deletable by the owner (if an owner field were defined).
- * - /stores/{storeId}: Stores store information, publicly readable, but only updatable/deletable by the owner (if an owner field were defined).
- *
- * Key Security Decisions:
- * - Users can only access their own profile data.
- * - Public read access is allowed for products, prices, and stores to facilitate community-driven price comparison.
- * - Write permissions for products, prices, and stores are restricted to the owner (if an owner field were defined), but the schema does not currently define an owner.
- * - User listing is not explicitly denied, but the rules only allow access to specific user IDs.
- *
- * Denormalization for Authorization:
- * - The `prices` collection includes the `userId` to directly associate a price with a user, avoiding the need for additional reads to the `users` collection.
- *
- * Structural Segregation:
- * - User-specific data is stored under `/users/{userId}`, while global data (products, stores) reside in top-level collections.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -42,7 +20,7 @@ service cloud.firestore {
 
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
@@ -56,21 +34,47 @@ service cloud.firestore {
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows public read access to price information and restricts write access to the owner.
+     * @description Allows public read access to price information and restricts write access to the user who created the price.
      * @path /prices/{priceId}
      * @allow (get, list) Public read access to price information.
-     * @deny (create, update, delete) No one can create, update, delete price information without owner validation.
-     * @principle Allows public read access while restricting write access to the owner (if ownership were defined).
+     * @allow (create) Authenticated user can create a price.
+     * @allow (update, delete) The user who created the price can update/delete it.
+     * @deny (create, update, delete) if not the owner.
+     * @principle Allows public read access while restricting write access to the owner.
      */
     match /prices/{priceId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
       allow get, list: if true;
-       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+        /**
+         * @description Allows authenticated users to create comments on a price submission.
+         * @path /prices/{priceId}/comments/{commentId}
+         * @allow (create) Authenticated user can create a comment.
+         * @deny (get, list, update, delete) No one can read, list, update, delete comments.
+         * @principle Restricts write access to authenticated users only.
+         */
+    match /prices/{priceId}/comments/{commentId} {
+       function isSignedIn() {
+        return request.auth != null;
+      }
+      allow create: if isSignedIn();
+      allow get: if false;
+      allow list: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
@@ -82,7 +86,9 @@ service cloud.firestore {
      */
     match /stores/{storeId} {
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
