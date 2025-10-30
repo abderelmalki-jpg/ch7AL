@@ -1,8 +1,4 @@
-
-// IMPORTANT: This file is for server-side use only.
-// It must NOT be imported into any client-side components.
-
-// This file is currently not used due to the shift to client-side data mutations.
+// This file is not currently used because all Firebase operations
+// are handled on the client-side.
 // It is kept for potential future server-side logic.
-
 export {};

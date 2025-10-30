@@ -50,6 +50,9 @@ export default function ScannerPage() {
             const q = query(productsRef, where('barcode', '==', barcode), limit(1));
             const querySnapshot = await getDocs(q);
 
+            const params = new URLSearchParams();
+            params.set('barcode', barcode);
+
             if (!querySnapshot.empty) {
                 const productDoc = querySnapshot.docs[0];
                 const product = productDoc.data() as Product;
@@ -58,23 +61,21 @@ export default function ScannerPage() {
                     description: `Redirection vers l'ajout de prix pour ${product.name}.`,
                 });
                 
-                const params = new URLSearchParams();
                 params.set('name', product.name);
                 if(product.brand) params.set('brand', product.brand);
                 if(product.category) params.set('category', product.category);
                 if (product.imageUrl) {
                     params.set('photoDataUri', product.imageUrl);
                 }
-
-                router.push(`/add-product?${params.toString()}`);
             } else {
                  toast({
                     variant: 'default',
                     title: 'Nouveau produit',
                     description: "Ce code-barres n'est pas dans notre base. Veuillez ajouter les détails du produit.",
                 });
-                router.push('/add-product');
             }
+
+            router.push(`/add-product?${params.toString()}`);
 
         } catch (error) {
             console.error('Erreur de recherche du code-barres :', error);

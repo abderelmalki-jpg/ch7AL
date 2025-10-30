@@ -13,12 +13,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, getDocs, serverTimestamp, increment, runTransaction, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, serverTimestamp, increment, runTransaction, doc, addDoc, type Firestore } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
-async function getOrCreateStore(db: any, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
+// Client-side function to get or create a store
+async function getOrCreateStore(db: Firestore, storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
     const storesRef = collection(db, 'stores');
-    const q = query(storesRef, where("name", "==", storeName));
+    const q = query(storesRef, where("name", "==", storeName), where("address", "==", address || ''));
     
     const querySnapshot = await getDocs(q);
 
@@ -35,13 +36,13 @@ async function getOrCreateStore(db: any, storeName: string, address?: string, la
             newStoreData.longitude = longitude;
         }
 
-        const newStoreRef = await addDocumentNonBlocking(storesRef, newStoreData);
+        const newStoreRef = await addDoc(storesRef, newStoreData);
         return newStoreRef.id;
     }
 }
 
-
-async function getOrCreateProduct(db: any, productName: string, brand?: string, category?: string, imageUrl?: string): Promise<string> {
+// Client-side function to get or create a product
+async function getOrCreateProduct(db: Firestore, productName: string, brand?: string, category?: string, barcode?: string, imageUrl?: string): Promise<string> {
     const productsRef = collection(db, 'products');
     const q = query(productsRef, where("name", "==", productName), where("brand", "==", brand || ''));
     
@@ -50,18 +51,26 @@ async function getOrCreateProduct(db: any, productName: string, brand?: string, 
     if (!querySnapshot.empty) {
         const productDoc = querySnapshot.docs[0];
         const productId = productDoc.id;
-        // If an image is provided and the product doesn't have one, update it.
+        
+        const updateData: { imageUrl?: string, barcode?: string } = {};
         if (imageUrl && !productDoc.data().imageUrl) {
+            updateData.imageUrl = imageUrl;
+        }
+        if (barcode && !productDoc.data().barcode) {
+             updateData.barcode = barcode;
+        }
+        
+        if (Object.keys(updateData).length > 0) {
             const productRef = doc(db, 'products', productId);
-            setDocumentNonBlocking(productRef, { imageUrl }, { merge: true });
+            await setDocumentNonBlocking(productRef, updateData, { merge: true });
         }
         return productId;
     } else {
-        const newProductRef = await addDocumentNonBlocking(productsRef, {
+        const newProductRef = await addDoc(productsRef, {
             name: productName,
             brand: brand || '',
             category: category || '',
-            barcode: `generated-${Date.now()}`, // Placeholder barcode
+            barcode: barcode || `generated-${Date.now()}`,
             imageUrl: imageUrl || '',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -70,12 +79,12 @@ async function getOrCreateProduct(db: any, productName: string, brand?: string, 
     }
 }
 
+// Client-side function to upload image
 async function uploadImageToStorage(photoDataUri: string, userId: string): Promise<string> {
     const storage = getStorage();
-    
     const mimeType = photoDataUri.substring("data:".length, photoDataUri.indexOf(";base64"));
     const fileExtension = mimeType.split('/')[1] || 'jpg';
-    const filePath = `products/${userId}/${Date.now()}.${fileExtension}`;
+    const filePath = `product-images/${userId}/${Date.now()}.${fileExtension}`;
     const fileRef = storageRef(storage, filePath);
 
     await uploadString(fileRef, photoDataUri, 'data_url');
@@ -104,6 +113,7 @@ export function AddProductForm() {
     const [address, setAddress] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
+    const [barcode, setBarcode] = useState('');
     
     // UI Errors
     const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
@@ -119,18 +129,20 @@ export function AddProductForm() {
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
-    const nameParam = searchParams.get('name');
-    const brandParam = searchParams.get('brand');
-    const categoryParam = searchParams.get('category');
-    const photoParam = searchParams.get('photoDataUri');
-
+    // Set initial form values from URL params
     useEffect(() => {
-      if (nameParam) setProductName(nameParam);
-      if (brandParam) setBrand(brandParam);
-      if (categoryParam) setCategory(categoryParam);
-      if (photoParam) setPhotoDataUri(photoParam);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const nameParam = searchParams.get('name');
+        const brandParam = searchParams.get('brand');
+        const categoryParam = searchParams.get('category');
+        const photoParam = searchParams.get('photoDataUri');
+        const barcodeParam = searchParams.get('barcode');
+
+        if (nameParam) setProductName(nameParam);
+        if (brandParam) setBrand(brandParam);
+        if (categoryParam) setCategory(categoryParam);
+        if (photoParam) setPhotoDataUri(photoParam);
+        if (barcodeParam) setBarcode(barcodeParam);
+    }, [searchParams]);
 
      useEffect(() => {
         async function setupCamera() {
@@ -243,7 +255,7 @@ export function AddProductForm() {
                     }
 
                     const storeId = await getOrCreateStore(firestore, storeName, address, latitude || undefined, longitude || undefined);
-                    const productId = await getOrCreateProduct(firestore, productName, brand, category, imageUrl);
+                    const productId = await getOrCreateProduct(firestore, productName, brand, category, barcode, imageUrl);
 
                     await runTransaction(firestore, async (transaction) => {
                         const priceDocRef = doc(collection(firestore, 'prices'));
@@ -268,19 +280,9 @@ export function AddProductForm() {
                         });
                     });
                     
-                    setProductName('');
-                    setPrice('');
-                    setStoreName('');
-                    setAddress('');
-                    setLatitude(null);
-                    setLongitude(null);
-                    setBrand('');
-                    setCategory('');
-                    setPhotoDataUri('');
-                    
                     toast({
                         title: 'Succès !',
-                        description: `Prix pour ${productName} ajouté avec succès chez ${storeName} ! (+10 points)`,
+                        description: `Prix pour ${productName} ajouté avec succès ! (+10 points)`,
                         duration: 4000,
                     });
                     router.push('/dashboard');
@@ -293,14 +295,7 @@ export function AddProductForm() {
                         description: "Une erreur est survenue lors de l'ajout du prix.",
                     });
                 }
-            })().catch((err) => {
-                console.error("Erreur inattendue:", err);
-                toast({
-                    variant: 'destructive',
-                    title: 'Erreur Inattendue',
-                    description: "Une erreur grave est survenue. Veuillez réessayer."
-                })
-            });
+            })();
         });
     }
 
