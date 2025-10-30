@@ -11,19 +11,18 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
-    const firestore = useFirestore();
     const searchParams = useSearchParams();
 
-    // Submission states
+    // États de soumission
     const [isSubmittingPrice, startPriceTransition] = useTransition();
 
-    // Form fields
+    // Champs du formulaire
     const [productName, setProductName] = useState('');
     const [price, setPrice] = useState('');
     const [storeName, setStoreName] = useState('');
@@ -35,13 +34,13 @@ export function AddProductForm() {
     const [longitude, setLongitude] = useState<number | null>(null);
     const [barcode, setBarcode] = useState('');
     
-    // UI Errors
+    // Erreurs du formulaire
     const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
 
-    // Location state
+    // État de la localisation
     const [isLocating, setIsLocating] = useState(false);
     
-    // Camera and AI state
+    // État de la caméra et de l'IA
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -49,7 +48,7 @@ export function AddProductForm() {
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
-    // Set initial form values from URL params
+    // Définir les valeurs initiales du formulaire à partir des paramètres d'URL
     useEffect(() => {
         const nameParam = searchParams.get('name');
         const brandParam = searchParams.get('brand');
@@ -127,7 +126,7 @@ export function AddProductForm() {
                 setBrand(result.brand);
                 setCategory(result.category);
                 setPhotoDataUri(dataUri);
-setIsCameraOn(false);
+                setIsCameraOn(false);
                 toast({
                     title: "Produit Identifié!",
                     description: `C'est un(e) ${result.name}.`,
@@ -152,22 +151,16 @@ setIsCameraOn(false);
         if (!productName) errors.productName = "Le nom du produit est requis.";
         if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
         if (!storeName) errors.storeName = "Le nom du magasin est requis.";
-        if (!user) errors.userId = "Vous devez être connecté.";
+        if (!user) {
+            errors.userId = "Vous devez être connecté pour soumettre un prix.";
+            toast({ variant: 'destructive', title: 'Utilisateur non connecté' });
+        }
 
         setFormErrors(errors);
         if (Object.keys(errors).length > 0) {
             return;
         }
 
-        if (!user || !firestore) {
-            toast({
-                variant: 'destructive',
-                title: 'Erreur',
-                description: "Vous devez être connecté et les services Firebase doivent être disponibles.",
-            });
-            return;
-        }
-        
         startPriceTransition(() => {
             (async () => {
                 try {
@@ -325,7 +318,7 @@ setIsCameraOn(false);
                         <div className="space-y-2">
                             <Label>Aperçu de l'image</Label>
                             <div className="relative aspect-video w-full max-w-sm mx-auto rounded-lg overflow-hidden border">
-                                <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" />
+                                <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" sizes="50vw" />
                                  <Button
                                     type="button"
                                     variant="destructive"
@@ -376,7 +369,7 @@ setIsCameraOn(false);
                         </div>
                     </div>
 
-                    <Button type="submit" disabled={isSubmittingPrice || !user || !firestore} className="w-full text-lg h-12">
+                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
                         {isSubmittingPrice ? (
                             <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />

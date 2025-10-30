@@ -3,7 +3,15 @@
 import { adminDb, adminStorage } from "@/firebase/server";
 import { FieldValue } from "firebase-admin/firestore";
 
+// S'assure que les services ont été correctement initialisés
+function checkFirebaseServices() {
+    if (!adminDb || !adminStorage) {
+        throw new Error("Firebase Admin SDK not initialized. Check server environment variables.");
+    }
+}
+
 async function getOrCreateStore(storeName: string, address?: string, latitude?: number, longitude?: number): Promise<string> {
+    checkFirebaseServices();
     const storesRef = adminDb.collection('stores');
     let query = storesRef.where("name", "==", storeName);
     if(address) {
@@ -31,6 +39,7 @@ async function getOrCreateStore(storeName: string, address?: string, latitude?: 
 }
 
 async function getOrCreateProduct(productName: string, brand?: string, category?: string, barcode?: string, imageUrl?: string): Promise<string> {
+    checkFirebaseServices();
     const productsRef = adminDb.collection('products');
     let query = productsRef.where("name", "==", productName);
      if(brand) {
@@ -52,7 +61,7 @@ async function getOrCreateProduct(productName: string, brand?: string, category?
         }
         
         if (Object.keys(updateData).length > 1) { // more than just timestamp
-            await adminDb.collection('products').doc(productId).set(updateData, { merge: true });
+            await adminDb.collection('products').doc(productId).update(updateData);
         }
         return productId;
     } else {
@@ -60,7 +69,7 @@ async function getOrCreateProduct(productName: string, brand?: string, category?
             name: productName,
             brand: brand || '',
             category: category || '',
-            barcode: barcode || `generated-${Date.now()}`,
+            barcode: barcode || '',
             imageUrl: imageUrl || '',
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
@@ -70,6 +79,7 @@ async function getOrCreateProduct(productName: string, brand?: string, category?
 }
 
 async function uploadImage(dataUri: string, userId: string): Promise<string> {
+    checkFirebaseServices();
     const bucket = adminStorage.bucket();
     
     const mimeType = dataUri.substring("data:".length, dataUri.indexOf(";base64"));
@@ -86,56 +96,53 @@ async function uploadImage(dataUri: string, userId: string): Promise<string> {
         }
     });
 
-    // Make the file public and get the URL
+    // Rendre le fichier public et obtenir l'URL
     await file.makePublic();
     return file.publicUrl();
 }
 
 export async function addPrice(data: any) {
   try {
+    checkFirebaseServices();
     const { userId, productName, price, storeName, address, latitude, longitude, brand, category, barcode, photoDataUri } = data;
 
     let imageUrl: string | undefined = undefined;
     if (photoDataUri && photoDataUri.startsWith('data:image')) {
         imageUrl = await uploadImage(photoDataUri, userId);
     } else if (photoDataUri) {
-        imageUrl = photoDataUri; // It's already a URL from a previous search/product
+        imageUrl = photoDataUri; // C'est déjà une URL
     }
 
     const storeId = await getOrCreateStore(storeName, address, latitude, longitude);
     const productId = await getOrCreateProduct(productName, brand, category, barcode, imageUrl);
+    
+    // Utiliser la collection "prices" pour la cohérence
+    const pricesRef = adminDb.collection('prices');
 
-    const transaction = adminDb.runTransaction(async (t) => {
-        const priceDocRef = adminDb.collection('priceRecords').doc();
-        const userRef = adminDb.collection('users').doc(userId);
-
-        t.set(priceDocRef, {
-            userId,
-            productId,
-            storeId,
-            price: Number(price),
-            createdAt: FieldValue.serverTimestamp(),
-            storeName, // Denormalized for easier display
-            productName, // Denormalized for easier display
-            ...(barcode && { barcode }),
-            ...(imageUrl && {productImageUrl: imageUrl}) // Maybe useful
-        });
-
-        t.update(userRef, {
-            points: FieldValue.increment(10),
-            contributions: FieldValue.increment(1)
-        });
+    await pricesRef.add({
+        userId,
+        productId,
+        storeId,
+        price: Number(price),
+        createdAt: FieldValue.serverTimestamp(),
+        upvotes: [],
+        downvotes: [],
+        voteScore: 0,
+        verified: false,
     });
-
-    await transaction;
+    
+    // Mettre à jour les points de l'utilisateur
+    const userRef = adminDb.collection('users').doc(userId);
+    await userRef.update({
+        points: FieldValue.increment(10),
+        contributions: FieldValue.increment(1)
+    });
     
     return { status: "success", message: "Prix ajouté avec succès !" };
 
   } catch (error) {
-    console.error("🔥 Erreur Firebase:", error);
+    console.error("🔥 Erreur Firebase dans l'action addPrice:", error);
     const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue est survenue côté serveur.";
     return { status: "error", message: errorMessage };
   }
 }
-
-    

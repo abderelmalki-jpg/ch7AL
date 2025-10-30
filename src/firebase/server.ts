@@ -3,17 +3,19 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
 let app: App;
+// Définir le nom du bucket ici pour l'utiliser dans la configuration
 const storageBucket = 'hanouti-6ce26.appspot.com';
 
 if (!getApps().length) {
   try {
-    // Attempt to initialize with Application Default Credentials (ADC)
-    // This works in Cloud Run, Cloud Functions, GKE, etc.
+    // Tenter d'initialiser avec les identifiants par défaut de l'application (ADC)
+    // Cela fonctionne dans Cloud Run, Cloud Functions, GKE, etc.
+    // Assurez-vous d'inclure le storageBucket ici.
     app = initializeApp({
         storageBucket,
     });
   } catch (e) {
-    // If ADC fails (e.g., local dev without gcloud auth), fall back to service account if available
+    // Si ADC échoue (par exemple, dev local sans gcloud auth), se rabattre sur le compte de service si disponible
     if (process.env.FIREBASE_PRIVATE_KEY) {
         app = initializeApp({
             credential: cert({
@@ -21,12 +23,13 @@ if (!getApps().length) {
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
                 privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
             }),
+            // Inclure le storageBucket également ici
             storageBucket,
         });
     } else {
         console.error("🔴 Firebase Admin SDK initialization failed. Neither Application Default Credentials nor a service account key were found.");
-        // We don't throw here to allow the app to build, but server-side Firebase calls will fail.
-        // Create a placeholder app to avoid crashing the server on import
+        // Nous ne levons pas d'erreur ici pour permettre à l'application de se construire, mais les appels Firebase côté serveur échoueront.
+        // Créer une application de remplacement pour éviter de faire planter le serveur à l'importation
         app = {} as App; 
     }
   }
@@ -34,5 +37,26 @@ if (!getApps().length) {
   app = getApps()[0];
 }
 
-export const adminDb = getFirestore(app);
-export const adminStorage = getStorage(app);
+// Exporter les services initialisés
+// Utiliser des blocs try-catch pour éviter les crashs si l'initialisation a échoué
+let adminDb;
+let adminStorage;
+
+try {
+    adminDb = getFirestore(app);
+} catch (e) {
+    console.error("🔥 Failed to initialize Firestore Admin:", e);
+    // @ts-ignore
+    adminDb = null;
+}
+
+try {
+    adminStorage = getStorage(app);
+} catch (e) {
+    console.error("🔥 Failed to initialize Storage Admin:", e);
+    // @ts-ignore
+    adminStorage = null;
+}
+
+
+export { adminDb, adminStorage };
