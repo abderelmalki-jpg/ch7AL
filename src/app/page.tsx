@@ -6,7 +6,7 @@ import { Logo } from '@/components/logo';
 
 export default function LandingPage() {
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4 sm:p-8">
+    <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4 sm:p-8">
       
       <div className="w-full max-w-4xl flex flex-col items-center">
         {/* Video Player in a rounded container */}
