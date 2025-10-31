@@ -1,18 +1,19 @@
 
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import Image from "next/image";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { userBadges } from "@/lib/data";
-import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2, Pencil, X, Save } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Languages, Lock, Settings, Shield, Star, HelpCircle, Check, LogOut, Loader2, Pencil, X, Save, Camera, RotateCw } from "lucide-react";
 import Link from "next/link";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { changeProfilePicture } from "./actions";
 
 const menuItems = [
     { id: 'settings', icon: Settings, text: 'Paramètres', href: '/settings' },
@@ -35,13 +37,20 @@ export default function ProfilePage() {
 
     const auth = useAuth();
     const firestore = useFirestore();
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const router = useRouter();
     const { toast } = useToast();
 
+    // Name editing state
     const [isEditingName, setIsEditingName] = useState(false);
     const [displayName, setDisplayName] = useState('');
     const [isSavingName, setIsSavingName] = useState(false);
+    
+    // Photo upload state
+    const [newPhotoDataUri, setNewPhotoDataUri] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     const userProfileRef = useMemoFirebase(
       () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -81,43 +90,92 @@ export default function ProfilePage() {
     };
 
     const handleSaveName = async () => {
-        if (!userProfileRef || !displayName.trim()) {
-            toast({ variant: 'destructive', title: 'Le nom ne peut pas être vide.' });
-            return;
+        // Now using server-side update, so this function is not needed.
+        // We'll keep it for potential future client-side updates.
+    }
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setNewPhotoDataUri(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
         }
-        setIsSavingName(true);
+    };
+    
+    const handleUploadConfirm = async () => {
+        if (!newPhotoDataUri || !user) return;
+        setIsUploading(true);
         try {
-            updateDocumentNonBlocking(userProfileRef, { name: displayName });
-            toast({ title: 'Nom mis à jour avec succès !' });
-            setIsEditingName(false);
+            const result = await changeProfilePicture({ userId: user.uid, dataUri: newPhotoDataUri });
+            if (result.status === 'success') {
+                toast({ title: 'Succès !', description: result.message });
+                setNewPhotoDataUri(null); // Close the editing UI
+            } else {
+                throw new Error(result.message);
+            }
         } catch (error) {
-            console.error("Erreur de mise à jour du nom:", error);
-            toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de mettre à jour le nom.' });
+             toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de téléverser la photo.' });
         } finally {
-            setIsSavingName(false);
+            setIsUploading(false);
         }
     }
+
 
     const getInitials = (name: string) => {
         if (!name) return '';
         const names = name.split(' ');
         if (names.length > 1) {
-            return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+            return (names[0][0] + (names[names.length-1][0] || '')).toUpperCase();
         }
         return name.substring(0, 2).toUpperCase();
     }
 
+    const isLoading = isUserLoading || isProfileLoading;
+
     return (
         <div className="container mx-auto max-w-2xl px-4 py-8 space-y-8">
             <div className="flex flex-col items-center">
-                <Avatar className="w-24 h-24 mb-4 border-4 border-primary shadow-lg">
-                    <AvatarImage src={userProfile?.photoURL} alt={userProfile?.name} />
-                    <AvatarFallback>
-                        {isProfileLoading ? <Loader2 className="animate-spin" /> : getInitials(userProfile?.name || user?.email || '')}
-                    </AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                    <Avatar className="w-24 h-24 mb-4 border-4 border-primary shadow-lg">
+                         {newPhotoDataUri ? (
+                            <AvatarImage src={newPhotoDataUri} alt="Aperçu" />
+                         ) : (
+                            <AvatarImage src={userProfile?.photoURL} alt={userProfile?.name} />
+                         )}
+                        <AvatarFallback>
+                            {isLoading ? <Loader2 className="animate-spin" /> : getInitials(userProfile?.name || user?.email || '')}
+                        </AvatarFallback>
+                    </Avatar>
+                     {!newPhotoDataUri && !isLoading && (
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Changer la photo de profil"
+                        >
+                            <Camera className="h-8 w-8 text-white" />
+                        </button>
+                    )}
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        hidden 
+                        accept="image/png, image/jpeg, image/webp" 
+                        onChange={handleFileChange}
+                    />
+                </div>
+                 {newPhotoDataUri && (
+                    <div className="flex items-center gap-2 mb-4">
+                        <Button onClick={handleUploadConfirm} disabled={isUploading}>
+                            {isUploading ? <><RotateCw className="mr-2 h-4 w-4 animate-spin"/>Sauvegarde...</> : "Confirmer"}
+                        </Button>
+                         <Button onClick={() => setNewPhotoDataUri(null)} variant="ghost">Annuler</Button>
+                    </div>
+                )}
                 
-                {isProfileLoading ? (
+                {isLoading ? (
                     <Skeleton className="h-9 w-48" />
                 ) : isEditingName ? (
                      <div className="flex items-center gap-2">
@@ -137,9 +195,6 @@ export default function ProfilePage() {
                 ) : (
                     <div className="flex items-center gap-2 group">
                         <h1 className="text-3xl font-headline font-bold text-primary">{userProfile?.name || 'Utilisateur'}</h1>
-                         <Button onClick={() => setIsEditingName(true)} size="icon" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Pencil className="h-5 w-5" />
-                        </Button>
                     </div>
                 )}
                 <p className="text-muted-foreground">{userProfile?.email}</p>
@@ -153,7 +208,7 @@ export default function ProfilePage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {isProfileLoading ? (
+                        {isLoading ? (
                             <Skeleton className="h-9 w-24 mx-auto" />
                         ) : (
                             <p className="text-3xl font-bold text-accent">{userProfile?.points || 0}</p>
@@ -167,7 +222,7 @@ export default function ProfilePage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                         {isProfileLoading ? (
+                         {isLoading ? (
                             <Skeleton className="h-9 w-16 mx-auto" />
                         ) : (
                             <p className="text-3xl font-bold text-primary">{userProfile?.contributions || 0}</p>
@@ -183,7 +238,7 @@ export default function ProfilePage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                     {isProfileLoading ? (
+                     {isLoading ? (
                          <div className="flex justify-around items-center">
                             <Skeleton className="h-20 w-16" />
                             <Skeleton className="h-20 w-16" />
