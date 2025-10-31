@@ -10,13 +10,13 @@ export default function LandingPage() {
       
       <div className="w-full max-w-4xl flex flex-col items-center">
         {/* Video Player in a rounded container */}
-        <div className="relative w-full aspect-video rounded-2xl shadow-2xl overflow-hidden mb-8">
+        <div className="relative w-full aspect-video rounded-2xl shadow-2xl overflow-hidden mb-8 bg-black">
             <video
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="absolute z-0 top-0 left-0 min-h-full w-auto min-w-full max-w-none"
+                className="w-full h-full object-contain"
             >
                 <source
                 src="https://res.cloudinary.com/dhjwimevi/video/upload/v1761429194/Design_sans_titre_4_witvsw.mp4"
@@ -24,13 +24,11 @@ export default function LandingPage() {
                 />
                 Votre navigateur ne supporte pas la vidéo.
             </video>
-            <div className="absolute inset-0 bg-black/30 z-10"></div>
         </div>
 
         {/* Content below the video */}
         <div className="relative z-20 flex flex-col items-center text-center">
-          <Logo className="h-28 w-28 mb-2" />
-          <h1 className="font-headline text-5xl md:text-6xl font-bold drop-shadow-md text-primary">
+          <h1 className="font-headline text-5xl md:text-6xl font-bold drop-shadow-md text-orange-500">
             Hanouti
           </h1>
           <p className="mt-4 max-w-xl text-lg md:text-xl text-white drop-shadow-sm">
