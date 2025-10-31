@@ -1,50 +1,49 @@
+
 import { initializeApp, cert, getApps, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
-// Configuration du projet Firebase à partir des variables d'environnement
-const firebaseConfig = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "hanouti-6ce26",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "hanouti-6ce26.appspot.com",
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-};
+// Définir une variable globale pour l'état d'initialisation
+let adminApp: App | null = null;
+let adminDbInstance: ReturnType<typeof getFirestore> | null = null;
+let adminStorageInstance: ReturnType<typeof getStorage> | null = null;
 
-let app: App;
-
-// Initialisation unique du SDK Admin
-if (!getApps().length) {
-  try {
-    // Vérification que les identifiants du compte de service sont bien présents
-    if (firebaseConfig.clientEmail && firebaseConfig.privateKey) {
-      app = initializeApp({
-        credential: cert(firebaseConfig),
-        storageBucket: firebaseConfig.storageBucket,
-      });
-      console.log("✅ Firebase Admin initialisé avec un compte de service.");
-    } else {
-        console.warn("⚠️ Variables d'environnement pour Firebase Admin manquantes. L'initialisation est ignorée.");
-        app = {} as App; // Crée un objet vide pour éviter les plantages
+function initializeAdminApp() {
+    if (getApps().some(app => app.name === 'admin')) {
+        if (!adminApp) {
+             adminApp = getApps().find(app => app.name === 'admin')!;
+             adminDbInstance = getFirestore(adminApp);
+             adminStorageInstance = getStorage(adminApp);
+        }
+        return;
     }
-  } catch (err) {
-    console.error("🔥 Erreur lors de l’initialisation de Firebase Admin SDK :", err);
-    app = {} as App; 
-  }
-} else {
-  app = getApps()[0];
+
+    const serviceAccountKey = {
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
+
+    if (serviceAccountKey.projectId && serviceAccountKey.clientEmail && serviceAccountKey.privateKey) {
+        try {
+            adminApp = initializeApp({
+                credential: cert(serviceAccountKey),
+                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+            }, 'admin');
+            adminDbInstance = getFirestore(adminApp);
+            adminStorageInstance = getStorage(adminApp);
+            console.log("✅ Firebase Admin SDK initialisé avec succès.");
+        } catch (error) {
+            console.error("🔥 Erreur lors de l'initialisation de Firebase Admin SDK :", error);
+        }
+    } else {
+        console.warn("⚠️ Variables d'environnement pour Firebase Admin (FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) sont manquantes. Le SDK Admin n'est pas initialisé.");
+    }
 }
 
-// --- Export de Firestore & Storage ---
-let adminDb = null;
-let adminStorage = null;
+// Initialiser au chargement du module
+initializeAdminApp();
 
-try {
-  if (getApps().length) { // Tente d'obtenir les services uniquement si l'app est initialisée
-    adminDb = getFirestore(app);
-    adminStorage = getStorage(app);
-  }
-} catch (err) {
-  console.error("🔥 Impossible d’initialiser les services Admin Firebase :", err);
-}
-
-export { adminDb, adminStorage };
+// Exporter les instances potentiellement nulles
+export const adminDb = adminDbInstance;
+export const adminStorage = adminStorageInstance;

@@ -1,25 +1,46 @@
 'use client';
 
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp, FirebaseOptions } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+
+// A type guard to check if the config has all necessary properties.
+function isValidFirebaseConfig(config: any): config is FirebaseOptions {
+    return config &&
+        typeof config.apiKey === 'string' &&
+        typeof config.authDomain === 'string' &&
+        typeof config.projectId === 'string' &&
+        typeof config.storageBucket === 'string' &&
+        typeof config.messagingSenderId === 'string' &&
+        typeof config.appId === 'string';
+}
+
+function getSdks(firebaseApp: FirebaseApp): { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore } {
+  return {
+    firebaseApp,
+    auth: getAuth(firebaseApp),
+    firestore: getFirestore(firebaseApp)
+  };
+}
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
+export function initializeFirebase(): { firebaseApp: FirebaseApp | null; auth: Auth | null; firestore: Firestore | null } {
   if (getApps().length) {
-    return getSdks(getApp());
+    const app = getApp();
+    return getSdks(app);
   }
 
-  // In a production environment (like Firebase App Hosting),
-  // FIREBASE_CONFIG is automatically provided.
+  // First, try to use the comprehensive NEXT_PUBLIC_FIREBASE_CONFIG
   const firebaseConfigEnv = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
   if (firebaseConfigEnv) {
     try {
       const config = JSON.parse(firebaseConfigEnv);
-      const firebaseApp = initializeApp(config);
-      return getSdks(firebaseApp);
+      if (isValidFirebaseConfig(config)) {
+        const firebaseApp = initializeApp(config);
+        return getSdks(firebaseApp);
+      }
     } catch (e) {
-      console.error("Failed to parse FIREBASE_CONFIG, falling back to individual vars", e);
+      console.error("Failed to parse NEXT_PUBLIC_FIREBASE_CONFIG, falling back to individual vars", e);
     }
   }
 
@@ -33,29 +54,14 @@ export function initializeFirebase() {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   };
 
-  if (localFirebaseConfig.apiKey && localFirebaseConfig.projectId) {
+  if (isValidFirebaseConfig(localFirebaseConfig)) {
     const firebaseApp = initializeApp(localFirebaseConfig);
     return getSdks(firebaseApp);
   }
 
-  // Final attempt for environments like Cloud Build where `initializeApp()`
-  // might work without arguments.
-  try {
-    const firebaseApp = initializeApp();
-    return getSdks(firebaseApp);
-  } catch (e) {
-      console.error("Firebase initialization failed. Ensure Firebase environment variables are set.", e);
-      // Return null objects if initialization fails completely
-      return { firebaseApp: null, auth: null, firestore: null };
-  }
-}
-
-export function getSdks(firebaseApp: FirebaseApp) {
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
-  };
+  console.error("Firebase initialization failed: No valid configuration found. Ensure Firebase environment variables are set correctly.");
+  // Return null objects if initialization fails completely
+  return { firebaseApp: null, auth: null, firestore: null };
 }
 
 export * from './provider';
