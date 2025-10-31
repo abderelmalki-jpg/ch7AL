@@ -1,130 +1,164 @@
-
 'use server';
 
-import { adminDb, adminStorage } from "@/firebase/server";
-import { FieldValue }from "firebase-admin/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  collection,
+  serverTimestamp,
+  runTransaction,
+  increment,
+  type Firestore,
+} from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
+import { z } from 'zod';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
-// S'assure que les services ont été correctement initialisés
-function checkFirebaseServices() {
-    if (!adminDb || !adminStorage) {
-        throw new Error("Firebase Admin SDK not initialized. Check server environment variables.");
-    }
+// Schéma de validation pour les données du formulaire
+const PriceSchema = z.object({
+  userId: z.string().min(1),
+  userEmail: z.string().email(),
+  productName: z.string().min(1, 'Le nom du produit est requis.'),
+  price: z.number().positive('Le prix doit être un nombre positif.'),
+  storeName: z.string().min(1, 'Le nom du magasin est requis.'),
+  address: z.string().optional(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  brand: z.string().optional(),
+  category: z.string().optional(),
+  barcode: z.string().optional(),
+  photoDataUri: z.string().optional(),
+});
+
+type PriceInput = z.infer<typeof PriceSchema>;
+
+// Fonction pour uploader l'image
+async function uploadImage(storage: FirebaseStorage, dataUri: string, userId: string): Promise<string> {
+  const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
+  const imageRef = ref(storage, imagePath);
+  
+  // Utiliser `uploadString` avec l'option 'data_url'
+  const snapshot = await uploadString(imageRef, dataUri, 'data_url');
+  const downloadURL = await getDownloadURL(snapshot.ref);
+  return downloadURL;
 }
 
-async function uploadImage(dataUri: string, userId: string): Promise<string> {
-    checkFirebaseServices();
-    const bucket = adminStorage.bucket();
-    
-    const mimeType = dataUri.substring("data:".length, dataUri.indexOf(";base64"));
-    const fileExtension = mimeType.split('/')[1] || 'jpg';
-    const filePath = `product-images/${userId}/${Date.now()}.${fileExtension}`;
-    
-    const base64Data = dataUri.split(',')[1];
-    const buffer = Buffer.from(base64Data, 'base64');
-    
-    const file = bucket.file(filePath);
-    await file.save(buffer, {
-        metadata: {
-            contentType: mimeType
-        }
-    });
+// Fonction principale pour ajouter un prix
+export async function addPrice(
+  firestore: Firestore,
+  storage: FirebaseStorage,
+  data: PriceInput
+): Promise<{ status: 'success' | 'error'; message: string }> {
 
-    // Rendre le fichier public et obtenir l'URL
-    await file.makePublic();
-    return file.publicUrl();
-}
+  const validatedFields = PriceSchema.safeParse(data);
+  if (!validatedFields.success) {
+    return { status: 'error', message: 'Données invalides.' };
+  }
 
-export async function addPrice(data: any) {
+  const {
+    userId,
+    userEmail,
+    productName,
+    price,
+    storeName,
+    address,
+    latitude,
+    longitude,
+    brand,
+    category,
+    barcode,
+    photoDataUri,
+  } = validatedFields.data;
+
   try {
-    checkFirebaseServices();
-    const { userEmail, productName, price, storeName, address, latitude, longitude, brand, category, barcode, photoDataUri, userId } = data;
-
     let imageUrl: string | undefined = undefined;
     if (photoDataUri && photoDataUri.startsWith('data:image')) {
-        imageUrl = await uploadImage(photoDataUri, userId); 
+      imageUrl = await uploadImage(storage, photoDataUri, userId);
     }
-
-    const batch = adminDb.batch();
-    const timestamp = FieldValue.serverTimestamp();
-
-    // 1. Gérer la collection `stores`
-    const storeRef = adminDb.collection('stores').doc(storeName);
-    const storeDoc = await storeRef.get();
     
-    let storeData:any = { name: storeName, updatedAt: timestamp };
-    if (address) storeData.address = address;
-    if (latitude && longitude) storeData.location = JSON.stringify({ lat: latitude, lng: longitude });
+    // Utiliser une transaction pour assurer la cohérence des données
+    await runTransaction(firestore, async (transaction) => {
+      const timestamp = serverTimestamp();
 
-    if (!storeDoc.exists) {
-        storeData = {
-            ...storeData,
-            addedBy: userEmail,
+      // 1. Get or create Store
+      const storeRef = doc(firestore, 'stores', storeName.trim());
+      const storeSnap = await transaction.get(storeRef);
+      let storeId = storeRef.id;
+
+      if (!storeSnap.exists()) {
+        transaction.set(storeRef, {
+          name: storeName.trim(),
+          address: address || '',
+          latitude: latitude || null,
+          longitude: longitude || null,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          addedBy: userId,
+        });
+      }
+
+      // 2. Get or create Product
+      const productRef = doc(firestore, 'products', productName.trim());
+      const productSnap = await transaction.get(productRef);
+      let productId = productRef.id;
+
+      if (!productSnap.exists()) {
+        const productData: any = {
+            name: productName.trim(),
+            brand: brand || '',
+            category: category || '',
+            barcode: barcode || '',
             createdAt: timestamp,
-            city: '' // Vous pouvez ajouter une logique pour extraire la ville de l'adresse plus tard
+            updatedAt: timestamp,
+            uploadedBy: userId,
         };
-    }
-    batch.set(storeRef, storeData, { merge: true });
+        if(imageUrl) productData.imageUrl = imageUrl;
+        transaction.set(productRef, productData);
+      } else if (imageUrl && !productSnap.data().imageUrl) {
+        // Mettre à jour l'image si elle n'existe pas
+        transaction.update(productRef, { imageUrl: imageUrl, updatedAt: timestamp });
+      }
 
 
-    // 2. Gérer la collection `products`
-    const productRef = adminDb.collection('products').doc(productName);
-    const productDoc = await productRef.get();
-
-    const productData: any = {
-        name: productName,
-        brand: brand || '',
-        category: category || '',
-        barcode: barcode || '',
-        updatedAt: timestamp,
-    };
-     if (imageUrl) {
-        productData.imageUrl = imageUrl;
-    }
-    if (!productDoc.exists) {
-        productData.description = ''; // description initiale
-        productData.uploadedBy = userEmail;
-        productData.createdAt = timestamp;
-    }
-    batch.set(productRef, productData, { merge: true });
-    
-    // 3. Gérer la collection `priceRecords`
-    const priceRecordRef = adminDb.collection('priceRecords').doc(); // ID auto-généré
-    const locationData = {
-        lat: latitude || null,
-        lng: longitude || null,
-        address: address || ''
-    };
-    const newPriceRecord = {
-        barcode: barcode || '',
+      // 3. Add Price
+      const priceRef = doc(collection(firestore, 'prices'));
+      transaction.set(priceRef, {
+        productId: productId,
+        storeId: storeId,
+        userId: userId,
+        price: price,
         createdAt: timestamp,
-        currency: "MAD",
-        location: JSON.stringify(locationData),
-        price: Number(price),
-        productId: productName, // Utilisation directe du nom du produit
-        reportedBy: userEmail,
-        storeName: storeName,
-        updatedAt: timestamp,
-        verificationCount: 0,
-        verifiedBy: JSON.stringify([]), // Tableau vide sous forme de string
-    };
-    batch.set(priceRecordRef, newPriceRecord);
-    
-    // 4. Mettre à jour les points de l'utilisateur
-    const userRef = adminDb.collection('users').doc(userId);
-    batch.update(userRef, {
-        points: FieldValue.increment(10),
-        contributions: FieldValue.increment(1)
+        verified: false,
+        upvotes: [],
+        downvotes: [],
+        voteScore: 0,
+      });
+
+      // 4. Update user points
+      const userRef = doc(firestore, 'users', userId);
+      transaction.update(userRef, {
+        points: increment(10),
+        contributions: increment(1),
+      });
     });
 
-    // Exécuter toutes les opérations en une seule transaction
-    await batch.commit();
+    return { status: 'success', message: 'Prix ajouté avec succès !' };
+  } catch (error: any) {
+    console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    return { status: "success", message: "Prix ajouté avec succès !" };
+    // Émission d'une erreur de permission pour le débogage
+    if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+            path: `prices, products, stores, or users`,
+            operation: 'write',
+            requestResourceData: data,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }
 
-  } catch (error) {
-    console.error("🔥 Erreur Firebase dans l'action addPrice:", error);
-    const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue est survenue côté serveur.";
-    return { status: "error", message: errorMessage };
+    const errorMessage = error.message || "Une erreur inconnue est survenue.";
+    return { status: 'error', message: errorMessage };
   }
 }
-

@@ -55,7 +55,7 @@ export default function ScannerPage() {
 
             if (!querySnapshot.empty) {
                 const productDoc = querySnapshot.docs[0];
-                const product = productDoc.data() as Product;
+                const product = { id: productDoc.id, ...productDoc.data() } as Product;
                 toast({
                     title: 'Produit trouvé !',
                     description: `Redirection vers l'ajout de prix pour ${product.name}.`,

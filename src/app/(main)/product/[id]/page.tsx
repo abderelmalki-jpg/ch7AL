@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
-import type { Product, Price, Store } from '@/lib/types';
+import type { Product, Price as PriceType, Store } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { ImageIcon, Loader2, MapPin, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-interface PriceWithStore extends Price {
+interface PriceWithStore extends PriceType {
     storeName: string;
 }
 
@@ -42,19 +42,20 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
                 // Fetch prices for this product
                 const pricesQuery = query(
-                    collection(firestore, 'priceRecords'),
+                    collection(firestore, 'prices'),
                     where('productId', '==', productId),
                     orderBy('createdAt', 'desc')
                 );
                 const pricesSnap = await getDocs(pricesQuery);
 
                 const pricesData = await Promise.all(pricesSnap.docs.map(async (priceDoc) => {
-                    const price = { id: priceDoc.id, ...priceDoc.data() } as Price;
-                    // storeName is already on the price record
-                    return { ...price, storeName: price.storeName };
+                    const price = { id: priceDoc.id, ...priceDoc.data() } as PriceType;
+                    const storeSnap = await getDoc(doc(firestore, 'stores', price.storeId));
+                    const storeName = storeSnap.exists() ? (storeSnap.data() as Store).name : 'Magasin inconnu';
+                    return { ...price, storeName: storeName };
                 }));
                 
-                setPrices(pricesData);
+                setPrices(pricesData as PriceWithStore[]);
 
             } catch (error) {
                 console.error("Erreur lors de la récupération des détails du produit:", error);
@@ -67,7 +68,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
     }, [firestore, productId]);
     
-    const getFormattedDate = (timestamp: Timestamp | { seconds: number; nanoseconds: number; }) => {
+    const getFormattedDate = (timestamp: any) => {
         let date: Date;
         if (timestamp instanceof Timestamp) {
             date = timestamp.toDate();

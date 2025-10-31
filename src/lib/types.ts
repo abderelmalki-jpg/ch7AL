@@ -29,39 +29,33 @@ export type Product = {
   imageHint?: string; // imageHint is optional from Firestore
   barcode?: string;
   price?: number; // Price is optional, as it might not be directly on the product
-  uploadedBy: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  description: string;
+  uploadedBy?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  description?: string;
 };
 
 export type Price = {
     id: string;
     productId: string;
-    storeName: string;
-    reportedBy: string; // user email
+    storeId: string;
+    userId: string;
     price: number;
     createdAt: Timestamp;
-    updatedAt: Timestamp;
-    barcode: string;
-    currency: string;
-    location: string; // JSON string
-    verificationCount: number;
-    verifiedBy: string; // JSON string array of emails
-    upvotes?: string[];
-    downvotes?: string[];
-    voteScore?: number;
+    verified: boolean;
+    upvotes: string[];
+    downvotes: string[];
+    voteScore: number;
 }
 
 export type Store = {
     id: string;
     name: string;
     address?: string;
-    addedBy: string; // user email
-    city: string;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    location: string; // JSON stringified {lat, lng}
+    addedBy?: string;
+    city?: string;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
     latitude?: number;
     longitude?: number;
 }

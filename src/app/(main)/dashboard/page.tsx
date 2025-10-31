@@ -36,15 +36,13 @@ export default function DashboardPage() {
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
           const priceData = priceDoc.data() as Price;
 
-          const [productSnap, storeSnap] = await Promise.all([
+          const [productSnap, storeSnap, userSnap] = await Promise.all([
             getDoc(doc(firestore, 'products', priceData.productId)),
-            getDoc(doc(firestore, 'stores', priceData.storeName)),
+            getDoc(doc(firestore, 'stores', priceData.storeId)),
+            getDoc(doc(firestore, 'users', priceData.userId)),
           ]);
           
-          // Note: reportedBy is an email, not a userId. Fetching user profile by email is not efficient.
-          // For simplicity, we will leave the user field null for now.
-          const user = null; 
-
+          const user = userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : null;
           const product = productSnap.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : null;
           const store = storeSnap.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : null;
 
@@ -59,16 +57,6 @@ export default function DashboardPage() {
           } else {
             contributionDate = new Date(); // Fallback
           }
-          
-          let location = { lat: 0, lng: 0 };
-          try {
-            if(store?.location) {
-                const parsedLoc = JSON.parse(store.location as string);
-                location.lat = parsedLoc.lat;
-                location.lng = parsedLoc.lng;
-            }
-          } catch(e) { /* ignore parse error */ }
-
 
           return {
             id: priceDoc.id,
@@ -76,10 +64,10 @@ export default function DashboardPage() {
             storeName: store?.name || 'Magasin inconnu',
             price: priceData.price,
             date: contributionDate.toISOString(),
-            latitude: location.lat,
-            longitude: location.lng,
+            latitude: store?.latitude || 0,
+            longitude: store?.longitude || 0,
             imageUrl: product?.imageUrl || undefined,
-            userId: priceData.reportedBy, // This is an email
+            userId: priceData.userId,
             product,
             store,
             user,

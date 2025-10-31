@@ -10,20 +10,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wand2, Loader2, Lightbulb, MapPin, X, CheckCircle2, Camera, Zap, Sparkles, ScanLine, ArrowLeft } from 'lucide-react';
+import { Wand2, Loader2, MapPin, X, Camera, Zap, ScanLine, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { getStorage } from 'firebase/storage';
+import { addPrice } from './actions';
+
 
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
+    const firestore = useFirestore();
+    const storage = firestore ? getStorage(firestore.app) : null;
     const searchParams = useSearchParams();
 
-    // États de soumission
     const [isSubmittingPrice, startPriceTransition] = useTransition();
 
-    // Champs du formulaire
     const [productName, setProductName] = useState('');
     const [price, setPrice] = useState('');
     const [storeName, setStoreName] = useState('');
@@ -35,13 +38,10 @@ export function AddProductForm() {
     const [longitude, setLongitude] = useState<number | null>(null);
     const [barcode, setBarcode] = useState('');
     
-    // Erreurs du formulaire
     const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
 
-    // État de la localisation
     const [isLocating, setIsLocating] = useState(false);
     
-    // État de la caméra et de l'IA
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -49,7 +49,6 @@ export function AddProductForm() {
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
-    // Définir les valeurs initiales du formulaire à partir des paramètres d'URL
     useEffect(() => {
         const nameParam = searchParams.get('name');
         const brandParam = searchParams.get('brand');
@@ -65,6 +64,8 @@ export function AddProductForm() {
     }, [searchParams]);
 
      useEffect(() => {
+        let isMounted = true;
+
         async function setupCamera() {
           if (isCameraOn) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -73,19 +74,26 @@ export function AddProductForm() {
             }
             try {
               const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-              streamRef.current = stream;
-              if (videoRef.current) {
-                videoRef.current.srcObject = stream;
+              if(isMounted) {
+                  streamRef.current = stream;
+                  if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                  }
+                  setCameraError(null);
               }
-              setCameraError(null);
             } catch (err: any) {
-              console.error('Erreur accès caméra:', err);
-              if (err.name === 'NotAllowedError') {
-                   setCameraError("L'autorisation d'accès à la caméra est requise.");
-              } else {
-                   setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
-              }
-              setIsCameraOn(false);
+                if (isMounted) {
+                  console.error('Erreur accès caméra:', err);
+                  if (err.name === 'NotAllowedError') {
+                       setCameraError("L'autorisation d'accès à la caméra est requise.");
+                  } else if (err.name === 'AbortError' || err.name === 'NotReadableError') {
+                       setCameraError("La caméra est utilisée par une autre application ou a rencontré un problème.");
+                  }
+                  else {
+                       setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
+                  }
+                  setIsCameraOn(false);
+                }
             }
           } else {
             if (streamRef.current) {
@@ -101,6 +109,7 @@ export function AddProductForm() {
         setupCamera();
 
         return () => {
+          isMounted = false;
           if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
           }
@@ -152,9 +161,9 @@ export function AddProductForm() {
         if (!productName) errors.productName = "Le nom du produit est requis.";
         if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
         if (!storeName) errors.storeName = "Le nom du magasin est requis.";
-        if (!user) {
+        if (!user || !firestore || !storage) {
             errors.userId = "Vous devez être connecté pour soumettre un prix.";
-            toast({ variant: 'destructive', title: 'Utilisateur non connecté' });
+            toast({ variant: 'destructive', title: 'Utilisateur non connecté ou services indisponibles' });
         }
 
         setFormErrors(errors);
@@ -162,50 +171,42 @@ export function AddProductForm() {
             return;
         }
 
-        startPriceTransition(() => {
-            (async () => {
-                try {
-                    const response = await fetch('/api/add-price', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        userId: user!.uid,
-                        userEmail: user!.email,
-                        productName,
-                        price: Number(price),
-                        storeName,
-                        address,
-                        latitude,
-                        longitude,
-                        brand,
-                        category,
-                        barcode,
-                        photoDataUri,
-                      })
-                    });
-
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.message || 'Une erreur est survenue.');
-                    }
-                    
+        startPriceTransition(async () => {
+            try {
+                const result = await addPrice(firestore!, storage!, {
+                    userId: user!.uid,
+                    userEmail: user!.email!,
+                    productName,
+                    price: Number(price),
+                    storeName,
+                    address,
+                    latitude,
+                    longitude,
+                    brand,
+                    category,
+                    barcode,
+                    photoDataUri,
+                });
+                
+                if (result.status === 'success') {
                     toast({
                         title: 'Succès !',
                         description: `Prix pour ${productName} ajouté avec succès ! (+10 points)`,
                         duration: 4000,
                     });
                     router.push('/dashboard');
-
-                } catch (error) {
-                    console.error("Erreur lors de l'ajout du prix:", error);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erreur de soumission',
-                        description: (error as Error).message || "Une erreur est survenue lors de l'ajout du prix.",
-                    });
+                } else {
+                    throw new Error(result.message);
                 }
-            })();
+
+            } catch (error) {
+                console.error("Erreur lors de l'ajout du prix:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erreur de soumission',
+                    description: (error as Error).message || "Une erreur est survenue lors de l'ajout du prix.",
+                });
+            }
         });
     }
 
@@ -371,7 +372,7 @@ export function AddProductForm() {
                         </div>
                     </div>
 
-                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
+                    <Button type="submit" disabled={isSubmittingPrice || !user || !firestore} className="w-full text-lg h-12">
                         {isSubmittingPrice ? (
                             <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />

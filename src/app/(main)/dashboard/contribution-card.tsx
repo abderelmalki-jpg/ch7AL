@@ -43,8 +43,8 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   const [open, setOpen] = useState(false);
 
   // Memoized references
-  const priceRef = useMemoFirebase(() => open && firestore ? doc(firestore, 'priceRecords', contribution.id) : null, [open, firestore, contribution.id]);
-  const commentsQuery = useMemoFirebase(() => open && firestore ? query(collection(firestore, 'priceRecords', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null, [open, firestore, contribution.id]);
+  const priceRef = useMemoFirebase(() => open && firestore ? doc(firestore, 'prices', contribution.id) : null, [open, firestore, contribution.id]);
+  const commentsQuery = useMemoFirebase(() => open && firestore ? query(collection(firestore, 'prices', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null, [open, firestore, contribution.id]);
 
   // Data fetching hooks
   const { data: priceData, isLoading: isLoadingPrice } = useDoc<Price>(priceRef);
@@ -68,7 +68,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
 
     startCommentTransition(async () => {
         try {
-            const commentRef = collection(firestore, 'priceRecords', contribution.id, 'comments');
+            const commentRef = collection(firestore, 'prices', contribution.id, 'comments');
             await addDoc(commentRef, {
                 userId: user.uid,
                 userName: user.displayName || 'Anonyme',
@@ -111,7 +111,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
     return name.substring(0, 2).toUpperCase();
   }
 
-  const userDisplayName = contribution.user?.name || contribution.userId.split('@')[0];
+  const userDisplayName = contribution.user?.name || contribution.userId.substring(0, 5) + '...';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
