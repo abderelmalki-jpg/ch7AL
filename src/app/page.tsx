@@ -25,27 +25,26 @@ export default function LandingPage() {
                 Votre navigateur ne supporte pas la vidéo.
             </video>
             
-            {/* Overlay for text */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-black/60 to-transparent">
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
+            {/* Overlay for text and button */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+                 <div className="w-full">
                      <h1 className="font-headline text-5xl md:text-7xl font-bold text-accent drop-shadow-lg">
                         Hanouti
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
                         Comparez. Économisez. Partagez avec la communauté.
                     </p>
+                    <div className="mt-8">
+                      <Link href="/auth">
+                        <Button size="lg" className="h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground">
+                          Commencer
+                        </Button>
+                      </Link>
+                    </div>
                  </div>
             </div>
         </div>
 
-        {/* Content below the video */}
-        <div className="relative z-10 mt-8 flex flex-col items-center text-center">
-          <Link href="/auth">
-            <Button size="lg" className="h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground">
-              Commencer
-            </Button>
-          </Link>
-        </div>
       </div>
 
     </div>
