@@ -29,7 +29,7 @@ export default function DashboardPage() {
       
       setIsLoading(true);
       
-      const pricesRef = collection(firestore, 'priceRecords');
+      const pricesRef = collection(firestore, 'prices');
       const q = query(pricesRef, orderBy('createdAt', 'desc'), limit(6));
 
       getDocs(q).then(priceSnap => {
