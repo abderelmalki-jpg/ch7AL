@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth, useFirestore } from "@/firebase/provider";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, type User } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, updateProfile, type User } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -49,6 +49,7 @@ export function AuthForm() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
   const auth = useAuth();
   const firestore = useFirestore();
@@ -107,26 +108,21 @@ export function AuthForm() {
   
   const handleGoogleSignIn = async () => {
     if (!auth) return;
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
         const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({
-            prompt: 'select_account'
-        });
-        const result = await signInWithPopup(auth, provider);
-        await createUserProfile(result.user);
-        toast({ title: 'Connexion réussie avec Google !' });
-        router.replace('/dashboard');
+        await signInWithRedirect(auth, provider);
+        // La redirection est initiée. Le code ci-dessous ne s'exécutera pas.
+        // La gestion du résultat se fera sur la page de redirection (AuthPage).
     } catch (error: any) {
-        console.error("Erreur de connexion Google :", error);
+        console.error("Erreur de redirection Google :", error);
         const errorMessage = getFirebaseErrorMessage(error.code);
         toast({ 
             variant: 'destructive', 
             title: 'Erreur Google', 
             description: errorMessage
         });
-    } finally {
-        setIsLoading(false);
+        setIsGoogleLoading(false);
     }
   }
 
@@ -137,16 +133,16 @@ export function AuthForm() {
         {!isLogin && (
           <div className="space-y-2">
             <Label htmlFor="name">Nom</Label>
-            <Input id="name" type="text" placeholder="Votre nom" required value={name} onChange={e => setName(e.target.value)} disabled={isLoading} />
+            <Input id="name" type="text" placeholder="Votre nom" required value={name} onChange={e => setName(e.target.value)} disabled={isLoading || isGoogleLoading} />
           </div>
         )}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading} />
+          <Input id="email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading || isGoogleLoading} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Mot de passe</Label>
-          <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading}/>
+          <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading || isGoogleLoading}/>
         </div>
         {isLogin && (
           <div className="flex items-center justify-between text-sm">
@@ -156,7 +152,7 @@ export function AuthForm() {
             </Button>
           </div>
         )}
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading || !auth}>
+        <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading || isGoogleLoading || !auth}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isLogin ? "Se connecter" : "Créer un compte"}
         </Button>
@@ -171,8 +167,8 @@ export function AuthForm() {
         </div>
       </div>
       
-      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || !auth}>
-        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading || !auth}>
+        {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
         Google
       </Button>
 
@@ -183,7 +179,7 @@ export function AuthForm() {
           type="button"
           onClick={() => setIsLogin(!isLogin)}
           className="text-primary"
-          disabled={isLoading}
+          disabled={isLoading || isGoogleLoading}
         >
           {isLogin ? "S'inscrire" : "Se connecter"}
         </Button>
@@ -191,3 +187,5 @@ export function AuthForm() {
     </div>
   );
 }
+
+    
