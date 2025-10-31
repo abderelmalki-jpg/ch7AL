@@ -19,7 +19,7 @@ export default function LandingPage() {
                 className="w-full h-full object-contain"
             >
                 <source
-                src="https://res.cloudinary.com/dhjwimevi/video/upload/v1761429194/Design_sans_titre_4_witvsw.mp4"
+                src="https://res.cloudinary.com/dhjwimevi/video/upload/eo_-2/v1761429194/Design_sans_titre_4_witvsw.mp4"
                 type="video/mp4"
                 />
                 Votre navigateur ne supporte pas la vidéo.
@@ -32,7 +32,7 @@ export default function LandingPage() {
                         Hanouti
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
-                        Comparez. Économisez. Partagez avec la communauté.
+                        Comparez .Economisez . Partagez avec la communauté
                     </p>
                     <div className="mt-8">
                       <Link href="/auth">
