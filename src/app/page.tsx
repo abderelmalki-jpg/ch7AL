@@ -2,7 +2,6 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/logo';
 
 export default function LandingPage() {
   return (
@@ -20,10 +19,10 @@ export default function LandingPage() {
         />
         Votre navigateur ne supporte pas la vidéo.
       </video>
-      <div className="absolute inset-0 bg-black/40 z-10"></div>
-      <div className="relative z-20 flex flex-col items-center text-center text-white px-4">
+      <div className="absolute inset-0 bg-black/20 z-10"></div>
+      <div className="relative z-20 flex flex-col items-center text-center px-4">
         
-        <h1 className="font-headline text-5xl md:text-6xl font-bold drop-shadow-md">
+        <h1 className="font-headline text-5xl md:text-6xl font-bold drop-shadow-md text-accent">
           Hanouti
         </h1>
         <p className="mt-4 max-w-xl text-lg md:text-xl text-white/90 drop-shadow-sm">
@@ -39,5 +38,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
