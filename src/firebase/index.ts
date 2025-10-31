@@ -33,7 +33,7 @@ export function initializeFirebase() {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   };
 
-  if (localFirebaseConfig.apiKey) {
+  if (localFirebaseConfig.apiKey && localFirebaseConfig.projectId) {
     const firebaseApp = initializeApp(localFirebaseConfig);
     return getSdks(firebaseApp);
   }

@@ -33,12 +33,25 @@ export default function MapPage() {
   }, [firestore]);
   
   const storesForMap = stores
-    .filter(s => s.latitude && s.longitude)
-    .map((s) => ({
-      id: s.id,
-      name: s.name,
-      position: { lat: s.latitude!, lng: s.longitude! },
-  }));
+    .filter(s => {
+      if (s.location) {
+        try {
+          const loc = JSON.parse(s.location as string);
+          return loc.lat && loc.lng;
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    })
+    .map((s) => {
+      const loc = JSON.parse(s.location as string);
+      return {
+        id: s.id,
+        name: s.name,
+        position: { lat: loc.lat, lng: loc.lng },
+      }
+  });
 
   return (
     <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] flex flex-col">

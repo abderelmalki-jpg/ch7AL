@@ -11,7 +11,7 @@ export type Contribution = {
   latitude: number;
   longitude: number;
   imageUrl?: string;
-  userId: string; // email in this case from priceRecord
+  userId: string; // email in this case from price
   product: Product | null;
   store: Store | null;
   user: UserProfile | null;
@@ -62,6 +62,8 @@ export type Store = {
     createdAt: Timestamp;
     updatedAt: Timestamp;
     location: string; // JSON stringified {lat, lng}
+    latitude?: number;
+    longitude?: number;
 }
 
 export type UserProfile = {
