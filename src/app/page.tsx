@@ -19,7 +19,7 @@ export default function LandingPage() {
                 className="w-full h-full object-contain"
             >
                 <source
-                src="https://res.cloudinary.com/dhjwimevi/video/upload/eo_-2/v1761429194/Design_sans_titre_4_witvsw.mp4"
+                src="https://res.cloudinary.com/dhjwimevi/video/upload/v1761429194/Design_sans_titre_4_witvsw.mp4"
                 type="video/mp4"
                 />
                 Votre navigateur ne supporte pas la vidéo.
@@ -28,7 +28,7 @@ export default function LandingPage() {
             {/* Overlay for text and button */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
                  <div className="w-full">
-                     <h1 className="font-headline text-5xl md:text-7xl font-bold text-accent drop-shadow-lg">
+                     <h1 className="font-headline text-5xl md:text-7xl font-bold text-white drop-shadow-lg">
                         Hanouti
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
