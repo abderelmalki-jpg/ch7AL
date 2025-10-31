@@ -2,12 +2,13 @@ import { initializeApp, cert, getApps, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
-// Configuration correcte de ton projet Firebase
+// Configuration du projet Firebase à partir des variables d'environnement
 const firebaseConfig = {
   projectId: "hanouti-6ce26",
-  storageBucket: "hanouti-6ce26.appspot.com", // ✅ CORRECT : c’est le bon bucket Firebase Storage
+  storageBucket: "hanouti-6ce26.appspot.com",
   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  // Remplace les caractères d'échappement '\n' par de vrais sauts de ligne
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"), 
 };
 
 let app: App;
@@ -15,8 +16,8 @@ let app: App;
 // Initialisation unique du SDK Admin
 if (!getApps().length) {
   try {
+    // Vérification que les identifiants du compte de service sont bien présents
     if (firebaseConfig.privateKey && firebaseConfig.clientEmail) {
-      // ✅ Mode service account (local ou manuel)
       app = initializeApp({
         credential: cert({
           projectId: firebaseConfig.projectId,
@@ -25,32 +26,30 @@ if (!getApps().length) {
         }),
         storageBucket: firebaseConfig.storageBucket,
       });
-      console.log("✅ Firebase Admin initialisé avec un compte de service");
+      console.log("✅ Firebase Admin initialisé avec un compte de service.");
     } else {
-      // ✅ Mode Application Default Credentials (ex: Cloud Run, Workstations, etc.)
-      app = initializeApp({
-        projectId: firebaseConfig.projectId,
-        storageBucket: firebaseConfig.storageBucket,
-      });
-      console.log("✅ Firebase Admin initialisé avec ADC (Application Default Credentials)");
+      // Si les identifiants manquent, on lance une erreur claire.
+      throw new Error("Les variables d'environnement FIREBASE_CLIENT_EMAIL et FIREBASE_PRIVATE_KEY sont requises.");
     }
   } catch (err) {
     console.error("🔥 Erreur lors de l’initialisation de Firebase Admin SDK :", err);
-    app = {} as App;
+    // En cas d'échec, on assigne un objet vide pour éviter d'autres erreurs
+    app = {} as App; 
   }
 } else {
+  // Si l'app est déjà initialisée, on la récupère
   app = getApps()[0];
 }
 
-// --- Export Firestore & Storage ---
+// --- Export de Firestore & Storage ---
 let adminDb;
 let adminStorage;
 
 try {
+  // On tente d'obtenir les instances de service uniquement si l'initialisation a réussi
   adminDb = getFirestore(app);
 } catch (err) {
   console.error("🔥 Impossible d’initialiser Firestore Admin :", err);
-  // @ts-ignore
   adminDb = null;
 }
 
@@ -58,7 +57,6 @@ try {
   adminStorage = getStorage(app);
 } catch (err) {
   console.error("🔥 Impossible d’initialiser Storage Admin :", err);
-  // @ts-ignore
   adminStorage = null;
 }
 
