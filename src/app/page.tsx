@@ -6,11 +6,11 @@ import { Logo } from '@/components/logo';
 
 export default function LandingPage() {
   return (
-    <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4 sm:p-8">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4 sm:p-8">
       
       <div className="w-full max-w-4xl flex flex-col items-center">
         {/* Video Player in a rounded container */}
-        <div className="relative w-full aspect-video rounded-2xl shadow-2xl overflow-hidden mb-8 bg-black">
+        <div className="relative w-full aspect-video rounded-2xl shadow-2xl overflow-hidden bg-black">
             <video
                 autoPlay
                 loop
@@ -24,18 +24,23 @@ export default function LandingPage() {
                 />
                 Votre navigateur ne supporte pas la vidéo.
             </video>
+            
+            {/* Overlay for text */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-black/60 to-transparent">
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
+                     <h1 className="font-headline text-5xl md:text-7xl font-bold text-accent drop-shadow-lg">
+                        Hanouti
+                    </h1>
+                    <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
+                        Comparez les prix. Économisez de l'argent. Partagez avec la communauté.
+                    </p>
+                 </div>
+            </div>
         </div>
 
         {/* Content below the video */}
-        <div className="relative z-20 flex flex-col items-center text-center">
-          <h1 className="font-headline text-5xl md:text-6xl font-bold drop-shadow-md text-orange-500">
-            Hanouti
-          </h1>
-          <p className="mt-4 max-w-xl text-lg md:text-xl text-white drop-shadow-sm">
-            Comparez les prix. Économisez de l'argent. Partagez avec la communauté.
-            Le pouvoir est entre vos mains.
-          </p>
-          <Link href="/auth" className="mt-8">
+        <div className="relative z-10 mt-8 flex flex-col items-center text-center">
+          <Link href="/auth">
             <Button size="lg" className="h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground">
               Commencer
             </Button>
