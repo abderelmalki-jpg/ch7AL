@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth, useFirestore } from "@/firebase/provider";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, updateProfile, type User, getRedirectResult } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, updateProfile, type User } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -24,10 +24,10 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const getFirebaseErrorMessage = (errorCode: string) => {
-    switch_1:
     switch (errorCode) {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
+        case 'auth/invalid-credential':
             return 'Email ou mot de passe incorrect.';
         case 'auth/invalid-email':
             return 'Cette adresse email est invalide.';
@@ -39,6 +39,8 @@ const getFirebaseErrorMessage = (errorCode: string) => {
              return "Le processus de connexion a été annulé.";
         case 'auth/unauthorized-domain':
              return 'Le domaine n\'est pas autorisé pour l\'authentification. Veuillez vérifier votre configuration Firebase.';
+        case 'auth/invalid-api-key':
+            return "La clé d'API Firebase n'est pas valide. Veuillez vérifier votre configuration."
         default:
             return 'Une erreur est survenue. Veuillez réessayer.';
     }

@@ -33,7 +33,7 @@ export async function handleVote(
     }
 
     const { priceId, userId, voteType } = validatedFields.data;
-    const priceRef = doc(db, 'priceRecords', priceId);
+    const priceRef = doc(db, 'prices', priceId);
 
     // Using .then().catch() instead of try/catch to integrate with the custom error emitter
     return runTransaction(db, async (transaction) => {

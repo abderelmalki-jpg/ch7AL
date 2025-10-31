@@ -4,11 +4,10 @@ import { getStorage } from "firebase-admin/storage";
 
 // Configuration du projet Firebase à partir des variables d'environnement
 const firebaseConfig = {
-  projectId: "hanouti-6ce26",
-  storageBucket: "hanouti-6ce26.appspot.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "hanouti-6ce26",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "hanouti-6ce26.appspot.com",
   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  // Remplace les caractères d'échappement '\n' par de vrais sauts de ligne
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"), 
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
 };
 
 let app: App;
@@ -17,47 +16,35 @@ let app: App;
 if (!getApps().length) {
   try {
     // Vérification que les identifiants du compte de service sont bien présents
-    if (firebaseConfig.privateKey && firebaseConfig.clientEmail) {
+    if (firebaseConfig.clientEmail && firebaseConfig.privateKey) {
       app = initializeApp({
-        credential: cert({
-          projectId: firebaseConfig.projectId,
-          clientEmail: firebaseConfig.clientEmail,
-          privateKey: firebaseConfig.privateKey,
-        }),
+        credential: cert(firebaseConfig),
         storageBucket: firebaseConfig.storageBucket,
       });
       console.log("✅ Firebase Admin initialisé avec un compte de service.");
     } else {
-      // Si les identifiants manquent, on lance une erreur claire.
-      throw new Error("Les variables d'environnement FIREBASE_CLIENT_EMAIL et FIREBASE_PRIVATE_KEY sont requises.");
+        console.warn("⚠️ Variables d'environnement pour Firebase Admin manquantes. L'initialisation est ignorée.");
+        app = {} as App; // Crée un objet vide pour éviter les plantages
     }
   } catch (err) {
     console.error("🔥 Erreur lors de l’initialisation de Firebase Admin SDK :", err);
-    // En cas d'échec, on assigne un objet vide pour éviter d'autres erreurs
     app = {} as App; 
   }
 } else {
-  // Si l'app est déjà initialisée, on la récupère
   app = getApps()[0];
 }
 
 // --- Export de Firestore & Storage ---
-let adminDb;
-let adminStorage;
+let adminDb = null;
+let adminStorage = null;
 
 try {
-  // On tente d'obtenir les instances de service uniquement si l'initialisation a réussi
-  adminDb = getFirestore(app);
+  if (getApps().length) { // Tente d'obtenir les services uniquement si l'app est initialisée
+    adminDb = getFirestore(app);
+    adminStorage = getStorage(app);
+  }
 } catch (err) {
-  console.error("🔥 Impossible d’initialiser Firestore Admin :", err);
-  adminDb = null;
-}
-
-try {
-  adminStorage = getStorage(app);
-} catch (err) {
-  console.error("🔥 Impossible d’initialiser Storage Admin :", err);
-  adminStorage = null;
+  console.error("🔥 Impossible d’initialiser les services Admin Firebase :", err);
 }
 
 export { adminDb, adminStorage };
