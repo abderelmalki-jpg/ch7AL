@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { getRedirectResult, type User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,13 +63,6 @@ export default function AuthPage() {
   }
 
   useEffect(() => {
-    // Si l'utilisateur est déjà connecté, on le redirige directement
-    if (!isUserLoading && user) {
-      router.replace('/dashboard');
-      return;
-    }
-
-    // Sinon, on vérifie s'il y a un résultat de redirection Google
     if (auth && firestore) {
         getRedirectResult(auth)
             .then(async (result) => {
@@ -98,11 +91,11 @@ export default function AuthPage() {
         setIsHandlingRedirect(false);
     }
 
-  }, [user, isUserLoading, router, auth, toast, firestore]);
+  }, [auth, firestore, isUserLoading, router, toast]);
 
   // Affiche un loader tant que Firebase vérifie l'état d'authentification
   // ou qu'on gère une potentielle redirection
-  if (isUserLoading || isHandlingRedirect || (!isUserLoading && !isHandlingRedirect && user)) {
+  if (isUserLoading || isHandlingRedirect) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
         <Loader2 className="h-12 w-12 animate-spin text-white" />
