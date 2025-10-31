@@ -27,8 +27,11 @@ export default function LandingPage() {
             {/* Overlay for text and button */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
                  <div className="w-full">
+                    <div className="flex justify-center mb-4">
+                        <Logo className="h-24 w-24" />
+                    </div>
                      <h1 className="font-headline text-5xl md:text-7xl font-bold text-white drop-shadow-lg">
-                        Hanouti
+                        Ch3rel
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
                         Comparez .Economisez . Partagez avec la communauté

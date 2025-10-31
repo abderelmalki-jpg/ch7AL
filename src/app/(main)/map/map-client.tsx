@@ -47,7 +47,7 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
       <Map
         defaultCenter={defaultCenter}
         defaultZoom={12}
-        mapId="hanouti-map"
+        mapId="ch3rel-map"
         gestureHandling={'cooperative'}
         disableDefaultUI={false}
         zoomControl={true}

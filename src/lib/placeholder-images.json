@@ -15,7 +15,7 @@
     {
       "id": "product-2",
       "description": "A bag of chips",
-      "imageUrl": "https://images.unsplash.com/photo-1633536705449-905533e73cab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YmFnJTIwY2hpcHN8ZW58MHx8fHwxNzYxNDQ2ODc5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1633536705449-905533e73cab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxb3x8YmFnJTIwY2hpcHN8ZW58MHx8fHwxNzYxNDQ2ODc5fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "bag chips"
     },
     {
@@ -44,8 +44,8 @@
     },
     {
       "id": "logo",
-      "description": "Hanouti App Logo - a modern shopping bag with a Moroccan pattern",
-      "imageUrl": "https://res.cloudinary.com/dhjwimevi/image/upload/v1762104112/hanouti-logo-5_kqv5z7.png",
+      "description": "Ch3rel App Logo",
+      "imageUrl": "https://res.cloudinary.com/dhjwimevi/image/upload/v1761939684/ChatGPT_Image_31_oct._2025_20_40_19_m8uwly.png",
       "imageHint": "modern logo"
     }
   ]
