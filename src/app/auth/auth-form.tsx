@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth, useFirestore } from "@/firebase/provider";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, updateProfile, type User } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, updateProfile, type User, getRedirectResult } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -24,6 +24,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const getFirebaseErrorMessage = (errorCode: string) => {
+    switch_1:
     switch (errorCode) {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
@@ -109,11 +110,11 @@ export function AuthForm() {
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
     try {
-        const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
-        // La redirection est initiée. Le code ci-dessous ne s'exécutera pas.
-        // La gestion du résultat se fera sur la page de redirection (AuthPage).
+        // signInWithRedirect will cause a page reload.
+        // The logic to handle the result is in the AuthPage component.
     } catch (error: any) {
         console.error("Erreur de redirection Google :", error);
         const errorMessage = getFirebaseErrorMessage(error.code);
@@ -187,5 +188,3 @@ export function AuthForm() {
     </div>
   );
 }
-
-    

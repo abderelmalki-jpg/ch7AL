@@ -7,7 +7,8 @@ import { AuthForm } from "./auth-form";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useUser, useAuth, useFirestore } from '@/firebase';
-import { getRedirectResult, User, doc, getDoc, setDoc, serverTimestamp } from 'firebase/auth';
+import { getRedirectResult, type User } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,7 +70,7 @@ export default function AuthPage() {
     }
 
     // Sinon, on vérifie s'il y a un résultat de redirection Google
-    if (auth) {
+    if (auth && firestore) {
         getRedirectResult(auth)
             .then(async (result) => {
                 if (result) {
@@ -92,6 +93,9 @@ export default function AuthPage() {
                 });
                 setIsHandlingRedirect(false);
             });
+    } else if (!isUserLoading) {
+        // If firebase services are not ready, stop trying
+        setIsHandlingRedirect(false);
     }
 
   }, [user, isUserLoading, router, auth, toast, firestore]);
@@ -126,5 +130,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-    
