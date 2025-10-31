@@ -32,7 +32,7 @@ export default function LandingPage() {
                         Hanouti
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
-                        Comparez les prix. Économisez de l'argent. Partagez avec la communauté.
+                        Comparez. Économisez. Partagez avec la communauté.
                     </p>
                  </div>
             </div>
