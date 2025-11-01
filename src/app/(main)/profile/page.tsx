@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from 'next/navigation';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -21,7 +21,7 @@ import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { changeProfilePicture } from "./actions";
+import { changeProfilePicture, updateUserProfile } from "./actions";
 
 const menuItems = [
     { id: 'settings', icon: Settings, text: 'Paramètres', href: '/settings' },
@@ -44,11 +44,11 @@ export default function ProfilePage() {
     // Name editing state
     const [isEditingName, setIsEditingName] = useState(false);
     const [displayName, setDisplayName] = useState('');
-    const [isSavingName, setIsSavingName] = useState(false);
+    const [isSavingName, startSavingNameTransition] = useTransition();
     
     // Photo upload state
     const [newPhotoDataUri, setNewPhotoDataUri] = useState<string | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isUploading, startUploadingTransition] = useTransition();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -90,8 +90,20 @@ export default function ProfilePage() {
     };
 
     const handleSaveName = async () => {
-        // Now using server-side update, so this function is not needed.
-        // We'll keep it for potential future client-side updates.
+        if (!user || displayName === userProfile?.name) {
+            setIsEditingName(false);
+            return;
+        }
+
+        startSavingNameTransition(async () => {
+            const result = await updateUserProfile({ userId: user.uid, name: displayName });
+            if (result.status === 'success') {
+                toast({ title: 'Succès !', description: result.message });
+                setIsEditingName(false);
+            } else {
+                toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+            }
+        });
     }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,20 +119,15 @@ export default function ProfilePage() {
     
     const handleUploadConfirm = async () => {
         if (!newPhotoDataUri || !user) return;
-        setIsUploading(true);
-        try {
+        startUploadingTransition(async () => {
             const result = await changeProfilePicture({ userId: user.uid, dataUri: newPhotoDataUri });
             if (result.status === 'success') {
                 toast({ title: 'Succès !', description: result.message });
                 setNewPhotoDataUri(null); // Close the editing UI
             } else {
-                throw new Error(result.message);
+                 toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de téléverser la photo.' });
             }
-        } catch (error) {
-             toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de téléverser la photo.' });
-        } finally {
-            setIsUploading(false);
-        }
+        });
     }
 
 
@@ -184,6 +191,7 @@ export default function ProfilePage() {
                             onChange={(e) => setDisplayName(e.target.value)} 
                             className="text-2xl font-bold text-center h-12" 
                             placeholder="Votre nom"
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
                         />
                         <Button onClick={handleSaveName} size="icon" disabled={isSavingName}>
                             {isSavingName ? <Loader2 className="animate-spin" /> : <Save />}
@@ -193,8 +201,9 @@ export default function ProfilePage() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2 group">
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingName(true)}>
                         <h1 className="text-3xl font-headline font-bold text-primary">{userProfile?.name || 'Utilisateur'}</h1>
+                        <Pencil className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                 )}
                 <p className="text-muted-foreground">{userProfile?.email}</p>

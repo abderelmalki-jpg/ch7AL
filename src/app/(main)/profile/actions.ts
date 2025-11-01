@@ -2,6 +2,8 @@
 
 import { adminDb, adminStorage } from "@/firebase/server";
 import { getAuth } from "firebase-admin/auth";
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 // S'assure que les services ont été correctement initialisés
 function checkFirebaseServices() {
@@ -63,6 +65,8 @@ export async function changeProfilePicture(data: { userId: string; dataUri: stri
     }
 
     const newPhotoURL = await uploadAndUpdateProfilePicture(userId, dataUri);
+    revalidatePath('/profile');
+    revalidatePath('/dashboard'); // Pour le header
 
     return { 
         status: "success", 
@@ -74,4 +78,44 @@ export async function changeProfilePicture(data: { userId: string; dataUri: stri
     const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue est survenue côté serveur.";
     return { status: "error", message: errorMessage };
   }
+}
+
+const UpdateProfileSchema = z.object({
+    userId: z.string().min(1, "User ID est requis."),
+    name: z.string().min(3, "Le nom doit contenir au moins 3 caractères.").max(50, "Le nom ne doit pas dépasser 50 caractères."),
+});
+
+/**
+ * Server action pour mettre à jour le nom de l'utilisateur.
+ * @param data Les données du formulaire contenant userId et le nouveau nom.
+ */
+export async function updateUserProfile(data: { userId: string; name: string }): Promise<{ status: 'success' | 'error'; message: string; }> {
+    try {
+        const validatedData = UpdateProfileSchema.parse(data);
+        const { userId, name } = validatedData;
+        
+        checkFirebaseServices();
+
+        // Mettre à jour le profil Firebase Auth
+        await getAuth().updateUser(userId, { displayName: name });
+
+        // Mettre à jour le profil Firestore
+        const userRef = adminDb.collection('users').doc(userId);
+        await userRef.update({ name: name });
+
+        // Invalider le cache pour la page de profil pour refléter les changements
+        revalidatePath('/profile');
+        revalidatePath('/dashboard'); // Pour le header
+
+        return { status: 'success', message: 'Nom mis à jour avec succès !' };
+    } catch (error) {
+        console.error("🔥 Erreur Firebase dans l'action updateUserProfile:", error);
+        
+        if (error instanceof z.ZodError) {
+             return { status: 'error', message: error.errors[0].message };
+        }
+
+        const errorMessage = error instanceof Error ? error.message : "Une erreur inconnue est survenue côté serveur.";
+        return { status: 'error', message: errorMessage };
+    }
 }
