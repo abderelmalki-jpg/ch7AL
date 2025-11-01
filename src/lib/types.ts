@@ -52,8 +52,9 @@ export type Store = {
     id: string;
     name: string;
     address?: string;
-    addedBy?: string;
     city?: string;
+    neighborhood?: string;
+    addedBy?: string;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
     latitude?: number;

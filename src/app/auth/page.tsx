@@ -63,9 +63,13 @@ export default function AuthPage() {
   }
 
   useEffect(() => {
+    // We only want to handle redirect result once on initial component mount.
+    let isMounted = true; 
     if (auth && firestore) {
         getRedirectResult(auth)
             .then(async (result) => {
+                if (!isMounted) return;
+
                 if (result) {
                     // L'utilisateur s'est connecté via la redirection Google
                     await createUserProfile(result.user);
@@ -77,6 +81,7 @@ export default function AuthPage() {
                 }
             })
             .catch((error) => {
+                if (!isMounted) return;
                 console.error("Erreur de redirection Google:", error);
                 const errorMessage = getFirebaseErrorMessage(error.code);
                 toast({
@@ -90,8 +95,18 @@ export default function AuthPage() {
         // If firebase services are not ready, stop trying
         setIsHandlingRedirect(false);
     }
+    
+    return () => { isMounted = false; }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth, firestore]);
 
-  }, [auth, firestore, isUserLoading, router, toast]);
+  // Si l'utilisateur est déjà connecté, le rediriger
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        router.replace('/dashboard');
+    }
+  }, [isUserLoading, user, router]);
+
 
   // Affiche un loader tant que Firebase vérifie l'état d'authentification
   // ou qu'on gère une potentielle redirection
@@ -102,7 +117,7 @@ export default function AuthPage() {
       </div>
     );
   }
-
+  
   // Si on a fini de vérifier et qu'il n'y a pas d'utilisateur, on affiche le formulaire
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">

@@ -187,6 +187,14 @@
           "type": "string",
           "description": "Full address of the store."
         },
+        "city": {
+          "type": "string",
+          "description": "City where the store is located."
+        },
+        "neighborhood": {
+          "type": "string",
+          "description": "Neighborhood where the store is located."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp indicating when the store was added.",

@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -24,6 +25,8 @@ const PriceSchema = z.object({
   price: z.number().positive('Le prix doit être un nombre positif.'),
   storeName: z.string().min(1, 'Le nom du magasin est requis.'),
   address: z.string().optional(),
+  city: z.string().optional(),
+  neighborhood: z.string().optional(),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
   brand: z.string().optional(),
@@ -64,6 +67,8 @@ export async function addPrice(
     price,
     storeName,
     address,
+    city,
+    neighborhood,
     latitude,
     longitude,
     brand,
@@ -91,6 +96,8 @@ export async function addPrice(
         transaction.set(storeRef, {
           name: storeName.trim(),
           address: address || '',
+          city: city || '',
+          neighborhood: neighborhood || '',
           latitude: latitude || null,
           longitude: longitude || null,
           createdAt: timestamp,

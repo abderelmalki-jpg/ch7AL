@@ -34,6 +34,8 @@ export function AddProductForm() {
     const [category, setCategory] = useState('');
     const [photoDataUri, setPhotoDataUri] = useState('');
     const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [neighborhood, setNeighborhood] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
     const [barcode, setBarcode] = useState('');
@@ -180,6 +182,8 @@ export function AddProductForm() {
                     price: Number(price),
                     storeName,
                     address,
+                    city,
+                    neighborhood,
                     latitude,
                     longitude,
                     brand,
@@ -217,8 +221,14 @@ export function AddProductForm() {
         }
 
         setIsLocating(true);
+        const geoTimeout = setTimeout(() => {
+            setIsLocating(false);
+            toast({ variant: 'destructive', title: 'Timeout', description: 'Impossible d\'obtenir la localisation.' });
+        }, 10000); // 10 seconds timeout
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
+                clearTimeout(geoTimeout);
                 const { latitude, longitude } = position.coords;
                 setLatitude(latitude);
                 setLongitude(longitude);
@@ -227,10 +237,19 @@ export function AddProductForm() {
                 toast({ title: 'Localisation obtenue !' });
             },
             () => {
+                clearTimeout(geoTimeout);
                 setIsLocating(false);
                 toast({ variant: 'destructive', title: 'Erreur de localisation' });
-            }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
+    };
+    
+    const stopLocating = () => {
+        setIsLocating(false);
+        // We can't actually stop the browser's getCurrentPosition,
+        // but we can stop our UI from being in a loading state.
+        toast({ title: 'Recherche de localisation annulée.' });
     };
 
     const removeImage = () => {
@@ -354,21 +373,37 @@ export function AddProductForm() {
                         </div>
                     </div>
 
+                     <div className="space-y-2">
+                        <Label htmlFor="storeName">Lieu (Hanout)</Label>
+                        <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
+                        {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="storeName">Lieu (Hanout)</Label>
-                            <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
-                            {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
+                            <Label htmlFor="city">Ville</Label>
+                            <Input id="city" name="city" placeholder="ex: Rabat" value={city} onChange={e => setCity(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="address">Adresse (Optionnel)</Label>
-                            <div className="flex gap-2">
-                                <Input id="address" name="address" placeholder="Adresse du magasin" value={address} onChange={(e) => setAddress(e.target.value)} />
-                                <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
-                                    {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
-                                    <span className="sr-only">Géolocaliser</span>
+                            <Label htmlFor="neighborhood">Quartier</Label>
+                            <Input id="neighborhood" name="neighborhood" placeholder="ex: Agdal" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="address">Adresse ou point de repère</Label>
+                        <div className="flex gap-2">
+                            <Input id="address" name="address" placeholder="Près de la mosquée, etc." value={address} onChange={(e) => setAddress(e.target.value)} />
+                             <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
+                                {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
+                                <span className="sr-only">Géolocaliser</span>
+                            </Button>
+                             {isLocating && (
+                                <Button type="button" variant="ghost" size="icon" onClick={stopLocating}>
+                                    <X className="h-4 w-4" />
+                                    <span className="sr-only">Arrêter</span>
                                 </Button>
-                            </div>
+                            )}
                         </div>
                     </div>
 
