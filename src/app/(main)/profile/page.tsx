@@ -4,8 +4,10 @@
 import React, { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from 'next/navigation';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import Image from "next/image";
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { updateProfile as updateAuthProfile } from 'firebase/auth';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +23,6 @@ import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { changeProfilePicture, updateUserProfile } from "./actions";
 
 const menuItems = [
     { id: 'settings', icon: Settings, text: 'Paramètres', href: '/settings' },
@@ -37,6 +38,7 @@ export default function ProfilePage() {
 
     const auth = useAuth();
     const firestore = useFirestore();
+    const storage = firestore ? getStorage(firestore.app) : null;
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const { toast } = useToast();
@@ -90,18 +92,21 @@ export default function ProfilePage() {
     };
 
     const handleSaveName = async () => {
-        if (!user || displayName === userProfile?.name) {
+        if (!user || displayName === userProfile?.name || !firestore) {
             setIsEditingName(false);
             return;
         }
 
         startSavingNameTransition(async () => {
-            const result = await updateUserProfile({ userId: user.uid, name: displayName });
-            if (result.status === 'success') {
-                toast({ title: 'Succès !', description: result.message });
+            try {
+                // Update both Auth and Firestore
+                await updateAuthProfile(user, { displayName: displayName });
+                await updateDoc(doc(firestore, 'users', user.uid), { name: displayName });
+                toast({ title: 'Succès !', description: 'Votre nom a été mis à jour.' });
                 setIsEditingName(false);
-            } else {
-                toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+            } catch (error) {
+                console.error("Error updating name:", error);
+                toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de mettre à jour le nom.' });
             }
         });
     }
@@ -118,13 +123,31 @@ export default function ProfilePage() {
     };
     
     const handleUploadConfirm = async () => {
-        if (!newPhotoDataUri || !user) return;
+        if (!newPhotoDataUri || !user || !storage || !firestore) return;
+        
         startUploadingTransition(async () => {
-            const result = await changeProfilePicture({ userId: user.uid, dataUri: newPhotoDataUri });
-            if (result.status === 'success') {
-                toast({ title: 'Succès !', description: result.message });
+            try {
+                const mimeType = newPhotoDataUri.substring("data:".length, newPhotoDataUri.indexOf(";base64"));
+                const fileExtension = mimeType.split('/')[1] || 'jpg';
+                const imagePath = `profile-pictures/${user.uid}/profile.${fileExtension}`;
+                const imageRef = storageRef(storage, imagePath);
+
+                const snapshot = await uploadString(imageRef, newPhotoDataUri, 'data_url');
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // Add a timestamp to bust cache
+                const finalUrl = `${downloadURL}?t=${new Date().getTime()}`;
+
+                // Update Auth profile
+                await updateAuthProfile(user, { photoURL: finalUrl });
+                
+                // Update Firestore profile
+                await updateDoc(doc(firestore, 'users', user.uid), { photoURL: finalUrl });
+
+                toast({ title: 'Succès !', description: "Photo de profil mise à jour." });
                 setNewPhotoDataUri(null); // Close the editing UI
-            } else {
+            } catch (error) {
+                 console.error("Error uploading profile picture:", error);
                  toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de téléverser la photo.' });
             }
         });
@@ -324,3 +347,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
