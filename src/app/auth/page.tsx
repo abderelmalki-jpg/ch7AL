@@ -7,7 +7,7 @@ import { AuthForm } from "./auth-form";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useUser, useAuth, useFirestore } from '@/firebase';
-import { getRedirectResult, type User } from 'firebase/auth';
+import { isSignInWithEmailLink, signInWithEmailLink, type User } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -15,19 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const getFirebaseErrorMessage = (errorCode: string) => {
     switch (errorCode) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-            return 'Email ou mot de passe incorrect.';
         case 'auth/invalid-email':
             return 'Cette adresse email est invalide.';
-        case 'auth/email-already-in-use':
-            return 'Cette adresse email est déjà utilisée par un autre compte.';
-        case 'auth/weak-password':
-            return 'Le mot de passe est trop faible. Il doit contenir au moins 6 caractères.';
-        case 'auth/popup-closed-by-user':
-             return "Le processus de connexion a été annulé.";
-        case 'auth/unauthorized-domain':
-             return 'Le domaine n\'est pas autorisé pour l\'authentification. Veuillez vérifier votre configuration Firebase.';
+        case 'auth/user-not-found':
+             return 'Aucun compte n\'est associé à cet email.';
+        case 'auth/invalid-action-code':
+            return 'Le lien de connexion est invalide ou a expiré. Veuillez en demander un nouveau.';
         default:
             return 'Une erreur est survenue. Veuillez réessayer.';
     }
@@ -63,36 +56,33 @@ export default function AuthPage() {
   }
 
   useEffect(() => {
-    // We only want to handle redirect result once on initial component mount.
     let isMounted = true; 
-    if (auth && firestore) {
-        getRedirectResult(auth)
-            .then(async (result) => {
-                if (!isMounted) return;
+    if (auth && firestore && isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem('emailForSignIn');
+      if (!email) {
+        email = window.prompt('Veuillez fournir votre email pour confirmation');
+      }
 
-                if (result) {
-                    // L'utilisateur s'est connecté via la redirection Google
-                    await createUserProfile(result.user);
-                    toast({ title: 'Connexion réussie avec Google !' });
-                    router.replace('/dashboard');
-                } else {
-                    // Pas de redirection, l'utilisateur est sur la page normalement
-                    setIsHandlingRedirect(false);
-                }
-            })
-            .catch((error) => {
-                if (!isMounted) return;
-                console.error("Erreur de redirection Google:", error);
-                const errorMessage = getFirebaseErrorMessage(error.code);
-                toast({
-                    variant: 'destructive',
-                    title: 'Erreur de connexion',
-                    description: errorMessage
-                });
-                setIsHandlingRedirect(false);
-            });
-    } else if (!isUserLoading) {
-        // If firebase services are not ready, stop trying
+      if (email) {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then(async (result) => {
+            if (!isMounted) return;
+            window.localStorage.removeItem('emailForSignIn');
+            await createUserProfile(result.user);
+            toast({ title: 'Connexion réussie !' });
+            router.replace('/dashboard');
+          })
+          .catch((error) => {
+            if (!isMounted) return;
+            console.error("Erreur de connexion via lien:", error);
+            const errorMessage = getFirebaseErrorMessage(error.code);
+            toast({ variant: 'destructive', title: 'Erreur de connexion', description: errorMessage });
+            setIsHandlingRedirect(false);
+          });
+      } else {
+        setIsHandlingRedirect(false);
+      }
+    } else {
         setIsHandlingRedirect(false);
     }
     
@@ -100,7 +90,6 @@ export default function AuthPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth, firestore]);
 
-  // Si l'utilisateur est déjà connecté, le rediriger
   useEffect(() => {
     if (!isUserLoading && user) {
         router.replace('/dashboard');
@@ -108,17 +97,15 @@ export default function AuthPage() {
   }, [isUserLoading, user, router]);
 
 
-  // Affiche un loader tant que Firebase vérifie l'état d'authentification
-  // ou qu'on gère une potentielle redirection
   if (isUserLoading || isHandlingRedirect) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
         <Loader2 className="h-12 w-12 animate-spin text-white" />
+        <p className="text-white mt-4">Vérification...</p>
       </div>
     );
   }
   
-  // Si on a fini de vérifier et qu'il n'y a pas d'utilisateur, on affiche le formulaire
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
       <div className="w-full max-w-md">
@@ -128,7 +115,7 @@ export default function AuthPage() {
         <Card className="shadow-2xl rounded-2xl">
             <CardHeader className="text-center">
                 <CardTitle className="font-headline text-3xl">Rejoignez la communauté</CardTitle>
-                <CardDescription>Créez un compte ou connectez-vous</CardDescription>
+                <CardDescription>Recevez un lien magique pour vous connecter</CardDescription>
             </CardHeader>
             <CardContent>
                 <AuthForm />
