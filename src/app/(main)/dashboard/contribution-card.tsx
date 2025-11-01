@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, addDoc, serverTimestamp } from 'firebase/firestore';
-import type { Contribution, Comment as CommentType, Price } from '@/lib/types';
+import { collection, query, orderBy, doc, addDoc, serverTimestamp, getDoc, type Unsubscribe } from 'firebase/firestore';
+import type { Contribution, Comment as CommentType, Price, Store, UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -42,24 +42,77 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
   const [isVoting, startVoteTransition] = useTransition();
   const [open, setOpen] = useState(false);
 
+  // States for detailed data fetching inside the dialog
+  const [detailedContribution, setDetailedContribution] = useState<Contribution>(contribution);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
   // Memoized references
   const priceRef = useMemoFirebase(() => open && firestore ? doc(firestore, 'prices', contribution.id) : null, [open, firestore, contribution.id]);
   const commentsQuery = useMemoFirebase(() => open && firestore ? query(collection(firestore, 'prices', contribution.id, 'comments'), orderBy('createdAt', 'asc')) : null, [open, firestore, contribution.id]);
 
-  // Data fetching hooks
-  const { data: priceData, isLoading: isLoadingPrice } = useDoc<Price>(priceRef);
+  // Data fetching hooks for real-time updates inside the dialog
+  const { data: priceData } = useDoc<Price>(priceRef);
   const { data: comments, isLoading: isLoadingComments } = useCollection<CommentType>(commentsQuery);
   
-  const upvotes = useMemo(() => priceData?.upvotes || contribution.upvotes || [], [priceData, contribution.upvotes]);
-  const downvotes = useMemo(() => priceData?.downvotes || contribution.downvotes || [], [priceData, contribution.downvotes]);
+  useEffect(() => {
+    // Update detailed contribution when real-time price data changes
+    if (priceData) {
+      setDetailedContribution(prev => ({ ...prev, ...priceData }));
+    }
+  }, [priceData]);
+
+
+  // This effect fetches full details when the dialog opens
+  useEffect(() => {
+    let unsubscribe: Unsubscribe | undefined;
+    if (open && firestore) {
+      setIsLoadingDetails(true);
+
+      const priceDocRef = doc(firestore, 'prices', contribution.id);
+      
+      unsubscribe = onSnapshot(priceDocRef, async (priceSnap) => {
+        if (priceSnap.exists()) {
+          const price = priceSnap.data() as Price;
+
+          const [productSnap, storeSnap, userSnap] = await Promise.all([
+            price.productId ? getDoc(doc(firestore, 'products', price.productId)) : Promise.resolve(null),
+            price.storeId ? getDoc(doc(firestore, 'stores', price.storeId)) : Promise.resolve(null),
+            price.userId ? getDoc(doc(firestore, 'users', price.userId)) : Promise.resolve(null),
+          ]);
+          
+          const updatedContribution: Partial<Contribution> = {
+            ...price,
+            productName: productSnap?.exists() ? (productSnap.data() as Product).name : detailedContribution.productName,
+            storeName: storeSnap?.exists() ? (storeSnap.data() as Store).name : detailedContribution.storeName,
+            user: userSnap?.exists() ? userSnap.data() as UserProfile : detailedContribution.user,
+            product: productSnap?.exists() ? productSnap.data() as Product : detailedContribution.product,
+            store: storeSnap?.exists() ? storeSnap.data() as Store : detailedContribution.store,
+            imageUrl: productSnap?.exists() ? (productSnap.data() as Product).imageUrl : detailedContribution.imageUrl,
+          };
+          
+          setDetailedContribution(prev => ({...prev, ...updatedContribution}));
+        }
+        setIsLoadingDetails(false);
+      });
+    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, firestore, contribution.id]);
+
+
+  const upvotes = useMemo(() => detailedContribution?.upvotes || [], [detailedContribution]);
+  const downvotes = useMemo(() => detailedContribution?.downvotes || [], [detailedContribution]);
+  const voteScore = useMemo(() => upvotes.length - downvotes.length, [upvotes, downvotes]);
 
   const hasUpvoted = user && upvotes.includes(user.uid);
   const hasDownvoted = user && downvotes.includes(user.uid);
 
   const storeForMap = [{
-    id: contribution.id,
-    name: contribution.storeName,
-    position: { lat: contribution.latitude, lng: contribution.longitude }
+    id: detailedContribution.id,
+    name: detailedContribution.storeName,
+    position: { lat: detailedContribution.latitude, lng: detailedContribution.longitude }
   }];
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -129,7 +182,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div>
-                <Link href={`/product/${contribution.product?.id}`} className="hover:underline">
+                <Link href={`/product/${contribution.product?.id}`} className="hover:underline" onClick={e => e.stopPropagation()}>
                   <h3 className="font-semibold text-primary leading-tight">
                     {contribution.productName}
                   </h3>
@@ -159,14 +212,14 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{contribution.productName}</DialogTitle>
+          <DialogTitle>{detailedContribution.productName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
-          {contribution.imageUrl ? (
+          {detailedContribution.imageUrl ? (
             <div className="relative aspect-video w-full rounded-lg overflow-hidden border">
                 <Image 
-                    src={contribution.imageUrl} 
-                    alt={contribution.productName} 
+                    src={detailedContribution.imageUrl} 
+                    alt={detailedContribution.productName} 
                     fill 
                     className="object-contain" 
                 />
@@ -178,8 +231,8 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
           )}
           <div className="flex justify-between items-center bg-muted p-3 rounded-lg">
             <div>
-              <p className="text-sm text-accent">{contribution.storeName}</p>
-              <p className="text-2xl font-bold text-primary">{contribution.price.toFixed(2)} DH</p>
+              <p className="text-sm text-accent">{detailedContribution.storeName}</p>
+              <p className="text-2xl font-bold text-primary">{detailedContribution.price.toFixed(2)} DH</p>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => onVote('upvote')} disabled={isVoting} className={cn('h-10 w-12 flex gap-1', hasUpvoted && 'bg-green-100 text-green-600 border-green-300 hover:bg-green-200 hover:text-green-700')}>
@@ -228,7 +281,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
                       <div className="flex items-baseline justify-between">
                          <p className="font-semibold text-sm">{comment.userName}</p>
                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date((comment.createdAt as any).seconds * 1000), { locale: fr, addSuffix: true })}
+                            {comment.createdAt ? formatDistanceToNow(new Date((comment.createdAt as any).seconds * 1000), { locale: fr, addSuffix: true }) : ''}
                          </p>
                       </div>
                       <p className="text-sm">{comment.text}</p>

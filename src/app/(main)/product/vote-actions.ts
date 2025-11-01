@@ -3,7 +3,6 @@
 
 import { doc, runTransaction, type Firestore } from 'firebase/firestore';
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -78,8 +77,7 @@ export async function handleVote(
         return updatedData; // Return the data for context in case of error
     })
     .then(() => {
-        revalidatePath('/dashboard');
-        revalidatePath(`/product/${priceId}`);
+        // No need to revalidate paths, real-time listener will update the UI
         return { status: 'success' as const, message: 'Vote enregistré !' };
     })
     .catch((error) => {

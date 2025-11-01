@@ -57,8 +57,8 @@ export type Store = {
     addedBy?: string;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
-    latitude?: number;
-    longitude?: number;
+    latitude: number;
+    longitude: number;
 }
 
 export type UserProfile = {
@@ -82,7 +82,7 @@ export type Comment = {
     createdAt: {
         seconds: number;
         nanoseconds: number;
-    } | Date;
+    } | Date | Timestamp;
 }
 
 export type LeaderboardEntry = {
