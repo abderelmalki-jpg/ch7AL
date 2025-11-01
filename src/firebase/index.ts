@@ -4,6 +4,16 @@ import { initializeApp, getApps, getApp, FirebaseApp, FirebaseOptions } from 'fi
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
+// Configuration Firebase fournie par l'utilisateur
+const firebaseConfig = {
+  apiKey: "AIzaSyAJuQu1zUjvst6GevnVUAJe17ew7PhxODs",
+  authDomain: "hanouti-6ce26.firebaseapp.com",
+  projectId: "hanouti-6ce26",
+  storageBucket: "hanouti-6ce26.appspot.com",
+  messagingSenderId: "252246765953",
+  appId: "1:252246765953:web:726dc032c6eeba126bb880"
+};
+
 // A type guard to check if the config has all necessary properties.
 function isValidFirebaseConfig(config: any): config is FirebaseOptions {
     return config &&
@@ -30,37 +40,13 @@ export function initializeFirebase(): { firebaseApp: FirebaseApp | null; auth: A
     return getSdks(app);
   }
 
-  // First, try to use the comprehensive NEXT_PUBLIC_FIREBASE_CONFIG
-  const firebaseConfigEnv = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
-  if (firebaseConfigEnv) {
-    try {
-      const config = JSON.parse(firebaseConfigEnv);
-      if (isValidFirebaseConfig(config)) {
-        const firebaseApp = initializeApp(config);
-        return getSdks(firebaseApp);
-      }
-    } catch (e) {
-      console.error("Failed to parse NEXT_PUBLIC_FIREBASE_CONFIG, falling back to individual vars", e);
-    }
-  }
-
-  // Fallback for local development using individual .env variables
-  const localFirebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  };
-
-  if (isValidFirebaseConfig(localFirebaseConfig)) {
-    const firebaseApp = initializeApp(localFirebaseConfig);
+  if (isValidFirebaseConfig(firebaseConfig)) {
+    const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
   }
 
-  console.error("Firebase initialization failed: No valid configuration found. Ensure Firebase environment variables are set correctly.");
-  // Return null objects if initialization fails completely
+  console.error("Firebase initialization failed: The configuration object is invalid.");
+  // Return null objects if initialization fails
   return { firebaseApp: null, auth: null, firestore: null };
 }
 
