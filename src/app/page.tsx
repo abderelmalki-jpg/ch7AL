@@ -25,8 +25,8 @@ export default function LandingPage() {
             </video>
             
             {/* Overlay for text and button */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-                 <div className="w-full">
+            <div className="absolute inset-0 flex flex-col items-center justify-end p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent sm:justify-center">
+                 <div className="text-center">
                     <div className="flex justify-center mb-4">
                         <Logo className="h-24 w-24" />
                     </div>
@@ -34,7 +34,7 @@ export default function LandingPage() {
                         Ch3rel
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
-                        Comparez .Economisez . Partagez avec la communauté
+                        Comparez . Economisez . Partagez avec la communauté
                     </p>
                     <div className="mt-8">
                       <Link href="/auth">
