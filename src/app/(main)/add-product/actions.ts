@@ -62,6 +62,7 @@ export async function addPrice(
     return { status: 'error', message: 'Données invalides.' };
   }
   
+  // Correction : Créer une version des données SANS l'image pour les logs d'erreur
   const { photoDataUri: _, ...loggableData } = data;
 
 
