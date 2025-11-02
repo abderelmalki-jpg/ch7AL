@@ -214,32 +214,60 @@ export function AddProductForm() {
         });
     }
 
-    const handleGetLocation = () => {
+    const handleGetLocation = async () => {
         if (!navigator.geolocation) {
-            toast({ variant: 'destructive', title: 'Géolocalisation non supportée' });
+            toast({ variant: 'destructive', title: 'Géolocalisation non supportée par votre navigateur.' });
             return;
         }
-
+    
+        // Check for permission status
+        try {
+            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+    
+            if (permissionStatus.state === 'denied') {
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Permission refusée',
+                    description: "Vous devez autoriser la géolocalisation dans les paramètres de votre navigateur." 
+                });
+                return;
+            }
+        } catch (e) {
+            // Some browsers might not support navigator.permissions, we proceed cautiously
+        }
+    
         setIsLocating(true);
-        const geoTimeout = setTimeout(() => {
-            setIsLocating(false);
-            toast({ variant: 'destructive', title: 'Timeout', description: 'Impossible d\'obtenir la localisation.' });
-        }, 10000); // 10 seconds timeout
-
+    
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                clearTimeout(geoTimeout);
+            (position) => { // Success
                 const { latitude, longitude } = position.coords;
                 setLatitude(latitude);
                 setLongitude(longitude);
                 setAddress(`Position GPS : ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-                setIsLocating(false);
                 toast({ title: 'Localisation obtenue !' });
-            },
-            () => {
-                clearTimeout(geoTimeout);
                 setIsLocating(false);
-                toast({ variant: 'destructive', title: 'Erreur de localisation' });
+            },
+            (error) => { // Error
+                let title = 'Erreur de localisation';
+                let description = "Impossible d'obtenir votre position actuelle.";
+    
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        title = 'Permission refusée';
+                        description = "Vous avez refusé l'accès à la géolocalisation.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        title = 'Position non disponible';
+                        description = "Les informations de localisation ne sont pas disponibles.";
+                        break;
+                    case error.TIMEOUT:
+                        title = 'Timeout';
+                        description = "La demande de localisation a expiré.";
+                        break;
+                }
+    
+                toast({ variant: 'destructive', title, description });
+                setIsLocating(false);
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
@@ -247,8 +275,9 @@ export function AddProductForm() {
     
     const stopLocating = () => {
         setIsLocating(false);
-        // We can't actually stop the browser's getCurrentPosition,
-        // but we can stop our UI from being in a loading state.
+        // This is a UI-only stop. The browser's `getCurrentPosition` might still be running in the background,
+        // but we prevent the user from being stuck in a loading state. The success/error callbacks will
+        // still fire if/when they complete, but the UI state is no longer 'locating'.
         toast({ title: 'Recherche de localisation annulée.' });
     };
 
