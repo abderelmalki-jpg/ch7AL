@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useTransition } from 'react';
@@ -11,8 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, MapPin, X, Camera, Zap, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
-import { getStorage } from 'firebase/storage';
+import { useUser } from '@/firebase';
 import { addPrice } from './actions';
 
 
@@ -20,8 +18,6 @@ export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
-    const firestore = useFirestore();
-    const storage = firestore ? getStorage(firestore.app) : null;
     const searchParams = useSearchParams();
 
     const [isSubmittingPrice, startPriceTransition] = useTransition();
@@ -159,9 +155,9 @@ export function AddProductForm() {
         if (!productName) errors.productName = "Le nom du produit est requis.";
         if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
         if (!storeName) errors.storeName = "Le nom du magasin est requis.";
-        if (!user || !firestore || !storage) {
+        if (!user) {
             errors.userId = "Vous devez être connecté pour soumettre un prix.";
-            toast({ variant: 'destructive', title: 'Utilisateur non connecté ou services indisponibles' });
+            toast({ variant: 'destructive', title: 'Utilisateur non connecté' });
         }
 
         setFormErrors(errors);
@@ -187,7 +183,7 @@ export function AddProductForm() {
             };
 
             try {
-                const result = await addPrice(firestore!, storage!, priceData);
+                const result = await addPrice(priceData);
                 
                 if (result.status === 'success') {
                     toast({
@@ -423,7 +419,7 @@ export function AddProductForm() {
                         </div>
                     </div>
 
-                    <Button type="submit" disabled={isSubmittingPrice || !user || !firestore} className="w-full text-lg h-12">
+                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
                         {isSubmittingPrice ? (
                             <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />

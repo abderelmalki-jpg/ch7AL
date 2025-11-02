@@ -1,19 +1,14 @@
-
 'use server';
 
 import {
-  doc,
-  runTransaction,
   increment,
-  type Firestore,
-  collection,
   serverTimestamp
 } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { z } from 'zod';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { adminDb } from '@/firebase/server';
+import { adminDb, adminStorage } from '@/firebase/server';
 
 // Schéma de validation pour les données du formulaire
 const PriceSchema = z.object({
@@ -35,19 +30,29 @@ const PriceSchema = z.object({
 type PriceInput = z.infer<typeof PriceSchema>;
 
 // Fonction pour uploader l'image
-async function uploadImage(storage: FirebaseStorage, dataUri: string, userId: string): Promise<string> {
-  const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
-  const imageRef = ref(storage, imagePath);
-  
-  const snapshot = await uploadString(imageRef, dataUri, 'data_url');
-  const downloadURL = await getDownloadURL(snapshot.ref);
-  return downloadURL;
+async function uploadImage(dataUri: string, userId: string): Promise<string> {
+    if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
+    
+    const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
+    const imageRef = ref(adminStorage.bucket().file(imagePath).storage, imagePath);
+
+    // Le SDK Admin n'a pas uploadString, nous devons donc manipuler le buffer
+    const base64EncodedImageString = dataUri.split(';base64,').pop();
+    if (!base64EncodedImageString) {
+        throw new Error('Data URI invalide');
+    }
+    const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
+    
+    await adminStorage.bucket().file(imagePath).save(imageBuffer, {
+        metadata: { contentType: 'image/jpeg' },
+    });
+    
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
 }
 
 // Fonction principale pour ajouter un prix
 export async function addPrice(
-  firestore: Firestore,
-  storage: FirebaseStorage,
   data: PriceInput
 ): Promise<{ status: 'success' | 'error'; message: string }> {
 
@@ -56,9 +61,12 @@ export async function addPrice(
     return { status: 'error', message: 'Données invalides.' };
   }
 
+  if (!adminDb) {
+      return { status: 'error', message: "La base de données Admin n'est pas disponible." };
+  }
+
   const {
     userId,
-    userEmail,
     productName,
     price,
     storeName,
@@ -75,17 +83,12 @@ export async function addPrice(
   try {
     let imageUrl: string | undefined = undefined;
     if (photoDataUri && photoDataUri.startsWith('data:image')) {
-      imageUrl = await uploadImage(storage, photoDataUri, userId);
-    }
-    
-    if (!adminDb) {
-      throw new Error("L'admin Firestore n'est pas initialisé.");
+      imageUrl = await uploadImage(photoDataUri, userId);
     }
     
     await adminDb.runTransaction(async (transaction) => {
       const timestamp = serverTimestamp();
 
-      // IMPORTANT: Use product name in lowercase as the document ID for consistency
       const productDocId = productName.trim().toLowerCase();
 
       const storeRef = adminDb.collection('stores').doc(storeName.trim());
@@ -110,7 +113,7 @@ export async function addPrice(
       
       if (!productSnap.exists) {
         const productData: any = {
-            name: productName.trim(), // Keep original casing for display
+            name: productName.trim(),
             brand: brand || '',
             category: category || '',
             createdAt: timestamp,
@@ -137,7 +140,6 @@ export async function addPrice(
       });
 
       const userRef = adminDb.collection('users').doc(userId);
-      // Use Firestore's special FieldValue for atomic increments
       const FieldValue = require('firebase-admin').firestore.FieldValue;
       transaction.update(userRef, {
         points: FieldValue.increment(10),
@@ -149,7 +151,6 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // We remove the large data URI from the log to prevent call stack errors
     const { photoDataUri: _, ...loggableData } = data;
     
     if (error.code === 'permission-denied') {
