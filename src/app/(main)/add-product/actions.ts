@@ -1,15 +1,11 @@
 
 'use server';
 
-import {
-  increment,
-  serverTimestamp
-} from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { getAdminServices } from '@/firebase/server';
 import { z } from 'zod';
+import { FieldValue } from 'firebase-admin/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { getAdminServices } from '@/firebase/server';
 
 // Schéma de validation pour les données du formulaire
 const PriceSchema = z.object({
@@ -30,13 +26,13 @@ const PriceSchema = z.object({
 
 type PriceInput = z.infer<typeof PriceSchema>;
 
-// Fonction pour uploader l'image
+// Fonction pour uploader l'image en utilisant le SDK Admin
 async function uploadImage(dataUri: string, userId: string): Promise<string> {
     const { adminStorage } = getAdminServices();
     if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
     
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
-    const imageRef = ref(adminStorage.bucket().file(imagePath).storage, imagePath);
+    const imageFile = adminStorage.bucket().file(imagePath);
 
     const base64EncodedImageString = dataUri.split(';base64,').pop();
     if (!base64EncodedImageString) {
@@ -44,26 +40,27 @@ async function uploadImage(dataUri: string, userId: string): Promise<string> {
     }
     const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
     
-    await adminStorage.bucket().file(imagePath).save(imageBuffer, {
+    await imageFile.save(imageBuffer, {
         metadata: { contentType: 'image/jpeg' },
+        public: true, // Rendre le fichier publiquement lisible
     });
     
-    const downloadURL = await getDownloadURL(imageRef);
-    return downloadURL;
+    // Retourner l'URL publique
+    return `https://storage.googleapis.com/${adminStorage.bucket().name}/${imagePath}`;
 }
+
 
 // Fonction principale pour ajouter un prix
 export async function addPrice(
   data: PriceInput
 ): Promise<{ status: 'success' | 'error'; message: string }> {
 
-  const { adminDb } = getAdminServices();
-  
   const validatedFields = PriceSchema.safeParse(data);
   if (!validatedFields.success) {
     return { status: 'error', message: 'Données invalides.' };
   }
 
+  const { adminDb } = getAdminServices();
   if (!adminDb) {
       return { status: 'error', message: "La base de données Admin n'est pas disponible." };
   }
@@ -90,9 +87,11 @@ export async function addPrice(
     }
     
     await adminDb.runTransaction(async (transaction) => {
-      const timestamp = serverTimestamp();
+      // Admin SDK n'a pas serverTimestamp(), on utilise FieldValue
+      const timestamp = FieldValue.serverTimestamp();
 
-      const productDocId = productName.trim().toLowerCase();
+      // Utiliser un ID de produit normalisé pour éviter les doublons dus à la casse
+      const productDocId = productName.trim().toLowerCase().replace(/\s+/g, '-');
 
       const storeRef = adminDb.collection('stores').doc(storeName.trim());
       const storeSnap = await transaction.get(storeRef);
@@ -100,9 +99,9 @@ export async function addPrice(
       if (!storeSnap.exists) {
         transaction.set(storeRef, {
           name: storeName.trim(),
-          address: address || '',
-          city: city || '',
-          neighborhood: neighborhood || '',
+          address: address || null,
+          city: city || null,
+          neighborhood: neighborhood || null,
           latitude: latitude || null,
           longitude: longitude || null,
           createdAt: timestamp,
@@ -114,19 +113,24 @@ export async function addPrice(
       const productRef = adminDb.collection('products').doc(productDocId);
       const productSnap = await transaction.get(productRef);
       
+      const productData: any = {
+          name: productName.trim(),
+          brand: brand || '',
+          category: category || '',
+          updatedAt: timestamp,
+          uploadedBy: userId,
+      };
+
       if (!productSnap.exists) {
-        const productData: any = {
-            name: productName.trim(),
-            brand: brand || '',
-            category: category || '',
-            createdAt: timestamp,
-            updatedAt: timestamp,
-            uploadedBy: userId,
-        };
+        productData.createdAt = timestamp;
         if(imageUrl) productData.imageUrl = imageUrl;
         transaction.set(productRef, productData);
-      } else if (imageUrl && !productSnap.data()?.imageUrl) {
-        transaction.update(productRef, { imageUrl: imageUrl, updatedAt: timestamp });
+      } else {
+        // Mettre à jour l'image seulement si elle n'existait pas
+        if (imageUrl && !productSnap.data()?.imageUrl) {
+            productData.imageUrl = imageUrl;
+        }
+        transaction.update(productRef, productData);
       }
 
       const priceRef = adminDb.collection('prices').doc(); // Auto-generate ID
@@ -143,7 +147,6 @@ export async function addPrice(
       });
 
       const userRef = adminDb.collection('users').doc(userId);
-      const FieldValue = require('firebase-admin').firestore.FieldValue;
       transaction.update(userRef, {
         points: FieldValue.increment(10),
         contributions: FieldValue.increment(1),
@@ -151,12 +154,14 @@ export async function addPrice(
     });
 
     return { status: 'success', message: 'Prix ajouté avec succès !' };
+
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
+    // Ne pas logguer le data URI de l'image
     const { photoDataUri: _, ...loggableData } = data;
     
-    if (error.code === 'permission-denied') {
+    if (error.code === 'permission-denied' || (error.code === 7 && error.message.includes("permission-denied"))) {
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,
             operation: 'write',
@@ -165,7 +170,7 @@ export async function addPrice(
         errorEmitter.emit('permission-error', permissionError);
     }
 
-    const errorMessage = error.message || "Une erreur inconnue est survenue.";
+    const errorMessage = error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";
     return { status: 'error', message: errorMessage };
   }
 }
