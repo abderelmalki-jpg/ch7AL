@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, addDoc, serverTimestamp, getDoc, type Unsubscribe } from 'firebase/firestore';
-import type { Contribution, Comment as CommentType, Price, Store, UserProfile } from '@/lib/types';
+import { collection, query, orderBy, doc, addDoc, serverTimestamp, getDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import type { Contribution, Comment as CommentType, Price, Store, UserProfile, Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -70,7 +70,7 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
 
       const priceDocRef = doc(firestore, 'prices', contribution.id);
       
-      unsubscribe = onSnapshot(priceDocRef, async (priceSnap) => {
+      const unsubscribePrice = onSnapshot(priceDocRef, async (priceSnap) => {
         if (priceSnap.exists()) {
           const price = priceSnap.data() as Price;
 
@@ -94,10 +94,11 @@ export function ContributionCard({ contribution, apiKey }: ContributionCardProps
         }
         setIsLoadingDetails(false);
       });
+      
+      return () => {
+        unsubscribePrice();
+      };
     }
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, firestore, contribution.id]);
 
