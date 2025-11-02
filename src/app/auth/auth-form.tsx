@@ -1,100 +1,194 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/firebase/provider";
-import { sendSignInLinkToEmail } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Mail, KeyRound, User } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  handleEmailSignUp,
+  handleEmailSignIn,
+  handleMagicLinkSignIn
+} from "@/firebase/non-blocking-login";
 
 const getFirebaseErrorMessage = (errorCode: string) => {
-    switch (errorCode) {
-        case 'auth/invalid-email':
-            return 'Cette adresse email est invalide.';
-        case 'auth/missing-continue-uri':
-             return 'Une URL de redirection doit être fournie.';
-        case 'auth/operation-not-allowed':
-            return "La connexion par lien magique n'est pas activée. Veuillez l'activer dans la console Firebase.";
-        default:
-            return 'Une erreur est survenue. Veuillez réessayer.';
-    }
-}
-
-const actionCodeSettings = {
-  // L'URL doit être celle de votre page d'authentification
-  url: process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}/auth` : 'http://localhost:9002/auth',
-  handleCodeInApp: true,
+  switch (errorCode) {
+    case 'auth/invalid-email':
+      return 'Cette adresse email est invalide.';
+    case 'auth/user-not-found':
+      return 'Aucun compte n\'est associé à cet email.';
+    case 'auth/wrong-password':
+      return 'Le mot de passe est incorrect.';
+    case 'auth/weak-password':
+      return 'Le mot de passe doit contenir au moins 6 caractères.';
+    case 'auth/email-already-in-use':
+      return 'Cette adresse email est déjà utilisée par un autre compte.';
+    case 'auth/operation-not-allowed':
+      return "Ce mode de connexion n'est pas activé. Veuillez contacter l'administrateur.";
+    default:
+      return 'Une erreur est survenue. Veuillez réessayer.';
+  }
 };
 
+type AuthMode = 'signin' | 'signup';
+type AuthMethod = 'password' | 'magiclink';
 
 export function AuthForm() {
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [isPending, startTransition] = useTransition();
   const [isLinkSent, setIsLinkSent] = useState(false);
-  
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('password');
+
   const auth = useAuth();
   const { toast } = useToast();
-  
+
   const handleAuthAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    startTransition(async () => {
+      try {
+        if (authMode === 'signup') {
+          await handleEmailSignUp(auth, username, email, password);
+          toast({ title: 'Inscription réussie !', description: 'Bienvenue ! Vous êtes maintenant connecté.' });
+        } else {
+          await handleEmailSignIn(auth, email, password);
+          toast({ title: 'Connexion réussie !' });
+        }
+        // La redirection sera gérée par le layout principal
+      } catch (error: any) {
+        console.error("Auth Error:", error, error.code);
+        const errorMessage = getFirebaseErrorMessage(error.code);
+        toast({ variant: 'destructive', title: 'Erreur', description: errorMessage });
+      }
+    });
+  };
+
+  const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !email) return;
 
-    setIsLoading(true);
+    startTransition(async () => {
+        try {
+            await handleMagicLinkSignIn(auth, email);
+            setIsLinkSent(true);
+            toast({
+                title: 'Lien envoyé !',
+                description: `Un lien de connexion a été envoyé à ${email}.`,
+            });
+        } catch (error: any) {
+            console.error("Auth Error:", error, error.code);
+            const errorMessage = getFirebaseErrorMessage(error.code);
+            toast({ variant: 'destructive', title: 'Erreur d\'envoi', description: errorMessage });
+        }
+    });
+  }
+  
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setUsername('');
     setIsLinkSent(false);
-
-    try {
-        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-        window.localStorage.setItem('emailForSignIn', email);
-        setIsLinkSent(true);
-        toast({
-            title: 'Lien envoyé !',
-            description: `Un lien de connexion a été envoyé à ${email}.`,
-        });
-    } catch (error: any) {
-        console.error("Auth Error:", error, error.code);
-        const errorMessage = getFirebaseErrorMessage(error.code);
-        toast({ variant: 'destructive', title: 'Erreur d\'envoi', description: errorMessage });
-    } finally {
-        setIsLoading(false);
-    }
   }
 
-  if (isLinkSent) {
-    return (
-        <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
-            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-green-800">Vérifiez votre boîte mail</h3>
-            <p className="text-green-700 mt-2">
-                Nous avons envoyé un lien de connexion magique à <strong className="font-bold">{email}</strong>.
-            </p>
+  const renderPasswordForm = () => (
+    <form className="space-y-4" onSubmit={handleAuthAction}>
+      {authMode === 'signup' && (
+        <div className="space-y-2">
+          <Label htmlFor="username">Nom d'utilisateur</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input id="username" type="text" placeholder="Votre nom" required value={username} onChange={e => setUsername(e.target.value)} disabled={isPending} className="pl-9" />
+          </div>
         </div>
+      )}
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input id="email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isPending} className="pl-9" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Mot de passe</Label>
+        <div className="relative">
+          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input id="password" type="password" placeholder="••••••••" required value={password} onChange={e => setPassword(e.target.value)} disabled={isPending} className="pl-9" />
+        </div>
+      </div>
+      <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isPending || !auth}>
+        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {authMode === 'signin' ? 'Se connecter' : 'Créer un compte'}
+      </Button>
+    </form>
+  );
+
+  const renderMagicLinkForm = () => {
+     if (isLinkSent) {
+        return (
+            <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-green-800">Vérifiez votre boîte mail</h3>
+                <p className="text-green-700 mt-2">
+                    Nous avons envoyé un lien de connexion magique à <strong className="font-bold">{email}</strong>.
+                </p>
+                <Button variant="link" onClick={() => {setIsLinkSent(false); setEmail('')}}>Envoyer à une autre adresse</Button>
+            </div>
+        )
+    }
+    return (
+         <form className="space-y-4" onSubmit={handleSendMagicLink}>
+            <div className="space-y-2">
+            <Label htmlFor="magic-email">Email</Label>
+            <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="magic-email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isPending} className="pl-9" />
+            </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={isPending || !auth || !email}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Envoyer le lien magique
+            </Button>
+        </form>
     )
   }
 
   return (
     <div>
-      <form className="space-y-4" onSubmit={handleAuthAction}>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            placeholder="email@example.com" 
-            required 
-            value={email} 
-            onChange={e => setEmail(e.target.value)} 
-            disabled={isLoading} 
-          />
+        <div className="flex bg-muted p-1 rounded-lg mb-4">
+            <button 
+                onClick={() => { setAuthMode('signin'); resetForm(); }}
+                className={cn("flex-1 p-2 rounded-md text-sm font-medium", authMode === 'signin' && "bg-background shadow-sm")}>
+                Se connecter
+            </button>
+            <button 
+                onClick={() => { setAuthMode('signup'); resetForm(); }}
+                className={cn("flex-1 p-2 rounded-md text-sm font-medium", authMode === 'signup' && "bg-background shadow-sm")}>
+                S'inscrire
+            </button>
         </div>
-        
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading || !auth || !email}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Envoyer le lien de connexion
-        </Button>
-      </form>
+
+      {authMethod === 'password' ? renderPasswordForm() : renderMagicLinkForm()}
+      
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Ou</span>
+        </div>
+      </div>
+
+      <Button variant="outline" className="w-full" onClick={() => setAuthMethod(authMethod === 'password' ? 'magiclink' : 'password')}>
+        {authMethod === 'password' ? "Se connecter avec un lien magique" : "Se connecter avec un mot de passe"}
+      </Button>
     </div>
   );
 }

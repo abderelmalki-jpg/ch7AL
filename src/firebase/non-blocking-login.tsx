@@ -1,31 +1,34 @@
+
 'use client';
 import {
-  Auth, // Import Auth type for type hinting
+  Auth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithRedirect,
-  // Assume getAuth and app are initialized elsewhere
+  updateProfile,
+  sendSignInLinkToEmail
 } from 'firebase/auth';
 
-/** Initiate email/password sign-up (non-blocking). */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): void {
-  // CRITICAL: Call createUserWithEmailAndPassword directly. Do NOT use 'await createUserWithEmailAndPassword(...)'.
-  createUserWithEmailAndPassword(authInstance, email, password);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+const actionCodeSettings = {
+  url: process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}/auth` : 'http://localhost:9002/auth',
+  handleCodeInApp: true,
+};
+
+/** Initiate email/password sign-up */
+export async function handleEmailSignUp(authInstance: Auth, username: string, email: string, password: string) {
+  const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
+  if (userCredential.user) {
+    await updateProfile(userCredential.user, { displayName: username });
+  }
+  return userCredential;
 }
 
-/** Initiate email/password sign-in (non-blocking). */
-export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): void {
-  // CRITICAL: Call signInWithEmailAndPassword directly. Do NOT use 'await signInWithEmailAndPassword(...)'.
-  signInWithEmailAndPassword(authInstance, email, password);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+/** Initiate email/password sign-in */
+export async function handleEmailSignIn(authInstance: Auth, email: string, password: string) {
+  return signInWithEmailAndPassword(authInstance, email, password);
 }
 
-/** Initiate Google sign-in with redirect (non-blocking). */
-export function initiateGoogleSignIn(authInstance: Auth): void {
-  const provider = new GoogleAuthProvider();
-  // CRITICAL: Call signInWithRedirect directly. Do NOT use 'await signInWithRedirect(...)'.
-  signInWithRedirect(authInstance, provider);
-  // Code continues immediately. The page will redirect, and the result is handled after the redirect.
+/** Initiate magic link sign-in */
+export async function handleMagicLinkSignIn(authInstance: Auth, email: string) {
+    await sendSignInLinkToEmail(authInstance, email, actionCodeSettings);
+    window.localStorage.setItem('emailForSignIn', email);
 }

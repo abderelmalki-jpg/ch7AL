@@ -58,6 +58,7 @@ export default function AuthPage() {
   useEffect(() => {
     let isMounted = true; 
     if (auth && firestore && isSignInWithEmailLink(auth, window.location.href)) {
+      setIsHandlingRedirect(true);
       let email = window.localStorage.getItem('emailForSignIn');
       if (!email) {
         email = window.prompt('Veuillez fournir votre email pour confirmation');
@@ -107,15 +108,15 @@ export default function AuthPage() {
   }
   
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8 bg-gradient-to-br from-primary/80 to-primary">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-4">
             <Logo className="h-24 w-24" />
         </div>
         <Card className="shadow-2xl rounded-2xl">
-            <CardHeader className="text-center">
+            <CardHeader className="text-center pb-4">
                 <CardTitle className="font-headline text-3xl">Rejoignez la communauté</CardTitle>
-                <CardDescription>Recevez un lien magique pour vous connecter</CardDescription>
+                <CardDescription>Économisez et partagez en toute simplicité.</CardDescription>
             </CardHeader>
             <CardContent>
                 <AuthForm />
