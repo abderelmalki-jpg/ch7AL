@@ -13,7 +13,7 @@ import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { addPrice, findProductByBarcode } from './actions';
-import { BarcodeScanner } from 'react-zxing';
+import { useZxing } from 'react-zxing';
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -48,6 +48,11 @@ export function AddProductForm() {
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
+    const { ref: zxingRef } = useZxing({
+        onResult: handleBarcodeScan,
+        paused: !isScanning,
+    });
+
     useEffect(() => {
         const nameParam = searchParams.get('name');
         const brandParam = searchParams.get('brand');
@@ -73,8 +78,11 @@ export function AddProductForm() {
               const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
               if(isMounted) {
                   streamRef.current = stream;
-                  if (videoRef.current && isCameraOn) { // Only set srcObject for AI mode
+                  if (videoRef.current) {
                     videoRef.current.srcObject = stream;
+                  }
+                  if(zxingRef.current){
+                    zxingRef.current.srcObject = stream;
                   }
                   setCameraError(null);
               }
@@ -101,6 +109,9 @@ export function AddProductForm() {
              if (videoRef.current) {
                 videoRef.current.srcObject = null;
             }
+             if (zxingRef.current) {
+                zxingRef.current.srcObject = null;
+            }
           }
         }
 
@@ -112,7 +123,7 @@ export function AddProductForm() {
             streamRef.current.getTracks().forEach(track => track.stop());
           }
         };
-    }, [isCameraOn, isScanning]);
+    }, [isCameraOn, isScanning, zxingRef]);
 
 
     const handleCapture = async () => {
@@ -151,35 +162,40 @@ export function AddProductForm() {
         setIsIdentifying(false);
     };
 
-    const handleBarcodeScan = async (result: string | null) => {
+    function handleBarcodeScan(result: any){
         if (!result) return;
+        const scannedCode = result.getText();
+        if (!scannedCode) return;
+        
         setIsScanning(false); // Stop scanning once a result is found
-        setBarcode(result);
+        setBarcode(scannedCode);
 
         toast({
             title: "Code-barres scanné !",
-            description: `Recherche du produit avec le code : ${result}`
+            description: `Recherche du produit avec le code : ${scannedCode}`
         });
 
-        const { product, error } = await findProductByBarcode(result);
+        startPriceTransition(async () => {
+            const { product, error } = await findProductByBarcode(scannedCode);
 
-        if (error) {
-            toast({ variant: 'destructive', title: "Erreur", description: error });
-        } else if (product) {
-            setProductName(product.name || '');
-            setBrand(product.brand || '');
-            setCategory(product.category || '');
-            if(product.imageUrl) setPhotoDataUri(product.imageUrl);
-            toast({
-                title: "Produit trouvé !",
-                description: `${product.name} a été pré-rempli.`
-            });
-        } else {
-            toast({
-                title: "Produit inconnu",
-                description: "Ce code-barres n'est pas dans notre base. Merci de remplir les informations."
-            });
-        }
+            if (error) {
+                toast({ variant: 'destructive', title: "Erreur", description: error });
+            } else if (product) {
+                setProductName(product.name || '');
+                setBrand(product.brand || '');
+                setCategory(product.category || '');
+                if(product.imageUrl) setPhotoDataUri(product.imageUrl);
+                toast({
+                    title: "Produit trouvé !",
+                    description: `${product.name} a été pré-rempli.`
+                });
+            } else {
+                toast({
+                    title: "Produit inconnu",
+                    description: "Ce code-barres n'est pas dans notre base. Merci de remplir les informations."
+                });
+            }
+        });
     }
 
 
@@ -364,13 +380,7 @@ export function AddProductForm() {
         return (
              <CameraView onBack={() => setIsScanning(false)} title="Scanner un Code-barres">
                  <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
-                    <BarcodeScanner
-                        onResult={(result) => handleBarcodeScan(result.getText())}
-                        onError={(error) => {
-                            console.error(error);
-                            setCameraError("Erreur de scanner: " + error.message)
-                        }}
-                    />
+                    <video ref={zxingRef} className="w-full h-full object-cover"/>
                     <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white bg-black/50 px-2 py-1 rounded text-xs">Visez le code-barres</p>
                 </div>
             </CameraView>
@@ -509,3 +519,4 @@ export function AddProductForm() {
   );
 }
 
+    

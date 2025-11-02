@@ -13,8 +13,10 @@ function initializeAdminApp() {
     if (getApps().some(app => app.name === 'admin')) {
         if (!adminApp) {
             adminApp = getApps().find(app => app.name === 'admin');
-            adminDb = getFirestore(adminApp);
-            adminStorage = getStorage(adminApp);
+            if (adminApp) {
+                adminDb = getFirestore(adminApp);
+                adminStorage = getStorage(adminApp);
+            }
         }
         return;
     }
@@ -39,7 +41,8 @@ function initializeAdminApp() {
 
         adminApp = initializeApp({
             credential: cert(serviceAccount),
-            storageBucket: `${projectId}.appspot.com`,
+            // Le nom du bucket est automatiquement déduit par le SDK Admin
+            // lorsqu'il n'est pas spécifié, ce qui est plus robuste.
         }, 'admin');
         
         adminDb = getFirestore(adminApp);
