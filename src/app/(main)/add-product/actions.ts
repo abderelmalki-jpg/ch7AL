@@ -61,6 +61,9 @@ export async function addPrice(
   if (!validatedFields.success) {
     return { status: 'error', message: 'Données invalides.' };
   }
+  
+  const { photoDataUri: _, ...loggableData } = data;
+
 
   const { adminDb } = getAdminServices();
   if (!adminDb) {
@@ -160,15 +163,14 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // Exclure le data URI de l'image des logs et des erreurs propagées
-    // C'est la correction clé pour l'erreur "Maximum call stack size exceeded"
-    const { photoDataUri: _, ...loggableData } = data;
+    // CORRECTION CRITIQUE : Exclure le data URI de l'image des erreurs propagées
+    // pour éviter l'erreur "Maximum call stack size exceeded".
     
     if (error.code === 'permission-denied' || (error.code === 7 && error.message.includes("permission-denied"))) {
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,
             operation: 'write',
-            requestResourceData: loggableData, // Utiliser les données sans l'image
+            requestResourceData: loggableData, // Utiliser les données SANS l'image
         });
         errorEmitter.emit('permission-error', permissionError);
     }
