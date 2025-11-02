@@ -34,14 +34,16 @@ const menuItems = [
 type Language = 'fr' | 'ar' | 'dr';
 
 export default function ProfilePage() {
-    const [selectedLanguage, setSelectedLanguage] = useState<Language>('fr');
-
     const auth = useAuth();
     const firestore = useFirestore();
     const storage = firestore ? getStorage(firestore.app) : null;
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const { toast } = useToast();
+
+    // Language state
+    const [selectedLanguage, setSelectedLanguage] = useState<Language>('fr');
+    const [isSavingLanguage, startSavingLanguageTransition] = useTransition();
 
     // Name editing state
     const [isEditingName, setIsEditingName] = useState(false);
@@ -63,6 +65,7 @@ export default function ProfilePage() {
     useEffect(() => {
         if (userProfile) {
             setDisplayName(userProfile.name || '');
+            setSelectedLanguage((userProfile.language as Language) || 'fr');
         }
     }, [userProfile]);
 
@@ -152,6 +155,23 @@ export default function ProfilePage() {
             }
         });
     }
+
+    const handleLanguageChange = (langId: Language) => {
+        if (!user || !firestore || langId === userProfile?.language) {
+            return;
+        }
+
+        startSavingLanguageTransition(async () => {
+            try {
+                await updateDoc(doc(firestore, 'users', user.uid), { language: langId });
+                setSelectedLanguage(langId);
+                toast({ title: 'Langue mise à jour', description: `La langue a été changée en ${languageOptions.find(l => l.id === langId)?.name}.` });
+            } catch (error) {
+                console.error("Error updating language:", error);
+                toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de changer la langue.' });
+            }
+        });
+    };
 
 
     const getInitials = (name: string) => {
@@ -319,19 +339,22 @@ export default function ProfilePage() {
                             </DialogHeader>
                             <div className="flex flex-col gap-2 pt-4">
                                 {languageOptions.map((lang) => (
-                                    <Button
-                                        key={lang.id}
-                                        variant="outline"
-                                        className={cn(
-                                            "w-full justify-between h-14 text-lg",
-                                            selectedLanguage === lang.id && "border-primary ring-2 ring-primary"
-                                        )}
-                                        onClick={() => setSelectedLanguage(lang.id)}
-                                    >
-                                        <span>{lang.name} <span className="text-muted-foreground">({lang.nativeName})</span></span>
-                                        {selectedLanguage === lang.id && <Check className="w-5 h-5 text-primary" />}
-                                    </Button>
+                                    <DialogClose key={lang.id} asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-between h-14 text-lg",
+                                                selectedLanguage === lang.id && "border-primary ring-2 ring-primary"
+                                            )}
+                                            onClick={() => handleLanguageChange(lang.id)}
+                                            disabled={isSavingLanguage}
+                                        >
+                                            <span>{lang.name} <span className="text-muted-foreground">({lang.nativeName})</span></span>
+                                            {selectedLanguage === lang.id && <Check className="w-5 h-5 text-primary" />}
+                                        </Button>
+                                    </DialogClose>
                                 ))}
+                                {isSavingLanguage && <div className="flex items-center justify-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sauvegarde...</div>}
                             </div>
                         </DialogContent>
                     </Dialog>
