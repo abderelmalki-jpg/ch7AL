@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -8,7 +9,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { z } from 'zod';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { adminDb, adminStorage } from '@/firebase/server';
+import { getAdminServices } from '@/firebase/server';
 
 // Schéma de validation pour les données du formulaire
 const PriceSchema = z.object({
@@ -31,12 +32,12 @@ type PriceInput = z.infer<typeof PriceSchema>;
 
 // Fonction pour uploader l'image
 async function uploadImage(dataUri: string, userId: string): Promise<string> {
+    const { adminStorage } = getAdminServices();
     if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
     
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
     const imageRef = ref(adminStorage.bucket().file(imagePath).storage, imagePath);
 
-    // Le SDK Admin n'a pas uploadString, nous devons donc manipuler le buffer
     const base64EncodedImageString = dataUri.split(';base64,').pop();
     if (!base64EncodedImageString) {
         throw new Error('Data URI invalide');
@@ -56,6 +57,8 @@ export async function addPrice(
   data: PriceInput
 ): Promise<{ status: 'success' | 'error'; message: string }> {
 
+  const { adminDb } = getAdminServices();
+  
   const validatedFields = PriceSchema.safeParse(data);
   if (!validatedFields.success) {
     return { status: 'error', message: 'Données invalides.' };

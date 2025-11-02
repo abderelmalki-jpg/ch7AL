@@ -8,7 +8,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { adminDb } from '@/firebase/server';
+import { getAdminServices } from '@/firebase/server';
 import type { Product } from '@/lib/types';
 
 // Define input and output schemas with Zod for validation and type safety
@@ -37,6 +37,8 @@ const searchProductsFlow = ai.defineFlow(
     outputSchema: SearchProductsOutputSchema,
   },
   async ({ query }) => {
+    const { adminDb } = getAdminServices();
+    
     if (!adminDb) {
       console.error("L'admin Firestore n'est pas initialisé. La recherche ne peut pas continuer.");
       return { products: [] };
