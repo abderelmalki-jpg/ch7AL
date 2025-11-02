@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, query, orderBy, getDocs, limit, where } from 'firebase/firestore';
-import type { LeaderboardEntry } from '@/lib/types';
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import type { LeaderboardEntry, UserProfile } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Trophy, Star, BarChart3, Loader2 } from "lucide-react";
+import { Trophy, Star, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function LeaderboardPage() {
@@ -19,11 +19,26 @@ export default function LeaderboardPage() {
       if (!firestore) return;
       setIsLoading(true);
       try {
-        const leaderboardRef = collection(firestore, 'leaderboard');
-        const q = query(leaderboardRef, where('period', '==', 'all_time'), orderBy('rank', 'asc'), limit(50));
+        // Query the users collection directly, ordered by points
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, orderBy('points', 'desc'), limit(50));
+        
         const querySnapshot = await getDocs(q);
-        const fetchedContributors = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LeaderboardEntry));
+        
+        const fetchedContributors = querySnapshot.docs.map((doc, index) => {
+          const userData = doc.data() as UserProfile;
+          return {
+            id: doc.id,
+            userId: doc.id,
+            username: userData.name || 'Utilisateur anonyme',
+            points: userData.points || 0,
+            rank: index + 1, // Assign rank based on order
+            avatar: userData.photoURL || '',
+          };
+        });
+
         setContributors(fetchedContributors);
+
       } catch (error) {
         console.error("Failed to fetch leaderboard data:", error);
       } finally {
@@ -34,7 +49,7 @@ export default function LeaderboardPage() {
   }, [firestore]);
   
   const getInitials = (name: string) => {
-    if (!name) return '';
+    if (!name) return '?';
     const names = name.split(' ');
     if (names.length > 1) {
         return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
@@ -63,7 +78,7 @@ export default function LeaderboardPage() {
             </div>
           ) : (
             <ul className="divide-y">
-              {contributors.map((contributor, index) => (
+              {contributors.map((contributor) => (
                 <li key={contributor.id} className="p-4 flex items-center gap-4 hover:bg-secondary transition-colors">
                   <span className="text-xl font-bold text-muted-foreground w-6 text-center">{contributor.rank}</span>
                   <Avatar className="h-12 w-12 border-2 border-primary">

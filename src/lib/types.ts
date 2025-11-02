@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type Contribution = {
@@ -91,8 +90,4 @@ export type LeaderboardEntry = {
     points: number;
     rank: number;
     avatar: string;
-    badges: string; // JSON string array
-    period: 'all_time' | 'monthly' | 'weekly';
-    createdAt: any;
-    updatedAt: any;
 };
