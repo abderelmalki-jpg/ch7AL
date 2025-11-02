@@ -56,6 +56,11 @@ async function uploadImage(dataUri: string, userId: string): Promise<string> {
 export async function addPrice(
   data: PriceInput
 ): Promise<{ status: 'success' | 'error'; message: string }> {
+  
+  const { adminDb } = getAdminServices();
+  if (!adminDb) {
+      return { status: 'error', message: "La base de données Admin n'est pas disponible. Vérifiez la configuration du serveur." };
+  }
 
   const validatedFields = PriceSchema.safeParse(data);
   if (!validatedFields.success) {
@@ -65,11 +70,6 @@ export async function addPrice(
   // Correction : Créer une version des données SANS l'image pour les logs d'erreur
   const { photoDataUri: _, ...loggableData } = data;
 
-
-  const { adminDb } = getAdminServices();
-  if (!adminDb) {
-      return { status: 'error', message: "La base de données Admin n'est pas disponible." };
-  }
 
   const {
     userId,
@@ -176,7 +176,12 @@ export async function addPrice(
         errorEmitter.emit('permission-error', permissionError);
     }
 
-    const errorMessage = error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";
+    // Retourner un message d'erreur générique mais informatif.
+    // L'erreur spécifique (comme RangeError) est loggée côté serveur.
+    const errorMessage = error instanceof RangeError 
+        ? "Une erreur interne est survenue (stack size exceeded). L'incident a été enregistré."
+        : error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";
+
     return { status: 'error', message: errorMessage };
   }
 }

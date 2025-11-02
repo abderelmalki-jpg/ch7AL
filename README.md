@@ -7,16 +7,28 @@ This is a Next.js application for community-based price sharing.
 1.  **Configure Environment Variables**: Create a `.env` file in the root of your project. You will need to add your own API keys.
 
     ```.env
+    # ==== Firebase Client SDK Configuration ====
+    # These are public keys and are safe to be exposed on the client-side.
+    # Get these from your Firebase project settings under "General".
+    # https://console.firebase.google.com/project/_/settings/general/
+    NEXT_PUBLIC_FIREBASE_API_KEY="your-client-api-key-here"
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id-here"
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-sender-id-here"
+    NEXT_PUBLIC_FIREBASE_APP_ID="your-web-app-id-here"
+    NEXT_PUBLIC_BASE_URL="http://localhost:9002"
+
     # ==== Firebase Admin SDK (for Server Actions) ====
+    # CRITICAL: These are private keys and must be kept secret.
     # Get these values from your Firebase project settings:
     # Go to Project Settings > Service accounts > Generate new private key
     # https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id-here"
     FIREBASE_CLIENT_EMAIL="your-service-account-email-here"
     FIREBASE_PRIVATE_KEY="your-private-key-here"
 
     # ==== Google Maps API (for Client-side) ====
-    # IMPORTANT: Get your Google Maps API key from the Google Cloud Console: https://console.cloud.google.com/google/maps-apis/
+    # IMPORTANT: Get your Google Maps API key from the Google Cloud Console.
     # Make sure to enable the "Maps JavaScript API" for your project.
     # The map on the dashboard will not work without this key.
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-google-maps-api-key-here"
@@ -25,7 +37,7 @@ This is a Next.js application for community-based price sharing.
     **Important Note on `FIREBASE_PRIVATE_KEY`**: When you copy the private key from the JSON file you downloaded, it will contain newline characters (`\n`). You must format it as a single line in your `.env` file, replacing the newlines with `\n`. For example:
     `"-----BEGIN PRIVATE KEY-----\nMIIC...rest_of_the_key...\n-----END PRIVATE KEY-----\n"`
     
-    **CRITICAL: The maps in the application will NOT work until you replace `"your-google-maps-api-key-here"` with a real, valid Google Maps API key.**
+    **CRITICAL: The maps and price submission features will NOT work until you replace the placeholder values with real, valid API keys.**
 
 
 2.  **Install Dependencies**:
