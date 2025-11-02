@@ -3,14 +3,11 @@
 
 import {
   doc,
-  getDoc,
-  setDoc,
-  addDoc,
-  collection,
-  serverTimestamp,
   runTransaction,
   increment,
   type Firestore,
+  collection,
+  serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { z } from 'zod';
@@ -41,7 +38,6 @@ async function uploadImage(storage: FirebaseStorage, dataUri: string, userId: st
   const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
   const imageRef = ref(storage, imagePath);
   
-  // Utiliser `uploadString` avec l'option 'data_url'
   const snapshot = await uploadString(imageRef, dataUri, 'data_url');
   const downloadURL = await getDownloadURL(snapshot.ref);
   return downloadURL;
@@ -81,11 +77,9 @@ export async function addPrice(
       imageUrl = await uploadImage(storage, photoDataUri, userId);
     }
     
-    // Utiliser une transaction pour assurer la cohérence des données
     await runTransaction(firestore, async (transaction) => {
       const timestamp = serverTimestamp();
 
-      // 1. Get or create Store
       const storeRef = doc(firestore, 'stores', storeName.trim());
       const storeSnap = await transaction.get(storeRef);
       let storeId = storeRef.id;
@@ -104,7 +98,6 @@ export async function addPrice(
         });
       }
 
-      // 2. Get or create Product
       const productRef = doc(firestore, 'products', productName.trim());
       const productSnap = await transaction.get(productRef);
       let productId = productRef.id;
@@ -121,12 +114,9 @@ export async function addPrice(
         if(imageUrl) productData.imageUrl = imageUrl;
         transaction.set(productRef, productData);
       } else if (imageUrl && !productSnap.data().imageUrl) {
-        // Mettre à jour l'image si elle n'existe pas
         transaction.update(productRef, { imageUrl: imageUrl, updatedAt: timestamp });
       }
 
-
-      // 3. Add Price
       const priceRef = doc(collection(firestore, 'prices'));
       transaction.set(priceRef, {
         productId: productId,
@@ -140,7 +130,6 @@ export async function addPrice(
         voteScore: 0,
       });
 
-      // 4. Update user points
       const userRef = doc(firestore, 'users', userId);
       transaction.update(userRef, {
         points: increment(10),
@@ -152,9 +141,7 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // Émission d'une erreur de permission pour le débogage
     if (error.code === 'permission-denied') {
-        // Create a copy of the data without the large photoDataUri to avoid serialization issues.
         const { photoDataUri, ...errorData } = data;
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,

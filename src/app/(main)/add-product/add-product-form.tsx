@@ -170,22 +170,24 @@ export function AddProductForm() {
         }
 
         startPriceTransition(async () => {
+            const priceData = {
+                userId: user!.uid,
+                userEmail: user!.email!,
+                productName,
+                price: Number(price),
+                storeName,
+                address,
+                city,
+                neighborhood,
+                latitude,
+                longitude,
+                brand,
+                category,
+                photoDataUri,
+            };
+
             try {
-                const result = await addPrice(firestore!, storage!, {
-                    userId: user!.uid,
-                    userEmail: user!.email!,
-                    productName,
-                    price: Number(price),
-                    storeName,
-                    address,
-                    city,
-                    neighborhood,
-                    latitude,
-                    longitude,
-                    brand,
-                    category,
-                    photoDataUri,
-                });
+                const result = await addPrice(firestore!, storage!, priceData);
                 
                 if (result.status === 'success') {
                     toast({
@@ -215,7 +217,6 @@ export function AddProductForm() {
             return;
         }
     
-        // Check for permission status
         try {
             const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
     
@@ -234,7 +235,7 @@ export function AddProductForm() {
         setIsLocating(true);
     
         navigator.geolocation.getCurrentPosition(
-            (position) => { // Success
+            (position) => {
                 const { latitude, longitude } = position.coords;
                 setLatitude(latitude);
                 setLongitude(longitude);
@@ -242,7 +243,7 @@ export function AddProductForm() {
                 toast({ title: 'Localisation obtenue !' });
                 setIsLocating(false);
             },
-            (error) => { // Error
+            (error) => {
                 let title = 'Erreur de localisation';
                 let description = "Impossible d'obtenir votre position actuelle.";
     
@@ -270,9 +271,6 @@ export function AddProductForm() {
     
     const stopLocating = () => {
         setIsLocating(false);
-        // This is a UI-only stop. The browser's `getCurrentPosition` might still be running in the background,
-        // but we prevent the user from being stuck in a loading state. The success/error callbacks will
-        // still fire if/when they complete, but the UI state is no longer 'locating'.
         toast({ title: 'Recherche de localisation annulée.' });
     };
 
