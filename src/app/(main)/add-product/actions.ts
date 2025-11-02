@@ -31,7 +31,6 @@ const PriceSchema = z.object({
   longitude: z.number().optional().nullable(),
   brand: z.string().optional(),
   category: z.string().optional(),
-  barcode: z.string().optional(),
   photoDataUri: z.string().optional(),
 });
 
@@ -73,7 +72,6 @@ export async function addPrice(
     longitude,
     brand,
     category,
-    barcode,
     photoDataUri,
   } = validatedFields.data;
 
@@ -116,7 +114,6 @@ export async function addPrice(
             name: productName.trim(),
             brand: brand || '',
             category: category || '',
-            barcode: barcode || '',
             createdAt: timestamp,
             updatedAt: timestamp,
             uploadedBy: userId,

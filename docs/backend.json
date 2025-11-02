@@ -78,10 +78,6 @@
           "type": "string",
           "description": "Category of the product."
         },
-        "barcode": {
-          "type": "string",
-          "description": "Barcode of the product."
-        },
         "imageUrl": {
           "type": "string",
           "description": "URL of the product image, hosted on Firebase Storage.",

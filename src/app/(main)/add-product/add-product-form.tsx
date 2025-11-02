@@ -4,13 +4,12 @@
 import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wand2, Loader2, MapPin, X, Camera, Zap, ScanLine, ArrowLeft } from 'lucide-react';
+import { Loader2, MapPin, X, Camera, Zap, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { getStorage } from 'firebase/storage';
@@ -38,7 +37,6 @@ export function AddProductForm() {
     const [neighborhood, setNeighborhood] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
-    const [barcode, setBarcode] = useState('');
     
     const [formErrors, setFormErrors] = useState<{productName?: string, price?: string, storeName?: string, userId?: string}>({});
 
@@ -56,13 +54,11 @@ export function AddProductForm() {
         const brandParam = searchParams.get('brand');
         const categoryParam = searchParams.get('category');
         const photoParam = searchParams.get('photoDataUri');
-        const barcodeParam = searchParams.get('barcode');
 
         if (nameParam) setProductName(nameParam);
         if (brandParam) setBrand(brandParam);
         if (categoryParam) setCategory(categoryParam);
         if (photoParam) setPhotoDataUri(photoParam);
-        if (barcodeParam) setBarcode(barcodeParam);
     }, [searchParams]);
 
      useEffect(() => {
@@ -188,7 +184,6 @@ export function AddProductForm() {
                     longitude,
                     brand,
                     category,
-                    barcode,
                     photoDataUri,
                 });
                 
@@ -337,20 +332,14 @@ export function AddProductForm() {
                 </div>
                 <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
                 <CardDescription>
-                    Identifiez un produit avec votre caméra ou scannez son code-barres.
+                    Identifiez un produit avec votre caméra pour commencer.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="grid grid-cols-2 gap-4 mb-6">
-                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+                 <div className="mb-6">
+                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2 w-full bg-accent text-accent-foreground hover:bg-accent/90">
                         <Camera className="h-6 w-6" />
-                        <span>Analyse IA</span>
-                    </Button>
-                     <Button asChild size="lg" className="h-auto py-4 flex-col gap-2">
-                        <Link href="/scanner">
-                            <ScanLine className="h-6 w-6" />
-                             <span>Code-barres</span>
-                        </Link>
+                        <span>Analyser un produit</span>
                     </Button>
                 </div>
                  <div className="relative mb-6">

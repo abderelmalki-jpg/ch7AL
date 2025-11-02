@@ -8,7 +8,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
-const PROTECTED_ROUTES = ['/profile', '/add-product', '/scanner', '/dashboard', '/leaderboard', '/map', '/search', '/settings'];
+const PROTECTED_ROUTES = ['/profile', '/add-product', '/dashboard', '/leaderboard', '/map', '/search', '/settings'];
 const AUTH_ROUTE = '/auth';
 
 export default function MainLayout({

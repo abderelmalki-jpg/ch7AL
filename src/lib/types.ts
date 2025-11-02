@@ -27,7 +27,6 @@ export type Product = {
   category: string;
   imageUrl?: string;
   imageHint?: string; // imageHint is optional from Firestore
-  barcode?: string;
   price?: number; // Price is optional, as it might not be directly on the product
   uploadedBy?: string;
   createdAt?: Timestamp;
