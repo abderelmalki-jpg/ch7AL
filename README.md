@@ -24,6 +24,8 @@ This is a Next.js application for community-based price sharing.
     
     **Important Note on `FIREBASE_PRIVATE_KEY`**: When you copy the private key from the JSON file you downloaded, it will contain newline characters (`\n`). You must format it as a single line in your `.env` file, replacing the newlines with `\n`. For example:
     `"-----BEGIN PRIVATE KEY-----\nMIIC...rest_of_the_key...\n-----END PRIVATE KEY-----\n"`
+    
+    **CRITICAL: The maps in the application will NOT work until you replace `"your-google-maps-api-key-here"` with a real, valid Google Maps API key.**
 
 
 2.  **Install Dependencies**:

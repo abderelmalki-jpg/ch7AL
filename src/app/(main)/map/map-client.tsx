@@ -22,12 +22,13 @@ interface MapClientProps {
 }
 
 export function MapClient({ apiKey, stores }: MapClientProps) {
-  if (!apiKey) {
+  // Gracefully handle missing or placeholder API keys
+  if (!apiKey || apiKey === "your-google-maps-api-key-here") {
     return (
         <div className="flex items-center justify-center h-full bg-muted/20">
             <div className="text-center text-muted-foreground p-4">
                 <p className="font-bold">Carte non disponible</p>
-                <p className="text-sm">Veuillez fournir une clé API Google Maps dans votre fichier `.env` pour afficher la carte.</p>
+                <p className="text-sm">Veuillez fournir une clé API Google Maps valide dans votre fichier `.env` pour afficher la carte.</p>
             </div>
         </div>
     );
