@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Logo } from '@/components/logo';
 
 export default function LandingPage() {
   return (
-    <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4 sm:p-8">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4 sm:p-8">
       
       <div className="w-full max-w-4xl flex flex-col items-center">
         {/* Video Player in a rounded container */}
@@ -25,7 +26,7 @@ export default function LandingPage() {
             </video>
             
             {/* Overlay for text and button */}
-            <div className="absolute inset-0 flex flex-col items-center justify-end p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent sm:justify-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-end p-4 sm:p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent sm:justify-center">
                  <div className="text-center">
                     <div className="flex justify-center mb-4">
                         <Logo className="h-24 w-24" />
