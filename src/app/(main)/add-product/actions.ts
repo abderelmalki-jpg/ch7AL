@@ -13,6 +13,7 @@ import { ref, uploadString, getDownloadURL, type FirebaseStorage } from 'firebas
 import { z } from 'zod';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { adminDb } from '@/firebase/server';
 
 // Schéma de validation pour les données du formulaire
 const PriceSchema = z.object({
@@ -77,14 +78,20 @@ export async function addPrice(
       imageUrl = await uploadImage(storage, photoDataUri, userId);
     }
     
-    await runTransaction(firestore, async (transaction) => {
+    if (!adminDb) {
+      throw new Error("L'admin Firestore n'est pas initialisé.");
+    }
+    
+    await adminDb.runTransaction(async (transaction) => {
       const timestamp = serverTimestamp();
 
-      const storeRef = doc(firestore, 'stores', storeName.trim());
-      const storeSnap = await transaction.get(storeRef);
-      let storeId = storeRef.id;
+      // IMPORTANT: Use product name in lowercase as the document ID for consistency
+      const productDocId = productName.trim().toLowerCase();
 
-      if (!storeSnap.exists()) {
+      const storeRef = adminDb.collection('stores').doc(storeName.trim());
+      const storeSnap = await transaction.get(storeRef);
+      
+      if (!storeSnap.exists) {
         transaction.set(storeRef, {
           name: storeName.trim(),
           address: address || '',
@@ -98,13 +105,12 @@ export async function addPrice(
         });
       }
 
-      const productRef = doc(firestore, 'products', productName.trim());
+      const productRef = adminDb.collection('products').doc(productDocId);
       const productSnap = await transaction.get(productRef);
-      let productId = productRef.id;
-
-      if (!productSnap.exists()) {
+      
+      if (!productSnap.exists) {
         const productData: any = {
-            name: productName.trim(),
+            name: productName.trim(), // Keep original casing for display
             brand: brand || '',
             category: category || '',
             createdAt: timestamp,
@@ -113,14 +119,14 @@ export async function addPrice(
         };
         if(imageUrl) productData.imageUrl = imageUrl;
         transaction.set(productRef, productData);
-      } else if (imageUrl && !productSnap.data().imageUrl) {
+      } else if (imageUrl && !productSnap.data()?.imageUrl) {
         transaction.update(productRef, { imageUrl: imageUrl, updatedAt: timestamp });
       }
 
-      const priceRef = doc(collection(firestore, 'prices'));
+      const priceRef = adminDb.collection('prices').doc(); // Auto-generate ID
       transaction.set(priceRef, {
-        productId: productId,
-        storeId: storeId,
+        productId: productRef.id,
+        storeId: storeRef.id,
         userId: userId,
         price: price,
         createdAt: timestamp,
@@ -130,10 +136,12 @@ export async function addPrice(
         voteScore: 0,
       });
 
-      const userRef = doc(firestore, 'users', userId);
+      const userRef = adminDb.collection('users').doc(userId);
+      // Use Firestore's special FieldValue for atomic increments
+      const FieldValue = require('firebase-admin').firestore.FieldValue;
       transaction.update(userRef, {
-        points: increment(10),
-        contributions: increment(1),
+        points: FieldValue.increment(10),
+        contributions: FieldValue.increment(1),
       });
     });
 
@@ -141,12 +149,14 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
+    // We remove the large data URI from the log to prevent call stack errors
+    const { photoDataUri: _, ...loggableData } = data;
+    
     if (error.code === 'permission-denied') {
-        const { photoDataUri, ...errorData } = data;
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,
             operation: 'write',
-            requestResourceData: { ...errorData, photoDataUri: 'OMITTED_FOR_LOGGING' },
+            requestResourceData: loggableData,
         });
         errorEmitter.emit('permission-error', permissionError);
     }
