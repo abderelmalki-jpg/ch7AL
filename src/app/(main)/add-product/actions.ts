@@ -157,10 +157,12 @@ export async function addPrice(
     
     // Émission d'une erreur de permission pour le débogage
     if (error.code === 'permission-denied') {
+        // Create a copy of the data without the large photoDataUri to avoid serialization issues.
+        const { photoDataUri, ...errorData } = data;
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,
             operation: 'write',
-            requestResourceData: data,
+            requestResourceData: { ...errorData, photoDataUri: 'OMITTED_FOR_LOGGING' },
         });
         errorEmitter.emit('permission-error', permissionError);
     }
