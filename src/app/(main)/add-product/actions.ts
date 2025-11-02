@@ -42,11 +42,13 @@ async function uploadImage(dataUri: string, userId: string): Promise<string> {
     
     await imageFile.save(imageBuffer, {
         metadata: { contentType: 'image/jpeg' },
-        public: true, // Rendre le fichier publiquement lisible
     });
     
+    // Rendre le fichier publiquement lisible pour y accéder via URL
+    await imageFile.makePublic();
+
     // Retourner l'URL publique
-    return `https://storage.googleapis.com/${adminStorage.bucket().name}/${imagePath}`;
+    return imageFile.publicUrl();
 }
 
 
@@ -158,14 +160,15 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // Ne pas logguer le data URI de l'image
+    // Exclure le data URI de l'image des logs et des erreurs propagées
+    // C'est la correction clé pour l'erreur "Maximum call stack size exceeded"
     const { photoDataUri: _, ...loggableData } = data;
     
     if (error.code === 'permission-denied' || (error.code === 7 && error.message.includes("permission-denied"))) {
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,
             operation: 'write',
-            requestResourceData: loggableData,
+            requestResourceData: loggableData, // Utiliser les données sans l'image
         });
         errorEmitter.emit('permission-error', permissionError);
     }
