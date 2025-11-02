@@ -16,6 +16,8 @@ const getFirebaseErrorMessage = (errorCode: string) => {
             return 'Cette adresse email est invalide.';
         case 'auth/missing-continue-uri':
              return 'Une URL de redirection doit être fournie.';
+        case 'auth/operation-not-allowed':
+            return "La connexion par lien magique n'est pas activée. Veuillez l'activer dans la console Firebase.";
         default:
             return 'Une erreur est survenue. Veuillez réessayer.';
     }
