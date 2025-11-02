@@ -28,7 +28,7 @@ type PriceInput = z.infer<typeof PriceSchema>;
 
 // Fonction pour uploader l'image en utilisant le SDK Admin
 async function uploadImage(dataUri: string, userId: string): Promise<string> {
-    const { adminStorage } = getAdminServices();
+    const { adminStorage } = await getAdminServices();
     if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
     
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
@@ -57,7 +57,7 @@ export async function addPrice(
   data: PriceInput
 ): Promise<{ status: 'success' | 'error'; message: string }> {
   
-  const { adminDb } = getAdminServices();
+  const { adminDb } = await getAdminServices();
   if (!adminDb) {
       return { status: 'error', message: "La base de données Admin n'est pas disponible. Vérifiez la configuration du serveur." };
   }
@@ -67,7 +67,6 @@ export async function addPrice(
     return { status: 'error', message: 'Données invalides.' };
   }
   
-  // Correction : Créer une version des données SANS l'image pour les logs d'erreur
   const { photoDataUri: _, ...loggableData } = data;
 
 
@@ -93,10 +92,7 @@ export async function addPrice(
     }
     
     await adminDb.runTransaction(async (transaction) => {
-      // Admin SDK n'a pas serverTimestamp(), on utilise FieldValue
       const timestamp = FieldValue.serverTimestamp();
-
-      // Utiliser un ID de produit normalisé pour éviter les doublons dus à la casse
       const productDocId = productName.trim().toLowerCase().replace(/\s+/g, '-');
 
       const storeRef = adminDb.collection('stores').doc(storeName.trim());
@@ -132,14 +128,13 @@ export async function addPrice(
         if(imageUrl) productData.imageUrl = imageUrl;
         transaction.set(productRef, productData);
       } else {
-        // Mettre à jour l'image seulement si elle n'existait pas
         if (imageUrl && !productSnap.data()?.imageUrl) {
             productData.imageUrl = imageUrl;
         }
         transaction.update(productRef, productData);
       }
 
-      const priceRef = adminDb.collection('prices').doc(); // Auto-generate ID
+      const priceRef = adminDb.collection('prices').doc();
       transaction.set(priceRef, {
         productId: productRef.id,
         storeId: storeRef.id,
@@ -164,20 +159,18 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // CORRECTION CRITIQUE : Exclure le data URI de l'image des erreurs propagées
-    // pour éviter l'erreur "Maximum call stack size exceeded".
-    
+    // Create a safe data object for logging, excluding the large data URI
+    const { photoDataUri: _removed, ...safeData } = data;
+
     if (error.code === 'permission-denied' || (error.code === 7 && error.message.includes("permission-denied"))) {
         const permissionError = new FirestorePermissionError({
             path: `prices, products, stores, or users`,
             operation: 'write',
-            requestResourceData: loggableData, // Utiliser les données SANS l'image
+            requestResourceData: safeData,
         });
         errorEmitter.emit('permission-error', permissionError);
     }
 
-    // Retourner un message d'erreur générique mais informatif.
-    // L'erreur spécifique (comme RangeError) est loggée côté serveur.
     const errorMessage = error instanceof RangeError 
         ? "Une erreur interne est survenue (stack size exceeded). L'incident a été enregistré."
         : error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";

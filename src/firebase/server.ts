@@ -10,8 +10,12 @@ let adminDb: Firestore | null = null;
 let adminStorage: Storage | null = null;
 
 function initializeAdminApp() {
-    // Si déjà initialisé (avec succès ou échec), ne rien faire.
-    if (adminApp !== undefined) {
+    if (getApps().some(app => app.name === 'admin')) {
+        if (!adminApp) {
+            adminApp = getApps().find(app => app.name === 'admin');
+            adminDb = getFirestore(adminApp);
+            adminStorage = getStorage(adminApp);
+        }
         return;
     }
 
@@ -20,8 +24,7 @@ function initializeAdminApp() {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
     if (!projectId || !clientEmail || !privateKey) {
-        console.error("🔥 Erreur critique: Les variables d'environnement pour Firebase Admin SDK sont manquantes (NEXT_PUBLIC_FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Le SDK Admin ne sera pas initialisé.");
-        adminApp = undefined; // Marquer comme tentative d'initialisation échouée
+        console.error("🔥 Erreur critique: Les variables d'environnement pour Firebase Admin SDK sont manquantes. Le SDK Admin ne sera pas initialisé.");
         return;
     }
 
@@ -34,16 +37,10 @@ function initializeAdminApp() {
             privateKey: formattedPrivateKey,
         };
 
-        // Utiliser getApps pour éviter la ré-initialisation
-        const existingApp = getApps().find(app => app.name === 'admin');
-        if (existingApp) {
-            adminApp = existingApp;
-        } else {
-            adminApp = initializeApp({
-                credential: cert(serviceAccount),
-                storageBucket: `${projectId}.appspot.com`,
-            }, 'admin');
-        }
+        adminApp = initializeApp({
+            credential: cert(serviceAccount),
+            storageBucket: `${projectId}.appspot.com`,
+        }, 'admin');
         
         adminDb = getFirestore(adminApp);
         adminStorage = getStorage(adminApp);
@@ -67,8 +64,8 @@ interface AdminServices {
  * Gets the initialized Firebase Admin services.
  * It will attempt to initialize them on the first call if they haven't been already.
  */
-export function getAdminServices(): AdminServices {
-    if (adminApp === undefined) {
+export async function getAdminServices(): Promise<AdminServices> {
+    if (!adminApp) {
         initializeAdminApp();
     }
     return { adminDb, adminStorage };
