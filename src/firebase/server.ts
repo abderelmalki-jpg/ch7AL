@@ -26,7 +26,7 @@ function initializeAdminApp() {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
     const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 
-    if (!projectId || !clientEmail || !privateKey || !storageBucket) {
+    if (!projectId || !clientEmail || !privateKey) {
         console.error("🔥 Erreur critique: Des variables d'environnement pour Firebase Admin SDK sont manquantes. Le SDK Admin ne sera pas initialisé.");
         return;
     }
