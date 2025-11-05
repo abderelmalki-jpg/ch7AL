@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ export default function LandingPage() {
                         Comparez . Economisez . Partagez avec la communauté
                     </p>
                     <div className="mt-8">
-                      <Link href="/auth">
+                      <Link href="/dashboard">
                         <Button size="lg" className="h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground">
                           Commencer
                         </Button>
