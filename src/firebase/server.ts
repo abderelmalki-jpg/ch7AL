@@ -24,9 +24,10 @@ function initializeAdminApp() {
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 
-    if (!projectId || !clientEmail || !privateKey) {
-        console.error("🔥 Erreur critique: Les variables d'environnement pour Firebase Admin SDK sont manquantes. Le SDK Admin ne sera pas initialisé.");
+    if (!projectId || !clientEmail || !privateKey || !storageBucket) {
+        console.error("🔥 Erreur critique: Des variables d'environnement pour Firebase Admin SDK sont manquantes. Le SDK Admin ne sera pas initialisé.");
         return;
     }
 
@@ -41,8 +42,7 @@ function initializeAdminApp() {
 
         adminApp = initializeApp({
             credential: cert(serviceAccount),
-            // Le nom du bucket est automatiquement déduit par le SDK Admin
-            // lorsqu'il n'est pas spécifié, ce qui est plus robuste.
+            storageBucket: storageBucket,
         }, 'admin');
         
         adminDb = getFirestore(adminApp);
