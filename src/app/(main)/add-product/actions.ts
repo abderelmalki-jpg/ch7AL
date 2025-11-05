@@ -30,15 +30,17 @@ type PriceInput = z.infer<typeof PriceSchema>;
 // Fonction pour uploader l'image en utilisant le SDK Admin
 async function uploadImage(dataUri: string, userId: string): Promise<string> {
     const { adminStorage } = await getAdminServices();
-    if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
-
     const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+    if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
     if (!bucketName) {
         throw new Error("Le nom du bucket de stockage Firebase n'est pas défini dans les variables d'environnement.");
     }
     
+    // Utilisation explicite du bucket
+    const bucket = adminStorage.bucket(bucketName);
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
-    const imageFile = adminStorage.bucket(bucketName).file(imagePath);
+    const imageFile = bucket.file(imagePath);
 
     const base64EncodedImageString = dataUri.split(';base64,').pop();
     if (!base64EncodedImageString) {
@@ -196,9 +198,7 @@ export async function addPrice(
         errorEmitter.emit('permission-error', permissionError);
     }
 
-    const errorMessage = error instanceof RangeError 
-        ? "Une erreur interne est survenue (stack size exceeded). L'incident a été enregistré."
-        : error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";
+    const errorMessage = error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";
 
     return { status: 'error', message: errorMessage };
   }
