@@ -30,15 +30,9 @@ type PriceInput = z.infer<typeof PriceSchema>;
 // Fonction pour uploader l'image en utilisant le SDK Admin
 async function uploadImage(dataUri: string, userId: string): Promise<string> {
     const { adminStorage } = await getAdminServices();
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-
     if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
-    if (!bucketName) {
-        throw new Error("Le nom du bucket de stockage Firebase n'est pas défini dans les variables d'environnement.");
-    }
     
-    // Utilisation explicite du bucket
-    const bucket = adminStorage.bucket(bucketName);
+    const bucket = adminStorage.bucket();
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
     const imageFile = bucket.file(imagePath);
 
