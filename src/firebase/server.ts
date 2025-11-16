@@ -9,6 +9,9 @@ let adminApp: App | undefined;
 let adminDb: Firestore | null = null;
 let adminStorage: Storage | null = null;
 
+// Définir le nom du bucket de stockage directement et de manière fiable
+const STORAGE_BUCKET = 'hanouti-6ce26.appspot.com';
+
 function initializeAdminApp() {
     if (getApps().some(app => app.name === 'admin')) {
         if (!adminApp) {
@@ -24,8 +27,7 @@ function initializeAdminApp() {
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-    const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-
+    
     if (!projectId || !clientEmail || !privateKey) {
         console.error("🔥 Erreur critique: Des variables d'environnement pour Firebase Admin SDK sont manquantes. Le SDK Admin ne sera pas initialisé.");
         return;
@@ -42,7 +44,8 @@ function initializeAdminApp() {
 
         adminApp = initializeApp({
             credential: cert(serviceAccount),
-            storageBucket: storageBucket,
+            // Utiliser le nom du bucket directement ici
+            storageBucket: STORAGE_BUCKET,
         }, 'admin');
         
         adminDb = getFirestore(adminApp);

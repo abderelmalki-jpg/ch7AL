@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -15,27 +16,25 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // Tout le monde peut lire les produits, les utilisateurs connectés peuvent en créer/mettre à jour
+    // Les utilisateurs connectés peuvent lire les produits et en créer/mettre à jour
     match /products/{productId} {
-      allow get, list: if true;
-      // On autorise la création/mise à jour si l'utilisateur est connecté.
-      // On autorise aussi l'ajout ou la modification d'un code-barres.
+      allow read: if isSignedIn();
       allow create, update: if isSignedIn() && (
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'brand', 'category', 'imageUrl', 'barcode', 'updatedAt', 'uploadedBy', 'createdAt'])
       );
       allow delete: if false; // Suppression non autorisée
     }
     
-    // Tout le monde peut lire les magasins, les utilisateurs connectés peuvent en créer/mettre à jour
+    // Les utilisateurs connectés peuvent lire les magasins et en créer/mettre à jour
     match /stores/{storeId} {
-        allow get, list: if true;
+        allow read: if isSignedIn();
         allow create, update: if isSignedIn();
         allow delete: if false; // Suppression non autorisée
     }
 
-    // Tout le monde peut lire les prix
+    // Les utilisateurs connectés peuvent lire les prix
     match /prices/{priceId} {
-      allow get, list: if true;
+      allow read: if isSignedIn();
       
       // Un utilisateur connecté peut créer un prix si les données sont valides
       allow create: if isSignedIn()

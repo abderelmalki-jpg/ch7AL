@@ -204,7 +204,12 @@ export function AddProductForm() {
         
         const errors: {productName?: string, price?: string, storeName?: string, userId?: string} = {};
         if (!productName) errors.productName = "Le nom du produit est requis.";
-        if (!price || isNaN(Number(price)) || Number(price) <= 0) errors.price = "Le prix doit être un nombre positif.";
+        
+        const parsedPrice = parseFloat(price.replace(',', '.'));
+        if (!price || isNaN(parsedPrice) || parsedPrice <= 0) {
+            errors.price = "Le prix doit être un nombre positif.";
+        }
+
         if (!storeName) errors.storeName = "Le nom du magasin est requis.";
         if (!user) {
             errors.userId = "Vous devez être connecté pour soumettre un prix.";
@@ -221,7 +226,7 @@ export function AddProductForm() {
                 userId: user!.uid,
                 userEmail: user!.email!,
                 productName,
-                price: Number(price),
+                price: parsedPrice,
                 storeName,
                 address,
                 city,
@@ -452,7 +457,7 @@ export function AddProductForm() {
                         <div className="space-y-2">
                             <Label htmlFor="price">Prix</Label>
                             <div className="relative">
-                                <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12" required/>
+                                <Input id="price" name="price" type="text" inputMode="decimal" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12" required/>
                                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
                                     DH
                                 </span>
