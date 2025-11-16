@@ -1,4 +1,4 @@
-# Ch3rel - Price Sharing App
+# CH7AL - Price Sharing App
 
 This is a Next.js application for community-based price sharing.
 

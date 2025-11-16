@@ -5,7 +5,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'Ch3rel',
+  title: 'CH7AL',
   description: 'Application de comparaison de prix communautaire',
 };
 
