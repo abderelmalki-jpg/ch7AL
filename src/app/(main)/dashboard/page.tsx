@@ -152,7 +152,7 @@ function DashboardContent() {
                 Contribuer
             </Link>
         </Button>
-        <Button asChild size="lg" variant="outline" className="w-full h-14 text-lg">
+        <Button asChild size="lg" variant="secondary" className="w-full h-14 text-lg">
             <Link href="/search">
                 <Search className="mr-2 h-5 w-5" />
                 Rechercher un produit..
@@ -175,5 +175,3 @@ export default function HomePage() {
     </Suspense>
   )
 }
-
-    
