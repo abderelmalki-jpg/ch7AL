@@ -32,7 +32,9 @@ export default function DashboardPage() {
       const pricesRef = collection(firestore, 'prices');
       const q = query(pricesRef, orderBy('createdAt', 'desc'), limit(6));
 
-      getDocs(q).then(priceSnap => {
+      try {
+        const priceSnap = await getDocs(q);
+        
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
           const priceData = priceDoc.data() as Price;
 
@@ -77,13 +79,10 @@ export default function DashboardPage() {
           };
         });
 
-        Promise.all(contributionsPromises).then(contributions => {
-            setRecentContributions(contributions as Contribution[]);
-        }).finally(() => {
-            setIsLoading(false);
-        });
-
-      }).catch(error => {
+        const contributions = await Promise.all(contributionsPromises);
+        setRecentContributions(contributions as Contribution[]);
+        
+      } catch (error: any) {
         if (error.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: pricesRef.path,
@@ -94,8 +93,9 @@ export default function DashboardPage() {
             console.error("Erreur de chargement des contributions:", error);
             toast({ variant: 'destructive', title: 'Erreur', description: "Impossible de charger les contributions."});
         }
+      } finally {
         setIsLoading(false);
-      });
+      }
     }
     fetchRecentContributions();
   }, [firestore, toast]);
