@@ -42,9 +42,9 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 💰 PRICE RECORDS (/priceRecords/{priceRecordId})
+    // 💰 PRICE RECORDS (/prices/{priceId})
     // ============================================
-    match /prices/{priceRecordId} {
+    match /prices/{priceId} {
       // Tout le monde peut lire les prix
       allow get, list: if true;
       
@@ -53,13 +53,17 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
       // Les utilisateurs connectés peuvent voter (mettre à jour), mais pas sur leur propre post.
-      // Le propriétaire peut supprimer son propre post.
       allow update: if isSignedIn() && resource.data.userId != request.auth.uid;
+      
+      // Le propriétaire peut supprimer son propre post.
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
 
+      // ---- Sous-collection Commentaires ----
       match /comments/{commentId} {
         allow read, list: if isSignedIn();
+        // Un utilisateur connecté peut créer un commentaire
         allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        // Le propriétaire du commentaire peut le modifier ou le supprimer
         allow update, delete: if isOwner(resource.data.userId);
       }
     }

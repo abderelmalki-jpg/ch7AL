@@ -188,8 +188,7 @@
           "description": "City where the store is located."
         },
         "neighborhood": {
-          "type": "string",
-          "description": "Neighborhood where the store is located."
+          "type": "string",          "description": "Neighborhood where the store is located."
         },
         "createdAt": {
           "type": "string",
