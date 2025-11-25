@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Search, PlusCircle, ShoppingBasket, ArrowRight, Flame, MapPin, Store as StoreIcon, Calendar, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, getDocs, doc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, where } from 'firebase/firestore';
 import type { Price, Product, UserProfile, Contribution } from '@/lib/types';
 import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -52,15 +52,18 @@ function HomePageContent() {
             setIsLoadingDetails(true);
             const detailed = await Promise.all(
                 (prices || []).map(async (price) => {
+                    // This is incorrect, productId is an ID, not a name. Let's fetch by doc ID if possible.
+                    // The query `where('name', '==', price.productId)` is wrong.
+                    // Let's assume for now productId is the actual document ID.
                     const [productSnap, storeSnap, userSnap] = await Promise.all([
-                        getDocs(query(collection(firestore, 'products'), where('name', '==', price.productId))), // Assuming productId is name for now
-                        getDocs(query(collection(firestore, 'stores'), where('name', '==', price.storeId))),
-                        getDocs(query(collection(firestore, 'users'), where('uid', '==', price.userId)))
+                        price.productId ? getDoc(doc(firestore, 'products', price.productId)) : Promise.resolve(null),
+                        price.storeId ? getDoc(doc(firestore, 'stores', price.storeId)) : Promise.resolve(null),
+                        price.userId ? getDoc(doc(firestore, 'users', price.userId)) : Promise.resolve(null)
                     ]);
                     
-                    const product = !productSnap.empty ? { id: productSnap.docs[0].id, ...productSnap.docs[0].data() } as Product : undefined;
-                    const store = !storeSnap.empty ? { id: storeSnap.docs[0].id, ...storeSnap.docs[0].data() } : undefined;
-                    const user = !userSnap.empty ? { id: userSnap.docs[0].id, ...userSnap.docs[0].data() } as UserProfile : undefined;
+                    const product = productSnap?.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : undefined;
+                    const store = storeSnap?.exists() ? { id: storeSnap.id, ...storeSnap.data() } : undefined;
+                    const user = userSnap?.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : undefined;
                     
                     return {
                         ...price,
@@ -204,3 +207,5 @@ export default function HomePage() {
     </Suspense>
   )
 }
+
+    
