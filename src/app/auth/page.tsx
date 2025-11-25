@@ -57,7 +57,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     let isMounted = true; 
-    if (auth && firestore && isSignInWithEmailLink(auth, window.location.href)) {
+    if (auth && firestore && typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
       setIsHandlingRedirect(true);
       let email = window.localStorage.getItem('emailForSignIn');
       if (!email) {
@@ -100,23 +100,23 @@ export default function AuthPage() {
 
   if (isUserLoading || isHandlingRedirect) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-gradient-to-br from-primary/80 to-primary">
-        <Loader2 className="h-12 w-12 animate-spin text-white" />
-        <p className="text-white mt-4">Vérification...</p>
+      <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground mt-4">Vérification...</p>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8 bg-gradient-to-br from-primary/80 to-primary">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8 bg-background">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-4">
-            <Logo className="h-24 w-24" />
+        <div className="flex justify-center mb-6">
+            <Logo className="h-20 w-20" />
         </div>
-        <Card className="shadow-2xl rounded-2xl">
-            <CardHeader className="text-center pb-4">
-                <CardTitle className="font-headline text-3xl">Rejoignez la communauté</CardTitle>
-                <CardDescription>Économisez et partagez en toute simplicité.</CardDescription>
+        <Card className="shadow-lg rounded-xl">
+            <CardHeader className="text-center">
+                <CardTitle className="text-2xl font-bold">Bienvenue !</CardTitle>
+                <CardDescription>Connectez-vous pour continuer</CardDescription>
             </CardHeader>
             <CardContent>
                 <AuthForm />
@@ -126,3 +126,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
+    

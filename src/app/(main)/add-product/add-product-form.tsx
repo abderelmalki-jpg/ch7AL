@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode } from 'lucide-react';
+import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { addPrice, findProductByBarcode } from './actions';
@@ -78,11 +78,9 @@ export function AddProductForm() {
               const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
               if(isMounted) {
                   streamRef.current = stream;
-                  if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                  }
-                  if(zxingRef.current){
-                    zxingRef.current.srcObject = stream;
+                  const targetRef = isCameraOn ? videoRef : zxingRef;
+                  if (targetRef.current) {
+                    targetRef.current.srcObject = stream;
                   }
                   setCameraError(null);
               }
@@ -332,39 +330,36 @@ export function AddProductForm() {
     }
 
     const CameraView = ({onBack, children, title}: {onBack: () => void, children: React.ReactNode, title: string}) => (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <Button onClick={onBack} variant="outline" size="sm">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Retour
-                    </Button>
-                     <CardTitle className="text-lg">{title}</CardTitle>
-                     <div className="w-16"></div>
-                </div>
-            </CardHeader>
-            <CardContent>
+         <div className="bg-primary text-primary-foreground min-h-full flex flex-col p-4">
+            <div className="flex justify-between items-center mb-6">
+                <Button onClick={onBack} variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20">
+                    <ArrowLeft />
+                </Button>
+                <h1 className="text-xl font-bold">{title}</h1>
+                <div className="w-10"></div>
+            </div>
+             <div className="flex-grow flex flex-col justify-center items-center">
                 {cameraError ? (
-                     <div className="w-full aspect-video bg-black rounded-lg flex items-center justify-center p-4">
-                        <div className="text-center text-white">
+                    <div className="w-full aspect-square bg-black/30 rounded-lg flex items-center justify-center p-4">
+                        <div className="text-center">
                             <p>{cameraError}</p>
                         </div>
                     </div>
                 ) : (
                     children
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
     
     if (isCameraOn) {
         return (
             <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
-                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative mb-4">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                     <canvas ref={canvasRef} className="hidden" />
                 </div>
-                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
+                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full h-14 text-lg bg-white/90 text-primary hover:bg-white">
                     {isIdentifying ? (
                         <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -384,142 +379,123 @@ export function AddProductForm() {
     if (isScanning) {
         return (
              <CameraView onBack={() => setIsScanning(false)} title="Scanner un Code-barres">
-                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                 <div className="w-full max-w-sm aspect-square bg-black/30 rounded-2xl overflow-hidden shadow-lg relative flex items-center justify-center">
                     <video ref={zxingRef} className="w-full h-full object-cover"/>
-                    <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white bg-black/50 px-2 py-1 rounded text-xs">Visez le code-barres</p>
+                    <div className="absolute inset-0 border-[3rem] border-black/30 rounded-2xl pointer-events-none"></div>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-accent scan-line"></div>
+                    <p className="absolute bottom-6 text-white bg-black/50 px-2 py-1 rounded text-sm">Visez le code-barres</p>
                 </div>
             </CameraView>
         )
     }
 
   return (
-    <div className="space-y-8">
-        <Card className="overflow-hidden">
-            <CardHeader className="text-center">
-                 <div className="flex justify-center mb-4">
-                    <div className="p-3 bg-primary/10 rounded-full">
-                         <Camera className="h-8 w-8 text-primary" />
-                    </div>
-                </div>
-                <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
-                <CardDescription>
-                    Scannez un code-barres ou identifiez un produit avec votre caméra.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <div className="mb-6 grid grid-cols-2 gap-4">
-                    <Button onClick={() => setIsScanning(true)} size="lg" className="h-auto py-4 flex-col gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-                        <Barcode className="h-6 w-6" />
-                        <span>Scanner Code</span>
-                    </Button>
-                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2">
-                        <Zap className="h-6 w-6" />
-                        <span>Analyser avec l'IA</span>
-                    </Button>
-                </div>
-                 <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Ou remplir manuellement</span>
-                    </div>
-                </div>
+    <div className="space-y-4">
+        <div className="bg-primary text-primary-foreground p-4">
+            <h1 className="text-2xl font-bold">Ajouter un nouveau prix</h1>
+            <p>Commencez par prendre une photo ou scanner un code-barres.</p>
+        </div>
+        
+        <div className="p-4 space-y-4">
+            <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-24 w-full flex items-center justify-start gap-4 text-left text-lg bg-secondary hover:bg-secondary/90">
+                <Camera className="h-8 w-8" />
+                <span>Prendre une photo</span>
+            </Button>
+             <Button onClick={() => setIsScanning(true)} size="lg" className="h-24 w-full flex items-center justify-start gap-4 text-left text-lg bg-secondary hover:bg-secondary/90">
+                <ScanLine className="h-8 w-8" />
+                <span>Scanner le code-barres</span>
+            </Button>
+        </div>
 
-                <form onSubmit={handlePriceSubmit} className="space-y-6">
-                    {formErrors.userId && <p className="text-sm font-medium text-destructive">{formErrors.userId}</p>}
+        <div className="relative p-4">
+            <div className="absolute inset-0 flex items-center px-4">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Ou remplir manuellement</span>
+            </div>
+        </div>
 
-                    {photoDataUri && (
-                        <div className="space-y-2">
-                            <Label>Aperçu de l'image</Label>
-                            <div className="relative aspect-video w-full max-w-sm mx-auto rounded-lg overflow-hidden border">
-                                <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" sizes="50vw" />
-                                 <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-8 w-8"
-                                    onClick={removeImage}
-                                >
-                                    <X className="h-4 w-4" />
-                                    <span className="sr-only">Supprimer l'image</span>
-                                </Button>
-                            </div>
-                        </div>
+        <form onSubmit={handlePriceSubmit} className="space-y-6 p-4">
+            {formErrors.userId && <p className="text-sm font-medium text-destructive">{formErrors.userId}</p>}
+
+            {photoDataUri && (
+                <div className="space-y-2">
+                    <Label>Aperçu de l'image</Label>
+                    <div className="relative aspect-video w-full max-w-sm mx-auto rounded-lg overflow-hidden border">
+                        <Image src={photoDataUri} alt="Aperçu du produit" fill className="object-contain" sizes="50vw" />
+                            <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8"
+                            onClick={removeImage}
+                        >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Supprimer l'image</span>
+                        </Button>
+                    </div>
+                </div>
+            )}
+            
+            <div className="space-y-2">
+                <Label htmlFor="productName">Nom du produit</Label>
+                <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
+                {formErrors.productName && <p className="text-sm font-medium text-destructive">{formErrors.productName}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="price">Prix</Label>
+                <div className="relative">
+                    <Input id="price" name="price" type="text" inputMode="decimal" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12 text-lg" required/>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
+                        MAD
+                    </span>
+                </div>
+                {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
+            </div>
+            
+            {barcode && (
+                <div className="space-y-2">
+                    <Label htmlFor="barcode">Code-barres</Label>
+                        <Input id="barcode" name="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+                </div>
+            )}
+
+                <div className="space-y-2">
+                <Label htmlFor="storeName">Lieu (Hanout)</Label>
+                <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
+                {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="address">Adresse ou point de repère</Label>
+                <div className="flex gap-2">
+                    <Input id="address" name="address" placeholder="Près de la mosquée, etc." value={address} onChange={(e) => setAddress(e.target.value)} />
+                        <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
+                        {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
+                        <span className="sr-only">Géolocaliser</span>
+                    </Button>
+                        {isLocating && (
+                        <Button type="button" variant="ghost" size="icon" onClick={stopLocating}>
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Arrêter</span>
+                        </Button>
                     )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="productName">Nom du produit</Label>
-                            <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
-                            {formErrors.productName && <p className="text-sm font-medium text-destructive">{formErrors.productName}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="price">Prix</Label>
-                            <div className="relative">
-                                <Input id="price" name="price" type="text" inputMode="decimal" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12" required/>
-                                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
-                                    DH
-                                </span>
-                            </div>
-                            {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
-                        </div>
-                    </div>
-                    
-                    {barcode && (
-                        <div className="space-y-2">
-                            <Label htmlFor="barcode">Code-barres</Label>
-                             <Input id="barcode" name="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-                        </div>
-                    )}
+                </div>
+            </div>
 
-                     <div className="space-y-2">
-                        <Label htmlFor="storeName">Lieu (Hanout)</Label>
-                        <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
-                        {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="city">Ville</Label>
-                            <Input id="city" name="city" placeholder="ex: Rabat" value={city} onChange={e => setCity(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="neighborhood">Quartier</Label>
-                            <Input id="neighborhood" name="neighborhood" placeholder="ex: Agdal" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="address">Adresse ou point de repère</Label>
-                        <div className="flex gap-2">
-                            <Input id="address" name="address" placeholder="Près de la mosquée, etc." value={address} onChange={(e) => setAddress(e.target.value)} />
-                             <Button type="button" variant="outline" size="icon" onClick={handleGetLocation} disabled={isLocating}>
-                                {isLocating ? <Loader2 className="h-4 w-4 animate-spin"/> : <MapPin className="h-4 w-4 text-primary" />}
-                                <span className="sr-only">Géolocaliser</span>
-                            </Button>
-                             {isLocating && (
-                                <Button type="button" variant="ghost" size="icon" onClick={stopLocating}>
-                                    <X className="h-4 w-4" />
-                                    <span className="sr-only">Arrêter</span>
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
-                        {isSubmittingPrice ? (
-                            <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Ajout en cours...
-                            </>
-                        ) : (
-                            "Ajouter le prix"
-                        )}
-                    </Button>
-                </form>
-            </CardContent>
-        </Card>
+            <Button type="submit" disabled={isSubmittingPrice || !user} className="w-full text-lg h-12">
+                {isSubmittingPrice ? (
+                    <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Ajout en cours...
+                    </>
+                ) : (
+                    "Ajouter le prix"
+                )}
+            </Button>
+        </form>
     </div>
   );
 }

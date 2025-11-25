@@ -9,9 +9,11 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
-const PROTECTED_ROUTES = ['/profile', '/add-product', '/dashboard', '/leaderboard', '/map', '/search', '/settings', '/home'];
+const PROTECTED_ROUTES = ['/profile', '/add-product', '/dashboard', '/leaderboard', '/map', '/search', '/settings'];
 const AUTH_ROUTE = '/auth';
 const LANDING_PAGE = '/';
+
+const NO_NAV_ROUTES = ['/add-product'];
 
 export default function MainLayout({
   children,
@@ -24,7 +26,7 @@ export default function MainLayout({
 
   useEffect(() => {
     if (isUserLoading) {
-      return; // Ne rien faire tant que l'état d'authentification est en cours de chargement
+      return; // Wait until user status is resolved
     }
 
     const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
@@ -32,45 +34,44 @@ export default function MainLayout({
     const isLandingPage = pathname === LANDING_PAGE;
 
     if (!user && isProtectedRoute) {
-      // Si l'utilisateur n'est pas connecté et tente d'accéder à une page protégée,
-      // le rediriger vers la page de connexion.
       router.replace(AUTH_ROUTE);
-    } else if (user && isAuthPage) {
-      // Si l'utilisateur est connecté et essaie d'accéder à la page de connexion,
-      // le rediriger vers le tableau de bord.
-      router.replace('/dashboard');
-    } else if (user && isLandingPage) {
-      // Si l'utilisateur est connecté et sur la landing page, le rediriger vers le dashboard
+    } else if (user && (isAuthPage || isLandingPage)) {
       router.replace('/dashboard');
     }
 
   }, [user, isUserLoading, router, pathname]);
+  
+  const showNav = !NO_NAV_ROUTES.some(route => pathname.startsWith(route));
+  const isAuthOrLandingPage = pathname === AUTH_ROUTE || pathname === LANDING_PAGE;
 
-  if (isUserLoading && (PROTECTED_ROUTES.some(route => pathname.startsWith(route)) || pathname === LANDING_PAGE)) {
-    // Afficher un loader pour les routes protégées ou la landing pendant la vérification de l'utilisateur
+  if (isUserLoading && (PROTECTED_ROUTES.some(route => pathname.startsWith(route)) || isLandingPage)) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
   
-  const isAuthOrLandingPage = pathname === AUTH_ROUTE || pathname === LANDING_PAGE;
   if (!user && isAuthOrLandingPage) {
     return <main>{children}</main>;
   }
 
+  // This prevents a flash of protected content while redirecting
   if (!user && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-      // Ne rien afficher (un loader est déjà affiché) pour éviter un flash de contenu
-      // pendant que la redirection s'effectue.
-      return null;
+      return (
+        <div className="flex h-screen items-center justify-center bg-background">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
   }
   
   return (
     <div className="relative flex min-h-screen w-full flex-col">
-      <Header />
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
-      <BottomNav />
+       {showNav && <Header />}
+      <main className={`flex-1 ${showNav ? 'pt-16 pb-20' : ''} md:pb-0`}>{children}</main>
+      {showNav && <BottomNav />}
     </div>
   );
 }
+
+    

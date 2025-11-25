@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/logo";
 import { useUser } from "@/firebase";
+import { Button } from "../ui/button";
+import { User } from "lucide-react";
 
 export function Header() {
   const { user, isUserLoading } = useUser();
@@ -24,26 +26,32 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 hidden w-full bg-background/80 backdrop-blur-sm md:block">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <div className="w-10"></div> {/* Spacer to balance the layout */}
-        <Link href="/dashboard" className="flex justify-center">
-          <Logo className="h-16 w-16" />
+        <Link href="/dashboard">
+          <Logo className="h-12 w-12" />
         </Link>
-        <Link href="/profile">
-          <Avatar className="h-9 w-9 border-2 border-primary">
-            {!isUserLoading && user && (
-              <AvatarImage
-                src={user.photoURL || undefined}
-                alt={user.displayName || "User Avatar"}
-              />
-            )}
-            <AvatarFallback>
-                {getInitials(user?.displayName, user?.email)}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
+        <div className="flex items-center gap-4">
+            <p className="text-sm font-medium">
+                Bonjour, {user?.displayName || 'Utilisateur'}
+            </p>
+            <Link href="/profile">
+            <Avatar className="h-10 w-10 border-2 border-primary">
+                {!isUserLoading && user && (
+                <AvatarImage
+                    src={user.photoURL || undefined}
+                    alt={user.displayName || "User Avatar"}
+                />
+                )}
+                <AvatarFallback className="bg-muted">
+                    <User className="w-5 h-5"/>
+                </AvatarFallback>
+            </Avatar>
+            </Link>
+        </div>
       </div>
     </header>
   );
 }
+
+    

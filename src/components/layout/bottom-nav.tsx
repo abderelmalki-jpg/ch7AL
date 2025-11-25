@@ -3,15 +3,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Camera, User, Trophy } from "lucide-react";
+import { Home, Trophy, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "CH7AL", icon: Home },
-  { href: "/search", label: "Recherche", icon: Search },
-  { href: "/add-product", label: "Ajouter", icon: Camera, isCentral: true },
+  { href: "/dashboard", label: "Accueil", icon: Home },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
-  { href: "/profile", label: "Profil", icon: User },
+  { href: "/search", label: "Rechercher", icon: Search },
 ];
 
 export function BottomNav() {
@@ -21,32 +19,15 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-card/95 backdrop-blur-sm md:hidden">
       <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-
-          if (item.isCentral) {
-            return (
-              <div key={item.href} className="relative -top-6">
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex h-16 w-16 flex-col items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg transition-transform active:scale-95",
-                    isActive && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  <item.icon className="h-7 w-7" />
-                  <span className="sr-only">{item.label}</span>
-                </Link>
-              </div>
-            );
-          }
+          const isActive = pathname === item.href;
 
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors w-1/5",
-                isActive ? "text-primary" : "hover:text-primary"
+                "flex flex-col items-center justify-center gap-1 w-1/3 text-muted-foreground transition-colors",
+                isActive ? "text-accent" : "hover:text-accent"
               )}
             >
               <item.icon className="h-6 w-6" />
@@ -58,3 +39,5 @@ export function BottomNav() {
     </nav>
   );
 }
+
+    

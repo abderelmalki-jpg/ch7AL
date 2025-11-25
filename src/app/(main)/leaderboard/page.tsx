@@ -2,15 +2,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import type { LeaderboardEntry, UserProfile } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, Star, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const [contributors, setContributors] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -19,7 +21,6 @@ export default function LeaderboardPage() {
       if (!firestore) return;
       setIsLoading(true);
       try {
-        // Query the users collection directly, ordered by points
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, orderBy('points', 'desc'), limit(50));
         
@@ -32,7 +33,7 @@ export default function LeaderboardPage() {
             userId: doc.id,
             username: userData.name || 'Utilisateur anonyme',
             points: userData.points || 0,
-            rank: index + 1, // Assign rank based on order
+            rank: index + 1,
             avatar: userData.photoURL || '',
           };
         });
@@ -57,54 +58,64 @@ export default function LeaderboardPage() {
     return name.substring(0, 2).toUpperCase();
   }
 
+  const getRankCardClass = (rank: number) => {
+    switch(rank) {
+        case 1: return "bg-yellow-400 text-yellow-900";
+        case 2: return "bg-gray-300 text-gray-800";
+        case 3: return "bg-orange-400 text-orange-900";
+        default: return "bg-card";
+    }
+  }
+
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <Card className="overflow-hidden">
-        <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-                <div className="p-3 bg-primary/10 rounded-full">
-                     <Trophy className="h-8 w-8 text-primary" />
-                </div>
-            </div>
-            <CardTitle className="font-headline text-3xl text-primary">Classement</CardTitle>
-            <CardDescription>
-                Les champions de la communauté qui partagent le plus.
-            </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+        <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold">Classement</h1>
+        </div>
+        <div className="space-y-2">
           {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Card key={i} className="p-4 flex items-center gap-4">
+                    <Skeleton className="w-8 h-8 rounded-full" />
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1">
+                        <Skeleton className="h-5 w-32 mb-2" />
+                        <Skeleton className="h-4 w-16" />
+                    </div>
+                </Card>
+              ))}
             </div>
           ) : (
-            <ul className="divide-y">
+            <>
               {contributors.map((contributor) => (
-                <li key={contributor.id} className="p-4 flex items-center gap-4 hover:bg-secondary transition-colors">
-                  <span className="text-xl font-bold text-muted-foreground w-6 text-center">{contributor.rank}</span>
-                  <Avatar className="h-12 w-12 border-2 border-primary">
+                <Card key={contributor.id} className={cn("p-4 flex items-center gap-4 transition-all", getRankCardClass(contributor.rank))}>
+                    <div className={cn("flex items-center justify-center h-8 w-8 rounded-full font-bold", 
+                        contributor.rank === 1 ? 'bg-yellow-500' : 
+                        contributor.rank === 2 ? 'bg-gray-400' :
+                        contributor.rank === 3 ? 'bg-orange-500' :
+                        'bg-muted'
+                    )}>
+                        {contributor.rank}
+                    </div>
+
+                  <Avatar className="h-12 w-12 border-2 border-background">
                     <AvatarImage src={contributor.avatar} alt={contributor.username} />
                     <AvatarFallback>{getInitials(contributor.username)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <p className="font-semibold text-primary">{contributor.username}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-accent" />
-                        {contributor.points || 0}
-                      </span>
-                    </div>
+                    <p className="font-semibold text-lg">{contributor.username}</p>
                   </div>
-                  {contributor.rank < 4 && (
-                    <span className="text-3xl">
-                      {contributor.rank === 1 ? '🥇' : contributor.rank === 2 ? '🥈' : '🥉'}
-                    </span>
-                  )}
-                </li>
+                  <div className="font-bold text-lg">
+                      {contributor.points || 0} points
+                  </div>
+                </Card>
               ))}
-            </ul>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </div>
     </div>
   );
 }
+
+    

@@ -1,74 +1,69 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 20% 97%; /* Fond gris très clair */
-    --foreground: 222 47% 11%; /* Gris presque noir */
+    --background: 240 10% 97%; /* Light cream */
+    --foreground: 240 6% 10%; /* Dark Grey */
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 6% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 240 6% 10%;
 
-    --primary: 15 96% 59%; /* Orange Corail Vif (était #fb6b37) */
-    --primary-foreground: 20 100% 98%;
+    --primary: 142 76% 36%; /* Deep Green */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 132 78% 40%; /* Vert (#15ca35) */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 24 95% 53%; /* Bright Orange */
+    --secondary-foreground: 0 0% 100%;
     
-    --muted: 210 40% 94%;
-    --muted-foreground: 215 20% 45%;
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 45%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 24 95% 53%; /* Bright Orange */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 98%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 24 95% 53%; /* Bright Orange */
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 15 96% 59%; /* Orange Corail Vif */
-
-    --radius: 0.75rem; /* Coins plus arrondis */
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222 47% 11%; /* Gris anthracite */
-    --foreground: 210 40% 98%;
+    --background: 240 6% 10%; /* Dark Grey */
+    --foreground: 240 5% 95%;
 
-    --card: 222 47% 13%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 6% 12%;
+    --card-foreground: 240 5% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 240 5% 95%;
 
-    --primary: 15 96% 59%; /* Orange Corail Vif */
-    --primary-foreground: 20 100% 98%;
+    --primary: 142 71% 45%; /* Deep Green */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 132 78% 45%; /* Vert */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 24 95% 53%; /* Bright Orange */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 28% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 215 28% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 24 95% 53%; /* Bright Orange */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 0 0% 98%;
-    
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 98%;
 
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 15 96% 59%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 24 95% 53%;
   }
 }
 
@@ -85,19 +80,17 @@
   @keyframes scan-line-animation {
     0% {
       top: 0;
+      opacity: 0.5;
     }
     100% {
       top: 100%;
+      opacity: 0;
     }
   }
 
   .scan-line {
-    animation: scan-line-animation 2s linear infinite alternate;
+    animation: scan-line-animation 2s ease-in-out infinite;
   }
 }
 
-@layer components {
-    .card {
-        @apply bg-card;
-    }
-}
+    
