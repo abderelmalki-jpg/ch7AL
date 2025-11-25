@@ -375,21 +375,33 @@ export function AddProductForm() {
                 </div>
             )}
             
-            <div className="space-y-2">
-                <Label htmlFor="productName">Nom du produit</Label>
-                <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
-                {formErrors.productName && <p className="text-sm font-medium text-destructive">{formErrors.productName}</p>}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="productName">Nom du produit</Label>
+                    <Input id="productName" name="productName" placeholder="ex: Canette de Coca-Cola" value={productName} onChange={(e) => setProductName(e.target.value)} required/>
+                    {formErrors.productName && <p className="text-sm font-medium text-destructive">{formErrors.productName}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="price">Prix</Label>
+                    <div className="relative">
+                        <Input id="price" name="price" type="text" inputMode="decimal" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12" required/>
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
+                            DH
+                        </span>
+                    </div>
+                    {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
+                </div>
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="price">Prix</Label>
-                <div className="relative">
-                    <Input id="price" name="price" type="text" inputMode="decimal" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} className="pl-4 pr-12 text-lg" required/>
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-sm">
-                        MAD
-                    </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="brand">Marque (optionnel)</Label>
+                    <Input id="brand" name="brand" placeholder="ex: Coca-Cola" value={brand} onChange={e => setBrand(e.target.value)} />
                 </div>
-                {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
+                <div className="space-y-2">
+                    <Label htmlFor="category">Catégorie (optionnel)</Label>
+                    <Input id="category" name="category" placeholder="ex: Boisson gazeuse" value={category} onChange={e => setCategory(e.target.value)} />
+                </div>
             </div>
 
             <div className="space-y-2">
@@ -429,3 +441,6 @@ export function AddProductForm() {
     </div>
   );
 }
+
+
+    
