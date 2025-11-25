@@ -295,8 +295,19 @@ function ProductList({ records, isLoading, onImageClick }: { records: Price[] | 
   );
 }
 
-
-const localAds = [
+function DashboardContent() {
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+  const userProfile = null; // Mock
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { t } = { t: (key: string) => key }; // Mock translation
+  
+  const [selectedPrice, setSelectedPrice] = useState<Price | null>(null);
+  const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
+  const [greeting, setGreeting] = useState('');
+  
+  const localAds = [
     {
         imageUrl: "https://res.cloudinary.com/dhjwimevi/image/upload/q_auto,f_auto,w_800/v1762353376/images_1_dm0yuv.jpg",
         link: "https://www.google.com/maps/dir/TACOS+%26+SMASH,+Rue+El+Amal%D8%8C+Meknes%E2%80%AD/4+Rue+El+Amal,+Meknes+50000/@33.8853808,-5.6520659,17462m/data=!3m2!1e3!4b1!4m13!4m12!1m5!1m1!1s0xda05b00270c49a5:0xf300af1bc01c190e!2m2!1d-5.569663!2d33.8852657!1m5!1m1!1s0xda05b00270c49a5:0xf300af1bc01c190e!2m2!1d-5.569663!2d33.8852657?entry=ttu&g_ep=EgoyMDI1MTEwMi4wIKXMDSoASAFQAw%3D%3D"
@@ -315,18 +326,6 @@ const localAds = [
     },
 ];
 
-function DashboardContent() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
-  const userProfile = null; // Mock
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { t } = { t: (key: string) => key }; // Mock translation
-  
-  const [selectedPrice, setSelectedPrice] = useState<Price | null>(null);
-  const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
-  const [greeting, setGreeting] = useState('');
-  
   useEffect(() => {
     const hours = new Date().getHours();
     let greetingKey = 'Bonsoir';
@@ -549,5 +548,7 @@ export default function HomePage() {
     </Suspense>
   )
 }
+
+    
 
     
