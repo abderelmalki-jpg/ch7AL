@@ -3,7 +3,7 @@
 
 import { getAdminServices } from '@/firebase/server';
 import { z } from 'zod';
-import { FieldValue, Filter } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -32,7 +32,13 @@ async function uploadImage(dataUri: string, userId: string): Promise<string> {
     const { adminStorage } = await getAdminServices();
     if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
     
-    const bucket = adminStorage.bucket();
+    // Utilisation directe du nom du bucket depuis les variables d'environnement
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+        throw new Error("Le nom du bucket de stockage Firebase n'est pas configuré dans les variables d'environnement.");
+    }
+    const bucket = adminStorage.bucket(bucketName);
+    
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
     const imageFile = bucket.file(imagePath);
 
