@@ -3,11 +3,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, PlusCircle, ShoppingBasket, ArrowRight, Flame, MapPin, Store as StoreIcon, Calendar, ArrowUpDown } from 'lucide-react';
+import { Search, PlusCircle, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, where } from 'firebase/firestore';
-import type { Price, Product, UserProfile, Contribution } from '@/lib/types';
+import { collection, query, orderBy, limit, getDoc, doc } from 'firebase/firestore';
+import type { Price, Product, UserProfile, Contribution, Store } from '@/lib/types';
 import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
@@ -20,7 +20,7 @@ import { ContributionCard } from './contribution-card';
 type DetailedContribution = Contribution & {
     product?: Product;
     user?: UserProfile;
-    store?: any; // Define a proper Store type if you have one
+    store?: Store;
 };
 
 function HomePageContent() {
@@ -52,9 +52,6 @@ function HomePageContent() {
             setIsLoadingDetails(true);
             const detailed = await Promise.all(
                 (prices || []).map(async (price) => {
-                    // This is incorrect, productId is an ID, not a name. Let's fetch by doc ID if possible.
-                    // The query `where('name', '==', price.productId)` is wrong.
-                    // Let's assume for now productId is the actual document ID.
                     const [productSnap, storeSnap, userSnap] = await Promise.all([
                         price.productId ? getDoc(doc(firestore, 'products', price.productId)) : Promise.resolve(null),
                         price.storeId ? getDoc(doc(firestore, 'stores', price.storeId)) : Promise.resolve(null),
@@ -62,7 +59,7 @@ function HomePageContent() {
                     ]);
                     
                     const product = productSnap?.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : undefined;
-                    const store = storeSnap?.exists() ? { id: storeSnap.id, ...storeSnap.data() } : undefined;
+                    const store = storeSnap?.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : undefined;
                     const user = userSnap?.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : undefined;
                     
                     return {
@@ -71,13 +68,13 @@ function HomePageContent() {
                         productName: product?.name || price.productId,
                         storeName: store?.name || price.storeId,
                         price: price.price,
-                        date: price.createdAt ? formatDistanceToNow(price.createdAt.toDate(), { addSuffix: true, locale: fr }) : 'N/A',
+                        date: price.createdAt ? (price.createdAt as any).toDate() : new Date(),
                         imageUrl: product?.imageUrl,
                         user: user,
                         product: product,
                         store: store,
-                        latitude: store?.latitude || 0,
-                        longitude: store?.longitude || 0,
+                        latitude: store?.latitude || null,
+                        longitude: store?.longitude || null,
                     } as DetailedContribution;
                 })
             );
@@ -155,9 +152,9 @@ function HomePageContent() {
                                         <p className="text-xs text-muted-foreground truncate">{item.storeName}</p>
                                     </div>
                                     <div className="flex justify-between items-end mt-1">
-                                        <p className="text-xs text-muted-foreground">{item.date}</p>
+                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(item.date, { addSuffix: true, locale: fr })}</p>
                                         <div className="font-bold text-primary text-base whitespace-nowrap">
-                                            {item.price.toFixed(2)} MAD
+                                            {item.price.toFixed(2)} DH
                                         </div>
                                     </div>
                                 </div>
@@ -207,5 +204,3 @@ export default function HomePage() {
     </Suspense>
   )
 }
-
-    

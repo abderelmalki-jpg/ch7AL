@@ -6,17 +6,18 @@ export type Contribution = {
   productName: string;
   storeName: string;
   price: number;
-  date: string;
-  latitude: number;
-  longitude: number;
+  date: Date;
+  latitude: number | null;
+  longitude: number | null;
   imageUrl?: string;
-  userId: string; // email in this case from price
+  userId: string;
   product: Product | null;
   store: Store | null;
   user: UserProfile | null;
   upvotes: string[];
   downvotes: string[];
   voteScore: number;
+  createdAt: Timestamp; // Keep original timestamp
 };
 
 export type Product = {
@@ -55,8 +56,8 @@ export type Store = {
     addedBy?: string;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
-    latitude: number;
-    longitude: number;
+    latitude: number | null;
+    longitude: number | null;
 }
 
 export type UserProfile = {

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, ScanLine } from 'lucide-react';
+import { Loader2, MapPin, X, Camera, Zap, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { addPrice } from './actions';
@@ -334,7 +334,7 @@ export function AddProductForm() {
     <div className="space-y-4">
         <div className="bg-primary text-primary-foreground p-4 text-center">
             <h1 className="text-2xl font-bold">Ajouter un nouveau prix</h1>
-            <p>Commencez par prendre une photo pour identifier le produit.</p>
+            <p>Commencez par prendre une photo ou remplissez le formulaire.</p>
         </div>
         
         <div className="p-4 space-y-4">
@@ -410,6 +410,17 @@ export function AddProductForm() {
                 {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
             </div>
 
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="city">Ville</Label>
+                    <Input id="city" name="city" placeholder="ex: Rabat" value={city} onChange={e => setCity(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="neighborhood">Quartier</Label>
+                    <Input id="neighborhood" name="neighborhood" placeholder="ex: Agdal" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
+                </div>
+            </div>
+
             <div className="space-y-2">
                 <Label htmlFor="address">Adresse ou point de repère</Label>
                 <div className="flex gap-2">
@@ -441,6 +452,3 @@ export function AddProductForm() {
     </div>
   );
 }
-
-
-    
