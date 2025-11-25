@@ -49,7 +49,7 @@ service cloud.firestore {
 
     // Allow signed-in users to read from the contributions collection
     match /contributions/{contributionId} {
-        allow get, list: if isSignedIn();
+      allow get, list: if isSignedIn();
     }
   }
 }
