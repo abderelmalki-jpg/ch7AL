@@ -28,7 +28,6 @@ service cloud.firestore {
     }
 
     match /prices/{priceId} {
-      // Tout utilisateur connecté peut lire la liste des prix ou un prix spécifique.
       allow get, list: if isSignedIn();
       
       allow create: if isSignedIn()
@@ -40,13 +39,17 @@ service cloud.firestore {
                   
       allow delete: if isOwner(resource.data.userId);
 
-      // Les utilisateurs connectés peuvent ajouter et lire des commentaires
       match /comments/{commentId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() 
                       && request.resource.data.userId == request.auth.uid;
         allow update, delete: if isOwner(resource.data.userId);
       }
+    }
+
+    // Allow signed-in users to read from the contributions collection
+    match /contributions/{contributionId} {
+        allow get, list: if isSignedIn();
     }
   }
 }
