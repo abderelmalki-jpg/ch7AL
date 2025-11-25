@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect } from 'react';
@@ -26,7 +27,7 @@ export default function MainLayout({
       return; // Ne rien faire tant que l'état d'authentification est en cours de chargement
     }
 
-    const isProtectedRoute = PROTECTED_ROUTES.includes(pathname);
+    const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
     const isAuthPage = pathname === AUTH_ROUTE;
     const isLandingPage = pathname === LANDING_PAGE;
 
@@ -45,7 +46,7 @@ export default function MainLayout({
 
   }, [user, isUserLoading, router, pathname]);
 
-  if (isUserLoading && (PROTECTED_ROUTES.includes(pathname) || pathname === LANDING_PAGE)) {
+  if (isUserLoading && (PROTECTED_ROUTES.some(route => pathname.startsWith(route)) || pathname === LANDING_PAGE)) {
     // Afficher un loader pour les routes protégées ou la landing pendant la vérification de l'utilisateur
     return (
       <div className="flex h-screen items-center justify-center">
@@ -54,18 +55,17 @@ export default function MainLayout({
     );
   }
   
-  if (!user && PROTECTED_ROUTES.includes(pathname)) {
+  const isAuthOrLandingPage = pathname === AUTH_ROUTE || pathname === LANDING_PAGE;
+  if (!user && isAuthOrLandingPage) {
+    return <main>{children}</main>;
+  }
+
+  if (!user && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
       // Ne rien afficher (un loader est déjà affiché) pour éviter un flash de contenu
       // pendant que la redirection s'effectue.
       return null;
   }
   
-  // N'affiche pas le header et la nav pour la page de connexion
-  if (pathname === LANDING_PAGE) {
-    return <main>{children}</main>;
-  }
-
-
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       <Header />
