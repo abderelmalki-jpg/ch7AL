@@ -9,7 +9,7 @@ import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@
 import { collection, query, orderBy, doc, addDoc, serverTimestamp, getDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import type { Contribution, Comment as CommentType, Price, Store, UserProfile, Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ThumbsUp, ThumbsDown, MessageSquare, MapPin, ImageIcon, Send, Loader2, ArrowLeft } from 'lucide-react';
