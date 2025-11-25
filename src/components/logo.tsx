@@ -1,26 +1,22 @@
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export function Logo({ className }: { className?: string }) {
-  const logoImage = PlaceHolderImages.find((img) => img.id === "logo");
-  
-  if (!logoImage) {
-    return (
-        <div className={cn("h-10 w-10 bg-primary rounded-full", className)}></div>
-    );
-  }
-
   return (
-    <div className={cn("relative h-16 w-16", className)}>
-        <Image
-            src={logoImage.imageUrl}
-            alt={logoImage.description}
-            data-ai-hint={logoImage.imageHint}
-            fill
-            sizes="(max-width: 768px) 10vw, 5vw"
-            className="object-contain"
+    <div className={cn("relative h-16 w-16 overflow-hidden", className)}>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute top-0 left-0 w-full h-full object-cover"
+        key="logo-video"
+      >
+        <source
+          src="https://res.cloudinary.com/dhjwimevi/video/upload/v1764096899/grok-video-ac00e8b7-74a3-4043-bcf7-9673f81dcf59_1_dqu1ec.mp4"
+          type="video/mp4"
         />
+        Votre navigateur ne supporte pas la vidéo.
+      </video>
     </div>
   );
 }

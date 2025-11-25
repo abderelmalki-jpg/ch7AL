@@ -111,7 +111,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8 bg-background">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
-            <Logo className="h-20 w-20" />
+            <Logo className="h-28 w-28" />
         </div>
         <Card className="shadow-lg rounded-xl">
             <CardHeader className="text-center">
