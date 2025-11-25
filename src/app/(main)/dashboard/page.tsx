@@ -28,7 +28,8 @@ export default function DashboardPage() {
       
       setIsLoading(true);
       
-      const pricesRef = collection(firestore, 'prices');
+      // Correction: Utiliser la collection 'contributions' au lieu de 'prices'
+      const pricesRef = collection(firestore, 'contributions');
       const q = query(pricesRef, orderBy('createdAt', 'desc'), limit(6));
 
       try {
@@ -37,15 +38,16 @@ export default function DashboardPage() {
         const contributionsPromises = priceSnap.docs.map(async (priceDoc) => {
           const priceData = priceDoc.data() as Price;
 
+          // productId and storeId might not exist on old "contributions" data
           const [productSnap, storeSnap, userSnap] = await Promise.all([
-            getDoc(doc(firestore, 'products', priceData.productId)),
-            getDoc(doc(firestore, 'stores', priceData.storeId)),
-            getDoc(doc(firestore, 'users', priceData.userId)),
+            priceData.productId ? getDoc(doc(firestore, 'products', priceData.productId)) : Promise.resolve(null),
+            priceData.storeId ? getDoc(doc(firestore, 'stores', priceData.storeId)) : Promise.resolve(null),
+            priceData.userId ? getDoc(doc(firestore, 'users', priceData.userId)) : Promise.resolve(null),
           ]);
           
-          const user = userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : null;
-          const product = productSnap.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : null;
-          const store = storeSnap.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : null;
+          const user = userSnap && userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } as UserProfile : null;
+          const product = productSnap && productSnap.exists() ? { id: productSnap.id, ...productSnap.data() } as Product : null;
+          const store = storeSnap && storeSnap.exists() ? { id: storeSnap.id, ...storeSnap.data() } as Store : null;
 
           let contributionDate: Date;
           const createdAt = priceData.createdAt as any;
@@ -59,11 +61,21 @@ export default function DashboardPage() {
             contributionDate = new Date(); // Fallback
           }
 
+          // Handle old metadata structure
+          let productName = product?.name || 'Produit inconnu';
+          if (priceData.metadata && typeof priceData.metadata === 'string') {
+             try {
+                const metadata = JSON.parse(priceData.metadata.replace(/'/g, '"'));
+                productName = metadata.productName || productName;
+             } catch(e) {/* ignore */}
+          }
+
+
           return {
             id: priceDoc.id,
-            productName: product?.name || 'Produit inconnu',
+            productName: productName,
             storeName: store?.name || 'Magasin inconnu',
-            price: priceData.price,
+            price: priceData.price || priceData.points || 0, // Fallback for old structure
             date: contributionDate.toISOString(),
             latitude: store?.latitude || 0,
             longitude: store?.longitude || 0,
