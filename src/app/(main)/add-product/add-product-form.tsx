@@ -58,11 +58,18 @@ export function AddProductForm() {
         const brandParam = searchParams.get('brand');
         const categoryParam = searchParams.get('category');
         const photoParam = searchParams.get('photoDataUri');
+        const actionParam = searchParams.get('action');
 
         if (nameParam) setProductName(nameParam);
         if (brandParam) setBrand(brandParam);
         if (categoryParam) setCategory(categoryParam);
         if (photoParam) setPhotoDataUri(photoParam);
+
+        if (actionParam === 'camera') {
+            setIsCameraOn(true);
+        } else if (actionParam === 'scan') {
+            setIsScanning(true);
+        }
     }, [searchParams]);
 
      useEffect(() => {
