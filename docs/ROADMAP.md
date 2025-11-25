@@ -158,60 +158,7 @@ C'est une fonctionnalité en plusieurs étapes : capture, envoi à l'IA, et trai
     ```
     **Note pour une app native :** Le flux Genkit doit être déployé comme une fonction Cloud HTTP sécurisée (par ex. avec Firebase Auth) pour être appelé depuis l'extérieur du projet Next.js.
 
-### 3.4 Scanner de Code-barres
-
-L'application web utilise `react-zxing`, mais pour une expérience native avec Capacitor, un plugin est plus performant.
-
-#### Logique d'implémentation pour Capacitor :
-
-1.  **Installer un plugin** : Le plugin communautaire `capacitor-community/barcode-scanner` est une excellente option.
-2.  **Gérer les permissions et le scan** :
-    ```typescript
-    import { BarcodeScanner } from 'capacitor-community/barcode-scanner';
-
-    async function startScan() {
-      // Vérifier les permissions
-      await BarcodeScanner.checkPermission({ force: true });
-
-      // Rendre l'arrière-plan de l'application transparent
-      BarcodeScanner.hideBackground();
-      document.body.classList.add('scanner-active'); // Pour CSS
-
-      const result = await BarcodeScanner.startScan();
-
-      // Rétablir l'interface
-      document.body.classList.remove('scanner-active');
-
-      if (result.hasContent) {
-        console.log(result.content); // Le code-barres scanné
-        return result.content;
-      }
-      return null;
-    }
-
-    function stopScan() {
-      BarcodeScanner.showBackground();
-      BarcodeScanner.stopScan();
-    }
-    ```
-3.  **Recherche du produit** : Une fois le code-barres obtenu, interrogez Firestore pour trouver un produit existant.
-    ```typescript
-    // Concept de recherche par code-barres
-    async function findProductByBarcode(db: Firestore, barcode: string) {
-        const q = query(
-            collection(db, 'products'),
-            where('barcode', '==', barcode),
-            limit(1)
-        );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            return querySnapshot.docs[0].data();
-        }
-        return null;
-    }
-    ```
-
-### 3.5 Géolocalisation et Carte
+### 3.4 Géolocalisation et Carte
 
 La logique consiste à obtenir les coordonnées GPS et à les afficher sur une carte.
 
@@ -243,7 +190,7 @@ La logique consiste à obtenir les coordonnées GPS et à les afficher sur une c
     *   **Simple** : Un bouton "Ouvrir dans Maps" qui ouvre Google Maps ou OpenStreetMap avec un lien contenant les coordonnées. `https://maps.google.com/?q=latitude,longitude`.
     *   **Intégrée** : Utiliser un SDK de carte natif pour Flutter/Kotlin/Swift, ou un composant de carte React Native pour Capacitor (comme `capacitor-google-maps`) pour une expérience intégrée.
 
-### 3.6 Ajout d'un Prix
+### 3.5 Ajout d'un Prix
 
 C'est le cœur de l'application, qui combine plusieurs logiques.
 

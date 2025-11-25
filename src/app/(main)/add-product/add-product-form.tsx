@@ -9,11 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode, ScanLine } from 'lucide-react';
+import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { addPrice, findProductByBarcode } from './actions';
-import { useZxing } from 'react-zxing';
+import { addPrice } from './actions';
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -28,7 +27,6 @@ export function AddProductForm() {
     const [storeName, setStoreName] = useState('');
     const [brand, setBrand] = useState('');
     const [category, setCategory] = useState('');
-    const [barcode, setBarcode] = useState('');
     const [photoDataUri, setPhotoDataUri] = useState('');
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
@@ -44,14 +42,8 @@ export function AddProductForm() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [isCameraOn, setIsCameraOn] = useState(false);
-    const [isScanning, setIsScanning] = useState(false);
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
-    
-    const { ref: zxingRef } = useZxing({
-        onResult: handleBarcodeScan,
-        paused: !isScanning,
-    });
 
     useEffect(() => {
         const nameParam = searchParams.get('name');
@@ -67,8 +59,6 @@ export function AddProductForm() {
 
         if (actionParam === 'camera') {
             setIsCameraOn(true);
-        } else if (actionParam === 'scan') {
-            setIsScanning(true);
         }
     }, [searchParams]);
 
@@ -76,7 +66,7 @@ export function AddProductForm() {
         let isMounted = true;
 
         async function setupCamera() {
-          if (isCameraOn || isScanning) {
+          if (isCameraOn) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
               setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
               return;
@@ -85,9 +75,8 @@ export function AddProductForm() {
               const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
               if(isMounted) {
                   streamRef.current = stream;
-                  const targetRef = isCameraOn ? videoRef : zxingRef;
-                  if (targetRef.current) {
-                    targetRef.current.srcObject = stream;
+                  if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
                   }
                   setCameraError(null);
               }
@@ -103,7 +92,6 @@ export function AddProductForm() {
                        setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
                   }
                   setIsCameraOn(false);
-                  setIsScanning(false);
                 }
             }
           } else {
@@ -113,9 +101,6 @@ export function AddProductForm() {
             }
              if (videoRef.current) {
                 videoRef.current.srcObject = null;
-            }
-             if (zxingRef.current) {
-                zxingRef.current.srcObject = null;
             }
           }
         }
@@ -128,7 +113,7 @@ export function AddProductForm() {
             streamRef.current.getTracks().forEach(track => track.stop());
           }
         };
-    }, [isCameraOn, isScanning, zxingRef]);
+    }, [isCameraOn]);
 
 
     const handleCapture = async () => {
@@ -167,43 +152,6 @@ export function AddProductForm() {
         setIsIdentifying(false);
     };
 
-    function handleBarcodeScan(result: any){
-        if (!result) return;
-        const scannedCode = result.getText();
-        if (!scannedCode) return;
-        
-        setIsScanning(false); // Stop scanning once a result is found
-        setBarcode(scannedCode);
-
-        toast({
-            title: "Code-barres scanné !",
-            description: `Recherche du produit avec le code : ${scannedCode}`
-        });
-
-        startPriceTransition(async () => {
-            const { product, error } = await findProductByBarcode(scannedCode);
-
-            if (error) {
-                toast({ variant: 'destructive', title: "Erreur", description: error });
-            } else if (product) {
-                setProductName(product.name || '');
-                setBrand(product.brand || '');
-                setCategory(product.category || '');
-                if(product.imageUrl) setPhotoDataUri(product.imageUrl);
-                toast({
-                    title: "Produit trouvé !",
-                    description: `${product.name} a été pré-rempli.`
-                });
-            } else {
-                toast({
-                    title: "Produit inconnu",
-                    description: "Ce code-barres n'est pas dans notre base. Merci de remplir les informations."
-                });
-            }
-        });
-    }
-
-
     const handlePriceSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         
@@ -240,7 +188,6 @@ export function AddProductForm() {
                 longitude,
                 brand,
                 category,
-                barcode,
                 photoDataUri,
             };
 
@@ -383,34 +330,17 @@ export function AddProductForm() {
         )
     }
 
-    if (isScanning) {
-        return (
-             <CameraView onBack={() => setIsScanning(false)} title="Scanner un Code-barres">
-                 <div className="w-full max-w-sm aspect-square bg-black/30 rounded-2xl overflow-hidden shadow-lg relative flex items-center justify-center">
-                    <video ref={zxingRef} className="w-full h-full object-cover"/>
-                    <div className="absolute inset-0 border-[3rem] border-black/30 rounded-2xl pointer-events-none"></div>
-                    <div className="absolute top-0 left-0 w-full h-1 bg-accent scan-line"></div>
-                    <p className="absolute bottom-6 text-white bg-black/50 px-2 py-1 rounded text-sm">Visez le code-barres</p>
-                </div>
-            </CameraView>
-        )
-    }
-
   return (
     <div className="space-y-4">
-        <div className="bg-primary text-primary-foreground p-4">
+        <div className="bg-primary text-primary-foreground p-4 text-center">
             <h1 className="text-2xl font-bold">Ajouter un nouveau prix</h1>
-            <p>Commencez par prendre une photo ou scanner un code-barres.</p>
+            <p>Commencez par prendre une photo pour identifier le produit.</p>
         </div>
         
         <div className="p-4 space-y-4">
             <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-24 w-full flex items-center justify-start gap-4 text-left text-lg bg-secondary hover:bg-secondary/90">
                 <Camera className="h-8 w-8" />
                 <span>Prendre une photo</span>
-            </Button>
-             <Button onClick={() => setIsScanning(true)} size="lg" className="h-24 w-full flex items-center justify-start gap-4 text-left text-lg bg-secondary hover:bg-secondary/90">
-                <ScanLine className="h-8 w-8" />
-                <span>Scanner le code-barres</span>
             </Button>
         </div>
 
@@ -461,15 +391,8 @@ export function AddProductForm() {
                 </div>
                 {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
             </div>
-            
-            {barcode && (
-                <div className="space-y-2">
-                    <Label htmlFor="barcode">Code-barres</Label>
-                        <Input id="barcode" name="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-                </div>
-            )}
 
-                <div className="space-y-2">
+            <div className="space-y-2">
                 <Label htmlFor="storeName">Lieu (Hanout)</Label>
                 <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
                 {formErrors.storeName && <p className="text-sm font-medium text-destructive">{formErrors.storeName}</p>}
@@ -506,5 +429,3 @@ export function AddProductForm() {
     </div>
   );
 }
-
-    
