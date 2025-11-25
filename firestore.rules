@@ -11,49 +11,42 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Les utilisateurs peuvent lire/écrire leur propre profil
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
 
-    // Les utilisateurs connectés peuvent lire les produits, et les créer/mettre à jour
     match /products/{productId} {
       allow read, list: if isSignedIn();
       allow create, update: if isSignedIn();
-      allow delete: if false; // Suppression non autorisée
+      allow delete: if false; 
     }
     
-    // Les utilisateurs connectés peuvent lire les magasins, et les créer/mettre à jour
     match /stores/{storeId} {
       allow read, list: if isSignedIn();
       allow create, update: if isSignedIn();
-      allow delete: if false; // Suppression non autorisée
+      allow delete: if false;
     }
 
-    // Les utilisateurs connectés peuvent lire les prix
     match /prices/{priceId} {
-      allow read, list: if isSignedIn();
+      // Tout utilisateur connecté peut lire la liste des prix ou un prix spécifique.
+      allow get, list: if isSignedIn();
       
-      // Un utilisateur connecté peut créer un prix si les données sont valides
       allow create: if isSignedIn()
                     && request.resource.data.userId == request.auth.uid
                     && request.resource.data.price > 0;
 
-      // Seul un utilisateur connecté peut voter (mettre à jour les upvotes/downvotes)
       allow update: if isSignedIn() &&
-                  // On autorise la mise à jour uniquement pour les votes
                   request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'downvotes', 'voteScore']);
                   
-      // Seul le créateur peut supprimer un prix (logique à définir)
       allow delete: if isOwner(resource.data.userId);
-    }
 
-    // Les utilisateurs connectés peuvent ajouter et lire des commentaires
-    match /prices/{priceId}/comments/{commentId} {
-      allow read, list: if isSignedIn();
-      allow create: if isSignedIn() 
-                    && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isOwner(resource.data.userId);
+      // Les utilisateurs connectés peuvent ajouter et lire des commentaires
+      match /comments/{commentId} {
+        allow read, list: if isSignedIn();
+        allow create: if isSignedIn() 
+                      && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isOwner(resource.data.userId);
+      }
     }
   }
 }
