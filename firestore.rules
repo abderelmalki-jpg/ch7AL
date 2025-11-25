@@ -1,9 +1,13 @@
 
 rules_version = '2';
 
+// Re-deploying rules to ensure indexes are created.
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,41 +16,96 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // ============================================
+    // 👤 USER PROFILES (/users/{userId})
+    // ============================================
     match /users/{userId} {
+      // Un utilisateur connecté peut lire les profils des autres (pour les commentaires, etc.)
       allow get: if isSignedIn();
+      
+      // Un utilisateur peut mettre à jour son propre profil
       allow update: if isOwner(userId);
+
+      // Les profils sont listables pour le classement (leaderboard)
       allow list: if isSignedIn();
+
+      // Un utilisateur peut créer son propre profil
       allow create: if isOwner(userId);
+
+      // Personne ne peut supprimer un profil via l'app cliente
       allow delete: if false;
 
+      // ---- Sous-collection Liste de Courses ----
       match /shoppingList/{itemId} {
         allow read, list, create, update, delete: if isOwner(userId);
       }
     }
 
-    match /prices/{priceId} {
+    // ============================================
+    // 💰 PRICE RECORDS (/priceRecords/{priceRecordId})
+    // ============================================
+    match /prices/{priceRecordId} {
+      // Tout le monde peut lire les prix
       allow get, list: if true;
+      
+      // Seul un utilisateur connecté peut créer un prix
+      // et il doit être le créateur de l'enregistrement.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Les utilisateurs connectés peuvent voter (mettre à jour), mais pas sur leur propre post.
+      // Le propriétaire peut supprimer son propre post.
       allow update: if isSignedIn() && resource.data.userId != request.auth.uid;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
 
-    match /stores/{storeId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if false;
-
-      match /reviews/{reviewId} {
-        allow get, list: if true;
+      match /comments/{commentId} {
+        allow read, list: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow update, delete: if isOwner(resource.data.userId);
       }
     }
     
     match /contributions/{contributionId} {
       allow get, list: if isSignedIn();
     }
+
+    // ============================================
+    // 🏬 STORES (/stores/{storeId})
+    // ============================================
+    match /stores/{storeId} {
+      // Tout le monde peut lire les informations des magasins
+      allow get, list: if true;
+      
+      // Un utilisateur connecté peut ajouter un nouveau magasin
+      allow create: if isSignedIn() && request.resource.data.addedBy == request.auth.uid;
+      
+      // Personne ne peut modifier ou supprimer un magasin pour le moment
+      allow update, delete: if false;
+
+      // ---- Sous-collection Avis ----
+      match /reviews/{reviewId} {
+        // Tout le monde peut lire les avis
+        allow get, list: if true;
+        // Un utilisateur connecté peut créer un avis pour un magasin
+        // à condition qu'il n'en ait pas déjà posté un (logique à gérer dans la fonction Cloud)
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        // Un utilisateur peut modifier/supprimer son propre avis
+        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
+    }
+    
+    match /products/{productId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // 🏆 BADGES (/badges/{badgeId})
+    // ============================================
+    match /badges/{badgeId} {
+      // Les définitions des badges sont publiques et en lecture seule
+      allow get, list: if true;
+      allow create, update, delete: if false; // Géré côté serveur (admin)
+    }
   }
 }
-
-    
