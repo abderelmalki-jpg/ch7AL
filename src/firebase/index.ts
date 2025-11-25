@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAJuQu1zUjvst6GevnVUAJe17ew7PhxODs",
   authDomain: "hanouti-6ce26.firebaseapp.com",
   projectId: "hanouti-6ce26",
-  storageBucket: "hanouti-6ce26.appspot.com",
+  storageBucket: "hanouti-6ce26.firebasestorage.app",
   messagingSenderId: "252246765953",
   appId: "1:252246765953:web:726dc032c6eeba126bb880"
 };
