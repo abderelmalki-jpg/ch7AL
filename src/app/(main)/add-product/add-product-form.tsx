@@ -65,6 +65,16 @@ export function AddProductForm() {
      useEffect(() => {
         let isMounted = true;
 
+        const stopCamera = () => {
+             if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop());
+              streamRef.current = null;
+            }
+             if (videoRef.current) {
+                videoRef.current.srcObject = null;
+            }
+        }
+
         async function setupCamera() {
           if (isCameraOn) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -95,13 +105,7 @@ export function AddProductForm() {
                 }
             }
           } else {
-            if (streamRef.current) {
-              streamRef.current.getTracks().forEach(track => track.stop());
-              streamRef.current = null;
-            }
-             if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
+            stopCamera();
           }
         }
 
@@ -109,9 +113,7 @@ export function AddProductForm() {
 
         return () => {
           isMounted = false;
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-          }
+          stopCamera();
         };
     }, [isCameraOn]);
 
@@ -140,16 +142,23 @@ export function AddProductForm() {
                     title: "Produit Identifié!",
                     description: `C'est un(e) ${result.name}.`,
                 })
-            } catch (e) {
+            } catch (e: any) {
                 console.error(e);
+                let description = "L'IA n'a pas pu identifier le produit. Veuillez réessayer.";
+                if (e.message && e.message.includes('503')) {
+                    description = "Le service d'identification est momentanément surchargé. Veuillez réessayer dans quelques instants.";
+                }
                 toast({
                     variant: "destructive",
                     title: "Erreur d'identification",
-                    description: "L'IA n'a pas pu identifier le produit. Réessayez.",
+                    description: description,
                 });
+            } finally {
+                setIsIdentifying(false);
             }
+        } else {
+            setIsIdentifying(false);
         }
-        setIsIdentifying(false);
     };
 
     const handlePriceSubmit = async (event: React.FormEvent) => {
@@ -452,3 +461,5 @@ export function AddProductForm() {
     </div>
   );
 }
+
+    
