@@ -15,7 +15,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import Autoplay from 'embla-carousel-react';
+import type { EmblaCarouselType as CarouselApi, EmblaPluginType as CarouselPlugin } from 'embla-carousel-react';
+
 
 import {
   AlertDialog,
@@ -326,6 +327,17 @@ function DashboardContent() {
     },
 ];
 
+  const autoplay = useRef<CarouselPlugin>();
+  
+  useEffect(() => {
+    import('embla-carousel-autoplay').then((plugin) => {
+        autoplay.current = plugin.default({
+            delay: 3000,
+            stopOnInteraction: false,
+        });
+    });
+  }, []);
+
   useEffect(() => {
     const hours = new Date().getHours();
     let greetingKey = 'Bonsoir';
@@ -355,7 +367,7 @@ function DashboardContent() {
               if (priceSnap.exists()) {
                   handleImageClick(priceSnap.data() as Price);
               } else {
-                  router.replace('/'); // Price not found, clean URL
+                  router.replace('/dashboard'); // Price not found, clean URL
               }
           }
       };
@@ -457,12 +469,7 @@ function DashboardContent() {
                     align: "start",
                     loop: true,
                     }}
-                    plugins={[
-                        Autoplay({
-                        delay: 3000,
-                        stopOnInteraction: false,
-                        }),
-                    ]}
+                    plugins={autoplay.current ? [autoplay.current] : []}
                     className="w-full"
                 >
                     <CarouselContent>
@@ -548,7 +555,3 @@ export default function HomePage() {
     </Suspense>
   )
 }
-
-    
-
-    
