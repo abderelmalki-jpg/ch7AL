@@ -34,7 +34,7 @@ service cloud.firestore {
 
     // Les utilisateurs connectés peuvent lire les prix
     match /prices/{priceId} {
-      allow read: if isSignedIn();
+      allow read, list: if isSignedIn();
       
       // Un utilisateur connecté peut créer un prix si les données sont valides
       allow create: if isSignedIn()
