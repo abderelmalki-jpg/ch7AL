@@ -16,20 +16,18 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // Les utilisateurs connectés peuvent lire les produits et en créer/mettre à jour
+    // Les utilisateurs connectés peuvent lire les produits, et les créer/mettre à jour
     match /products/{productId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'brand', 'category', 'imageUrl', 'barcode', 'updatedAt', 'uploadedBy', 'createdAt'])
-      );
+      allow read, list: if isSignedIn();
+      allow create, update: if isSignedIn();
       allow delete: if false; // Suppression non autorisée
     }
     
-    // Les utilisateurs connectés peuvent lire les magasins et en créer/mettre à jour
+    // Les utilisateurs connectés peuvent lire les magasins, et les créer/mettre à jour
     match /stores/{storeId} {
-        allow read: if isSignedIn();
-        allow create, update: if isSignedIn();
-        allow delete: if false; // Suppression non autorisée
+      allow read, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if false; // Suppression non autorisée
     }
 
     // Les utilisateurs connectés peuvent lire les prix
