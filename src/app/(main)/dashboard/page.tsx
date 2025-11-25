@@ -141,7 +141,7 @@ function DashboardContent() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-        <div>
+        <div className="text-center">
             <h1 className="text-3xl font-bold"><HomeClient /></h1>
             <p className="text-muted-foreground">Qu'allez-vous faire aujourd'hui ?</p>
         </div>
@@ -159,7 +159,7 @@ function DashboardContent() {
             </Link>
         </Button>
 
-        <div>
+        <div className="text-center">
             <h2 className="text-xl font-bold mb-3">Derniers prix ajoutés</h2>
             <RecentPricesList />
         </div>

@@ -29,7 +29,7 @@ export function Header() {
     <header className="sticky top-0 z-40 hidden w-full bg-background/80 backdrop-blur-sm md:block">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/dashboard">
-          <Logo className="h-12 w-12" />
+          <Logo className="h-14 w-14" />
         </Link>
         <div className="flex items-center gap-4">
             <p className="text-sm font-medium">
