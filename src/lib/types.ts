@@ -25,7 +25,6 @@ export type Product = {
   name: string;
   brand: string;
   category: string;
-  barcode?: string;
   imageUrl?: string;
   imageHint?: string; // imageHint is optional from Firestore
   price?: number; // Price is optional, as it might not be directly on the product
