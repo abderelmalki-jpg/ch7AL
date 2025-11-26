@@ -1,6 +1,6 @@
-# Firebase Functions for Hanout Price
+# Firebase Functions for CH7AL
 
-This directory contains the backend logic for the Hanout Price application, running on Firebase Cloud Functions.
+This directory contains the backend logic for the CH7AL application, running on Firebase Cloud Functions.
 
 ## Environment Configuration
 

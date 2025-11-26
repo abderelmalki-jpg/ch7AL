@@ -70,7 +70,7 @@ export default function LeaderboardPage() {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold">Classement</h1>
+            <h1 className="text-3xl font-bold text-center">Classement</h1>
         </div>
         <div className="space-y-2">
           {isLoading ? (

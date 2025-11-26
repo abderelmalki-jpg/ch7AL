@@ -115,7 +115,7 @@ export default function AuthPage() {
         </div>
         <Card className="shadow-lg rounded-xl">
             <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">Bienvenue !</CardTitle>
+                <CardTitle className="text-2xl font-bold text-center">Bienvenue !</CardTitle>
                 <CardDescription>Connectez-vous pour continuer</CardDescription>
             </CardHeader>
             <CardContent>

@@ -4,12 +4,10 @@
 import { useState, useEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { identifyProduct } from '@/ai/flows/identify-product-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode } from 'lucide-react';
+import { Loader2, MapPin, X, ArrowLeft, Barcode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { addPrice, findProductByBarcode } from './actions';
@@ -40,12 +38,8 @@ export function AddProductForm() {
 
     const [isLocating, setIsLocating] = useState(false);
     
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
-    const [isCameraOn, setIsCameraOn] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
-    const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
     const { ref: zxingRef } = useZxing({
@@ -62,16 +56,11 @@ export function AddProductForm() {
         const brandParam = searchParams.get('brand');
         const categoryParam = searchParams.get('category');
         const photoParam = searchParams.get('photoDataUri');
-        const actionParam = searchParams.get('action');
 
         if (nameParam) setProductName(nameParam);
         if (brandParam) setBrand(brandParam);
         if (categoryParam) setCategory(categoryParam);
         if (photoParam) setPhotoDataUri(photoParam);
-
-        if (actionParam === 'camera') {
-            setIsCameraOn(true);
-        }
     }, [searchParams]);
 
      useEffect(() => {
@@ -82,17 +71,14 @@ export function AddProductForm() {
               streamRef.current.getTracks().forEach(track => track.stop());
               streamRef.current = null;
             }
-             if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
              if(zxingRef.current){
                 zxingRef.current.srcObject = null;
             }
         }
 
         async function setupCamera() {
-          const videoEl = isScanning ? zxingRef.current : videoRef.current;
-          if (isCameraOn || isScanning) {
+          const videoEl = zxingRef.current;
+          if (isScanning) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
               setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
               return;
@@ -117,7 +103,6 @@ export function AddProductForm() {
                   else {
                        setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
                   }
-                  setIsCameraOn(false);
                   setIsScanning(false);
                 }
             }
@@ -132,51 +117,8 @@ export function AddProductForm() {
           isMounted = false;
           stopCamera();
         };
-    }, [isCameraOn, isScanning, zxingRef]);
+    }, [isScanning, zxingRef]);
 
-
-    const handleCapture = async () => {
-        if (!videoRef.current || !canvasRef.current) return;
-        setIsIdentifying(true);
-
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext('2d');
-        if(context) {
-            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-            const dataUri = canvas.toDataURL('image/jpeg');
-            
-            try {
-                const result = await identifyProduct({ photoDataUri: dataUri });
-                setProductName(result.name);
-                setBrand(result.brand);
-                setCategory(result.category);
-                setPhotoDataUri(dataUri);
-                setIsCameraOn(false);
-                toast({
-                    title: "Produit Identifié!",
-                    description: `C'est un(e) ${result.name}.`,
-                })
-            } catch (e: any) {
-                console.error(e);
-                let description = "L'IA n'a pas pu identifier le produit. Veuillez réessayer.";
-                if (e.message && e.message.includes('503')) {
-                    description = "Le service d'identification est momentanément surchargé. Veuillez réessayer dans quelques instants.";
-                }
-                toast({
-                    variant: "destructive",
-                    title: "Erreur d'identification",
-                    description: description,
-                });
-            } finally {
-                setIsIdentifying(false);
-            }
-        } else {
-            setIsIdentifying(false);
-        }
-    };
 
     function handleBarcodeScan(scannedCode: string | null){
         if (!scannedCode) return;
@@ -367,30 +309,6 @@ export function AddProductForm() {
             </div>
         </div>
     );
-    
-    if (isCameraOn) {
-        return (
-            <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
-                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative mb-4">
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                    <canvas ref={canvasRef} className="hidden" />
-                </div>
-                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full h-14 text-lg bg-white/90 text-primary hover:bg-white">
-                    {isIdentifying ? (
-                        <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Analyse en cours...
-                        </>
-                    ) : (
-                        <>
-                            <Zap className="mr-2 h-5 w-5" />
-                            Identifier le Produit
-                        </>
-                    )}
-                </Button>
-            </CameraView>
-        )
-    }
 
     if (isScanning) {
         return (
@@ -412,14 +330,10 @@ export function AddProductForm() {
             <p>Commencez par utiliser votre caméra ou remplissez le formulaire.</p>
         </div>
         
-        <div className="p-4 grid grid-cols-2 gap-4">
+        <div className="p-4">
             <Button onClick={() => setIsScanning(true)} size="lg" className="h-24 w-full flex-col items-center justify-center gap-2 text-lg bg-secondary hover:bg-secondary/90">
                 <Barcode className="h-8 w-8" />
-                <span>Scanner Code</span>
-            </Button>
-            <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-24 w-full flex-col items-center justify-center gap-2 text-lg bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Zap className="h-8 w-8" />
-                <span>Analyser (IA)</span>
+                <span>Scanner un Produit</span>
             </Button>
         </div>
 

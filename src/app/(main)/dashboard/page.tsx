@@ -112,15 +112,15 @@ function HomePageContent() {
             </div>
 
             <Button asChild size="lg" className="w-full h-14 text-lg">
-                <Link href="/add-product?action=camera">
+                <Link href="/add-product">
                     <PlusCircle className="mr-2 h-5 w-5" />
                     Contribuer
                 </Link>
             </Button>
-            <Button asChild size="lg" variant="secondary" className="w-full h-14 text-lg">
+            <Button asChild size="lg" variant="secondary" className="w-full h-14 text-lg bg-secondary text-secondary-foreground hover:bg-secondary/90">
                 <Link href="/search">
                     <Search className="mr-2 h-5 w-5" />
-                    Rechercher un produit..
+                    Rechercher un produit
                 </Link>
             </Button>
             

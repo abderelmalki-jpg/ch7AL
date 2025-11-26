@@ -17,7 +17,6 @@ Cette section détaille la logique de chaque fonctionnalité majeure pour facili
 | **Base de Données** | Firebase Firestore | Stockage des données (utilisateurs, prix, etc.). |
 | **Authentification**| Firebase Authentication | Gestion des utilisateurs. |
 | **Stockage Fichiers**| Firebase Storage | Hébergement des images de produits. |
-| **IA (Backend)** | Genkit (Google AI) | Reconnaissance de produits à partir d'images. |
 | **Recherche** | Algolia | Moteur de recherche pour les produits. |
 | **Wrapper Natif** | Capacitor | Empaquette l'application web pour Android/iOS. |
 
@@ -105,58 +104,58 @@ Le profil stocke des informations supplémentaires non présentes dans Firebase 
     ```
 3.  **Affichage** : La page de profil récupère les données de `/users/{userId}` en temps réel en utilisant le hook `useDoc` de Firebase.
 
-### 3.3 Caméra et Reconnaissance IA
+### 3.3 Scanner de Code-barres
 
-C'est une fonctionnalité en plusieurs étapes : capture, envoi à l'IA, et traitement de la réponse.
-
-**Fichiers de référence :**
-*   `src/app/add-product/page.tsx` (pour la logique client)
-*   `src/ai/flows/identify-product-flow.ts` (pour la logique IA backend)
+L'application web utilise `react-zxing`, mais pour une expérience native avec Capacitor, un plugin est plus performant.
 
 #### Logique d'implémentation pour Capacitor :
 
-1.  **Accès à la caméra (Capacitor)** : Il faut utiliser le plugin officiel `@capacitor/camera`.
+1.  **Installer un plugin** : Le plugin communautaire `capacitor-community/barcode-scanner` est une excellente option.
+2.  **Gérer les permissions et le scan** :
     ```typescript
-    import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+    import { BarcodeScanner } from 'capacitor-community/barcode-scanner';
 
-    async function takePicture() {
-      try {
-        const image = await Camera.getPhoto({
-          quality: 90,
-          allowEditing: false,
-          resultType: CameraResultType.DataUrl, // Très important: Récupérer en DataURI
-          source: CameraSource.Camera
-        });
+    async function startScan() {
+      // Vérifier les permissions
+      await BarcodeScanner.checkPermission({ force: true });
 
-        // image.dataUrl contient quelque chose comme "data:image/jpeg;base64,..."
-        return image.dataUrl;
-      } catch (error) {
-        console.error("Erreur caméra:", error);
-        // Gérer le cas où l'utilisateur annule ou refuse la permission
+      // Rendre l'arrière-plan de l'application transparent
+      BarcodeScanner.hideBackground();
+      document.body.classList.add('scanner-active'); // Pour CSS
+
+      const result = await BarcodeScanner.startScan();
+
+      // Rétablir l'interface
+      document.body.classList.remove('scanner-active');
+
+      if (result.hasContent) {
+        console.log(result.content); // Le code-barres scanné
+        return result.content;
+      }
+      return null;
+    }
+
+    function stopScan() {
+      BarcodeScanner.showBackground();
+      BarcodeScanner.stopScan();
+    }
+    ```
+3.  **Recherche du produit** : Une fois le code-barres obtenu, interrogez Firestore pour trouver un produit existant.
+    ```typescript
+    // Concept de recherche par code-barres
+    async function findProductByBarcode(db: Firestore, barcode: string) {
+        const q = query(
+            collection(db, 'products'),
+            where('barcode', '==', barcode),
+            limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0].data();
+        }
         return null;
-      }
     }
     ```
-2.  **Appel de l'IA (Genkit)** : Le `dataUrl` obtenu est envoyé au flux Genkit via une simple requête `fetch`.
-    ```typescript
-    // Extrait de src/app/add-product/page.tsx
-    import { identifyProduct } from '@/ai/flows/identify-product-flow';
-
-    async function handleImageRecognition(dataUrl: string) {
-      try {
-        // La fonction `identifyProduct` est un Server Action Next.js,
-        // qui est en fait une API POST. Pour une app externe, il faudrait
-        // exposer ce flux via une Cloud Function HTTP.
-        const result = await identifyProduct({ photoDataUri: dataUrl });
-        // result contient { name: "...", brand: "...", category: "..." }
-        return result;
-      } catch (error) {
-        console.error("Erreur de reconnaissance IA:", error);
-        // Gérer les erreurs, notamment la surcharge du modèle (503)
-      }
-    }
-    ```
-    **Note pour une app native :** Le flux Genkit doit être déployé comme une fonction Cloud HTTP sécurisée (par ex. avec Firebase Auth) pour être appelé depuis l'extérieur du projet Next.js.
 
 ### 3.4 Géolocalisation et Carte
 

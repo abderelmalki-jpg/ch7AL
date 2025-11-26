@@ -43,7 +43,7 @@ export default function MapPage() {
   return (
     <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] flex flex-col">
        <div className="p-4 border-b text-center">
-         <h1 className="text-2xl font-headline font-bold">Magasins à proximité</h1>
+         <h1 className="text-2xl font-headline font-bold text-center">Magasins à proximité</h1>
       </div>
       <div className="flex-1">
         {isLoading ? (

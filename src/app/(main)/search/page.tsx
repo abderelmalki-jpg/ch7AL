@@ -51,7 +51,7 @@ export default function SearchPage() {
 
     return (
         <div className="container mx-auto px-4 md:px-6 py-6">
-            <h1 className="text-3xl font-headline font-bold mb-4 text-center">Rechercher des produits</h1>
+            <h1 className="text-3xl font-headline font-bold mb-4 text-center">Rechercher un produit</h1>
 
             <div className="relative mb-6">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
