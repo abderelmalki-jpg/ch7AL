@@ -6,32 +6,16 @@
  * The flow takes a product description as input and returns a list of suggested product names.
  *
  * @exports `suggestAlternativeProducts` - The main function to trigger the flow.
- * @exports `SuggestAlternativeProductsInput` - The input type for the flow.
- * @exports `SuggestAlternativeProductsOutput` - The output type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {
+  SuggestAlternativeProductsInput,
+  SuggestAlternativeProductsOutput,
+  SuggestAlternativeProductsInputSchema,
+  SuggestAlternativeProductsOutputSchema
+} from '@/lib/types';
 
-const SuggestAlternativeProductsInputSchema = z.object({
-  productDescription: z
-    .string()
-    .describe('La description du produit pour lequel suggérer des noms alternatifs.'),
-});
-
-export type SuggestAlternativeProductsInput = z.infer<
-  typeof SuggestAlternativeProductsInputSchema
->;
-
-const SuggestAlternativeProductsOutputSchema = z.object({
-  suggestedProductNames: z
-    .array(z.string())
-    .describe('Une liste de noms de produits suggérés en fonction de la description.'),
-});
-
-export type SuggestAlternativeProductsOutput = z.infer<
-  typeof SuggestAlternativeProductsOutputSchema
->;
 
 export async function suggestAlternativeProducts(
   input: SuggestAlternativeProductsInput

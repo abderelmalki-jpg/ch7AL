@@ -5,28 +5,16 @@
  * It takes an image data URI and returns the identified product's name, brand, and category.
  *
  * @exports `identifyProduct` - The main function to trigger the flow.
- * @exports `IdentifyProductInput` - The input type for the flow.
- * @exports `IdentifyProductOutput` - The output type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {
+  IdentifyProductInput,
+  IdentifyProductOutput,
+  IdentifyProductInputSchema,
+  IdentifyProductOutputSchema
+} from '@/lib/types';
 
-const IdentifyProductInputSchema = z.object({
-  photoDataUri: z
-    .string()
-    .describe(
-      "A photo of a product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-});
-export type IdentifyProductInput = z.infer<typeof IdentifyProductInputSchema>;
-
-const IdentifyProductOutputSchema = z.object({
-  name: z.string().describe('Le nom du produit identifié.'),
-  brand: z.string().describe('La marque du produit identifié.'),
-  category: z.string().describe('La catégorie à laquelle le produit appartient (par exemple, Boissons, Snacks, etc.).'),
-});
-export type IdentifyProductOutput = z.infer<typeof IdentifyProductOutputSchema>;
 
 export async function identifyProduct(
   input: IdentifyProductInput

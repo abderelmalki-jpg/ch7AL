@@ -1,5 +1,7 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
+import { z } from 'zod';
 
 export type Contribution = {
   id: string;
@@ -97,3 +99,54 @@ export type VoteFormState = {
     status: 'idle' | 'success' | 'error';
     message: string;
 }
+
+// ===== Genkit Flow Schemas and Types =====
+
+// --- Identify Product Flow ---
+export const IdentifyProductInputSchema = z.object({
+  photoDataUri: z
+    .string()
+    .describe(
+      "A photo of a product, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
+});
+export type IdentifyProductInput = z.infer<typeof IdentifyProductInputSchema>;
+
+export const IdentifyProductOutputSchema = z.object({
+  name: z.string().describe('Le nom du produit identifié.'),
+  brand: z.string().describe('La marque du produit identifié.'),
+  category: z.string().describe('La catégorie à laquelle le produit appartient (par exemple, Boissons, Snacks, etc.).'),
+});
+export type IdentifyProductOutput = z.infer<typeof IdentifyProductOutputSchema>;
+
+
+// --- Search Products Flow ---
+export const SearchProductsInputSchema = z.object({
+  query: z.string().min(1, 'La recherche ne peut pas être vide.').describe('Le terme de recherche pour les produits.'),
+});
+export type SearchProductsInput = z.infer<typeof SearchProductsInputSchema>;
+
+export const SearchProductsOutputSchema = z.object({
+    products: z.array(z.custom<Product>()).describe('La liste des produits correspondants trouvés.'),
+});
+export type SearchProductsOutput = z.infer<typeof SearchProductsOutputSchema>;
+
+
+// --- Suggest Alternative Products Flow ---
+export const SuggestAlternativeProductsInputSchema = z.object({
+  productDescription: z
+    .string()
+    .describe('La description du produit pour lequel suggérer des noms alternatifs.'),
+});
+export type SuggestAlternativeProductsInput = z.infer<
+  typeof SuggestAlternativeProductsInputSchema
+>;
+
+export const SuggestAlternativeProductsOutputSchema = z.object({
+  suggestedProductNames: z
+    .array(z.string())
+    .describe('Une liste de noms de produits suggérés en fonction de la description.'),
+});
+export type SuggestAlternativeProductsOutput = z.infer<
+  typeof SuggestAlternativeProductsOutputSchema
+>;

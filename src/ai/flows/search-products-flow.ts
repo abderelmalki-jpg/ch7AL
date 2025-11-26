@@ -7,20 +7,15 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
 import { getAdminServices } from '@/firebase/server';
-import type { Product } from '@/lib/types';
+import { 
+    SearchProductsInput,
+    SearchProductsOutput,
+    SearchProductsInputSchema,
+    SearchProductsOutputSchema,
+    type Product
+} from '@/lib/types';
 
-// Define input and output schemas with Zod for validation and type safety
-export const SearchProductsInputSchema = z.object({
-  query: z.string().min(1, 'La recherche ne peut pas être vide.').describe('Le terme de recherche pour les produits.'),
-});
-export type SearchProductsInput = z.infer<typeof SearchProductsInputSchema>;
-
-export const SearchProductsOutputSchema = z.object({
-    products: z.array(z.custom<Product>()).describe('La liste des produits correspondants trouvés.'),
-});
-export type SearchProductsOutput = z.infer<typeof SearchProductsOutputSchema>;
 
 // The main exported function that client components will call.
 export async function searchProducts(
