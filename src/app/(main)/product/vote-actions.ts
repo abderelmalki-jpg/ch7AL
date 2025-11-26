@@ -5,17 +5,13 @@ import { doc, runTransaction, type Firestore } from 'firebase/firestore';
 import { z } from 'zod';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import type { VoteFormState } from '@/lib/types';
 
 const voteSchema = z.object({
   priceId: z.string().min(1),
   userId: z.string().min(1, 'Utilisateur non connecté.'),
   voteType: z.enum(['upvote', 'downvote']),
 });
-
-export type VoteFormState = {
-    status: 'idle' | 'success' | 'error';
-    message: string;
-}
 
 export async function handleVote(
     db: Firestore,

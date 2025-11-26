@@ -92,3 +92,8 @@ export type LeaderboardEntry = {
     rank: number;
     avatar: string;
 };
+
+export type VoteFormState = {
+    status: 'idle' | 'success' | 'error';
+    message: string;
+}
