@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Trophy, Star, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LeaderboardPage() {
   const firestore = useFirestore();
@@ -117,5 +118,3 @@ export default function LeaderboardPage() {
     </div>
   );
 }
-
-    
