@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, PlusCircle, ShoppingBasket } from 'lucide-react';
+import { Search, PlusCircle, ShoppingBasket, List, Map as MapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, getDoc, doc } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { HomeClient } from '../home-client';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ContributionCard } from './contribution-card';
+import { MapClient } from '../map/map-client';
 
 // Define the shape of your detailed contribution
 type DetailedContribution = Contribution & {
@@ -27,6 +28,7 @@ function HomePageContent() {
     const firestore = useFirestore();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('recent');
+    const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
     const [selectedContribution, setSelectedContribution] = useState<DetailedContribution | null>(null);
 
     // Queries
@@ -92,6 +94,14 @@ function HomePageContent() {
 
     const isLoading = isLoadingRecent || isLoadingPopular || isLoadingDetails;
     const currentPrices = detailedPrices[activeTab as 'recent' | 'popular'] || [];
+    
+    const storesForMap = currentPrices
+        .filter(p => p.latitude && p.longitude)
+        .map(p => ({
+            id: p.storeId,
+            name: p.storeName,
+            position: { lat: p.latitude!, lng: p.longitude! }
+        }));
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
@@ -112,7 +122,7 @@ function HomePageContent() {
             </div>
 
             <Button asChild size="lg" className="w-full h-14 text-lg">
-                <Link href="/add-product">
+                <Link href="/add-product?action=camera">
                     <PlusCircle className="mr-2 h-5 w-5" />
                     Contribuer
                 </Link>
@@ -130,19 +140,25 @@ function HomePageContent() {
                     <Button variant={activeTab === 'recent' ? 'default' : 'outline'} onClick={() => setActiveTab('recent')}>Récents</Button>
                     <Button variant={activeTab === 'popular' ? 'default' : 'outline'} onClick={() => setActiveTab('popular')}>Populaires</Button>
                  </div>
+                 
+                 <div className="flex gap-2 justify-center">
+                    <Button size="sm" variant={viewMode === 'list' ? 'secondary' : 'ghost'} onClick={() => setViewMode('list')}><List className="mr-2 h-4 w-4"/>Liste</Button>
+                    <Button size="sm" variant={viewMode === 'map' ? 'secondary' : 'ghost'} onClick={() => setViewMode('map')}><MapIcon className="mr-2 h-4 w-4"/>Carte</Button>
+                 </div>
+
                  {isLoading ? (
                       <div className="grid grid-cols-2 gap-4">
                         <Skeleton className="h-48 w-full rounded-lg" />
                         <Skeleton className="h-48 w-full rounded-lg" />
                      </div>
-                 ) : (
+                 ) : viewMode === 'list' ? (
                     <div className="grid grid-cols-2 gap-4">
                         {currentPrices.map(item => (
                             <div key={item.id} onClick={() => handleCardClick(item)} className="cursor-pointer">
                                 <div className="bg-card p-3 rounded-lg flex flex-col h-full group">
                                      <div className="w-full h-24 bg-muted rounded-md relative overflow-hidden flex-shrink-0">
                                         {item.imageUrl ? (
-                                            <Image src={item.imageUrl} alt={item.productName || 'Produit'} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                                            <Image src={item.imageUrl} alt={item.productName || 'Produit'} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="50vw"/>
                                         ) : (
                                             <ShoppingBasket className="w-8 h-8 text-muted-foreground m-auto"/>
                                         )}
@@ -160,6 +176,10 @@ function HomePageContent() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                ) : (
+                    <div className="h-96 w-full rounded-lg overflow-hidden">
+                        <MapClient apiKey={apiKey} stores={storesForMap} />
                     </div>
                 )}
             </div>
@@ -204,3 +224,5 @@ export default function HomePage() {
     </Suspense>
   )
 }
+
+    

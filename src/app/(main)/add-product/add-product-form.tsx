@@ -294,10 +294,10 @@ export function AddProductForm() {
     }
 
     const CameraView = ({onBack, children, title}: {onBack: () => void, children: React.ReactNode, title: string}) => (
-        <Card>
-            <CardHeader>
+        <Card className="bg-transparent border-0 shadow-none">
+            <CardHeader className="text-primary-foreground">
                 <div className="flex justify-between items-center">
-                    <Button onClick={onBack} variant="outline" size="sm">
+                    <Button onClick={onBack} variant="ghost" size="sm" className="text-primary-foreground hover:bg-white/10 hover:text-white">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Retour
                     </Button>
@@ -321,43 +321,45 @@ export function AddProductForm() {
     
     if (isCameraOn) {
         return (
-            <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
-                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                    <canvas ref={canvasRef} className="hidden" />
-                </div>
-                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
-                    {isIdentifying ? (
-                        <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Analyse en cours...
-                        </>
-                    ) : (
-                        <>
-                            <Zap className="mr-2 h-5 w-5" />
-                            Identifier le Produit
-                        </>
-                    )}
-                </Button>
-            </CameraView>
+            <div className="bg-gray-900 min-h-screen flex flex-col p-4">
+                <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
+                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                        <canvas ref={canvasRef} className="hidden" />
+                    </div>
+                    <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90 h-14 text-lg">
+                        {isIdentifying ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Analyse en cours...
+                            </>
+                        ) : (
+                            <>
+                                <Zap className="mr-2 h-5 w-5" />
+                                Identifier le Produit
+                            </>
+                        )}
+                    </Button>
+                </CameraView>
+            </div>
         )
     }
 
   return (
     <div className="space-y-8">
         <Card className="overflow-hidden">
-            <CardHeader className="text-center">
+             <div className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-center">
                  <div className="flex justify-center mb-4">
-                    <div className="p-3 bg-primary/10 rounded-full">
-                         <Camera className="h-8 w-8 text-primary" />
+                    <div className="p-3 bg-white/20 rounded-full">
+                         <Camera className="h-8 w-8" />
                     </div>
                 </div>
-                <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
-                <CardDescription>
-                    Identifiez un produit avec votre caméra pour commencer.
+                <CardTitle className="font-headline text-3xl">Ajouter un prix</CardTitle>
+                <CardDescription className="text-primary-foreground/80">
+                    Utilisez votre caméra pour identifier un produit ou remplissez les champs manuellement.
                 </CardDescription>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-6">
                  <div className="mb-6">
                     <Button onClick={() => setIsCameraOn(true)} size="lg" className="w-full h-auto py-4 flex-col gap-2">
                         <Zap className="h-6 w-6" />
@@ -474,3 +476,5 @@ export function AddProductForm() {
     </div>
   );
 }
+
+    
