@@ -111,77 +111,94 @@ function HomePageContent() {
     };
 
     if (selectedContribution) {
-        return <ContributionCard contribution={selectedContribution} apiKey={apiKey} onBack={() => setSelectedContribution(null)} />;
+        return <div className="container mx-auto px-4 py-6"><ContributionCard contribution={selectedContribution} apiKey={apiKey} onBack={() => setSelectedContribution(null)} /></div>;
     }
 
     return (
-        <div className="container mx-auto px-4 py-6 space-y-6">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold"><HomeClient /></h1>
-                <p className="text-muted-foreground">Qu'allez-vous faire aujourd'hui ?</p>
+        <div className="flex-1">
+             <div className="relative h-64 w-full hidden md:flex items-center justify-center text-center text-white overflow-hidden">
+                <Image 
+                    src="https://res.cloudinary.com/dhjwimevi/image/upload/v1764756650/90ab7acdb5a379d79bca798078f014ea_tvw3wl.jpg"
+                    alt="Souk background"
+                    fill
+                    className="object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="relative z-10">
+                    <h1 className="text-5xl font-headline font-bold drop-shadow-md">Hada ch7al</h1>
+                    <p className="text-xl mt-2 tracking-wider uppercase font-light drop-shadow">compare  -  partager  -  recompenser</p>
+                </div>
             </div>
 
-            <Button asChild size="lg" className="w-full h-14 text-lg">
-                <Link href="/add-product?action=camera">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Contribuer
-                </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary" className="w-full h-14 text-lg bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                <Link href="/search">
-                    <Search className="mr-2 h-5 w-5" />
-                    Rechercher un produit
-                </Link>
-            </Button>
-            
-            <div className="space-y-4">
-                 <h2 className="text-xl font-bold text-center">Les Bons Plans</h2>
-                 <div className="flex gap-2 justify-center">
-                    <Button variant={activeTab === 'recent' ? 'default' : 'outline'} onClick={() => setActiveTab('recent')}>Récents</Button>
-                    <Button variant={activeTab === 'popular' ? 'default' : 'outline'} onClick={() => setActiveTab('popular')}>Populaires</Button>
-                 </div>
-                 
-                 <div className="flex gap-2 justify-center">
-                    <Button size="sm" variant={viewMode === 'list' ? 'secondary' : 'ghost'} onClick={() => setViewMode('list')}><List className="mr-2 h-4 w-4"/>Liste</Button>
-                    <Button size="sm" variant={viewMode === 'map' ? 'secondary' : 'ghost'} onClick={() => setViewMode('map')}><MapIcon className="mr-2 h-4 w-4"/>Carte</Button>
-                 </div>
+            <div className="container mx-auto px-4 py-6 space-y-6">
+                <div className="text-center md:hidden">
+                    <h1 className="text-3xl font-bold"><HomeClient /></h1>
+                    <p className="text-muted-foreground">Qu'allez-vous faire aujourd'hui ?</p>
+                </div>
 
-                 {isLoading ? (
-                      <div className="grid grid-cols-2 gap-4">
-                        <Skeleton className="h-48 w-full rounded-lg" />
-                        <Skeleton className="h-48 w-full rounded-lg" />
-                     </div>
-                 ) : viewMode === 'list' ? (
-                    <div className="grid grid-cols-2 gap-4">
-                        {currentPrices.map(item => (
-                            <div key={item.id} onClick={() => handleCardClick(item)} className="cursor-pointer">
-                                <div className="bg-card p-3 rounded-lg flex flex-col h-full group">
-                                     <div className="w-full h-24 bg-muted rounded-md relative overflow-hidden flex-shrink-0">
-                                        {item.imageUrl ? (
-                                            <Image src={item.imageUrl} alt={item.productName || 'Produit'} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="50vw"/>
-                                        ) : (
-                                            <ShoppingBasket className="w-8 h-8 text-muted-foreground m-auto"/>
-                                        )}
-                                    </div>
-                                    <div className="flex-grow mt-2">
-                                        <p className="font-semibold leading-tight text-sm truncate">{item.productName}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{item.storeName}</p>
-                                    </div>
-                                    <div className="flex justify-between items-end mt-1">
-                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(item.date, { addSuffix: true, locale: fr })}</p>
-                                        <div className="font-bold text-primary text-base whitespace-nowrap">
-                                            {item.price.toFixed(2)} DH
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button asChild size="lg" className="w-full h-14 text-lg">
+                        <Link href="/add-product">
+                            <PlusCircle className="mr-2 h-5 w-5" />
+                            Contribuer
+                        </Link>
+                    </Button>
+                    <Button asChild size="lg" variant="secondary" className="w-full h-14 text-lg bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                        <Link href="/search">
+                            <Search className="mr-2 h-5 w-5" />
+                            Rechercher un produit
+                        </Link>
+                    </Button>
+                </div>
+                
+                <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-center">Les Bons Plans</h2>
+                    <div className="flex gap-2 justify-center">
+                        <Button variant={activeTab === 'recent' ? 'default' : 'outline'} onClick={() => setActiveTab('recent')}>Récents</Button>
+                        <Button variant={activeTab === 'popular' ? 'default' : 'outline'} onClick={() => setActiveTab('popular')}>Populaires</Button>
+                    </div>
+                    
+                    <div className="flex gap-2 justify-center">
+                        <Button size="sm" variant={viewMode === 'list' ? 'secondary' : 'ghost'} onClick={() => setViewMode('list')}><List className="mr-2 h-4 w-4"/>Liste</Button>
+                        <Button size="sm" variant={viewMode === 'map' ? 'secondary' : 'ghost'} onClick={() => setViewMode('map')}><MapIcon className="mr-2 h-4 w-4"/>Carte</Button>
+                    </div>
+
+                    {isLoading ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-lg" />)}
+                        </div>
+                    ) : viewMode === 'list' ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {currentPrices.map(item => (
+                                <div key={item.id} onClick={() => handleCardClick(item)} className="cursor-pointer">
+                                    <div className="bg-card p-3 rounded-lg flex flex-col h-full group border">
+                                        <div className="w-full h-24 bg-muted rounded-md relative overflow-hidden flex-shrink-0">
+                                            {item.imageUrl ? (
+                                                <Image src={item.imageUrl} alt={item.productName || 'Produit'} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="50vw"/>
+                                            ) : (
+                                                <ShoppingBasket className="w-8 h-8 text-muted-foreground m-auto"/>
+                                            )}
+                                        </div>
+                                        <div className="flex-grow mt-2">
+                                            <p className="font-semibold leading-tight text-sm truncate">{item.productName}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{item.storeName}</p>
+                                        </div>
+                                        <div className="flex justify-between items-end mt-1">
+                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(item.date, { addSuffix: true, locale: fr })}</p>
+                                            <div className="font-bold text-primary text-base whitespace-nowrap">
+                                                {item.price.toFixed(2)} DH
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="h-96 w-full rounded-lg overflow-hidden">
-                        <MapClient apiKey={apiKey} stores={storesForMap} />
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="h-96 w-full rounded-lg overflow-hidden border">
+                            <MapClient apiKey={apiKey} stores={storesForMap} />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -224,3 +241,5 @@ export default function HomePage() {
     </Suspense>
   )
 }
+
+    
