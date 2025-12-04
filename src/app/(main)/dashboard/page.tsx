@@ -47,6 +47,9 @@ function HomePageContent() {
     const [detailedPrices, setDetailedPrices] = useState<Record<string, DetailedContribution[]>>({ recent: [], popular: [] });
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+
     useEffect(() => {
         if (!firestore) return;
 
@@ -102,8 +105,6 @@ function HomePageContent() {
             name: p.storeName,
             position: { lat: p.latitude!, lng: p.longitude! }
         }));
-
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 
     const handleCardClick = (contribution: DetailedContribution) => {
@@ -241,5 +242,3 @@ export default function HomePage() {
     </Suspense>
   )
 }
-
-    
