@@ -23,12 +23,15 @@ interface MapClientProps {
 
 export function MapClient({ apiKey, stores }: MapClientProps) {
   // Gracefully handle missing or placeholder API keys
-  if (!apiKey || apiKey === "your-google-maps-api-key-here") {
+  if (!apiKey || apiKey.startsWith("your-") || apiKey.startsWith("AIza")) {
     return (
         <div className="flex items-center justify-center h-full bg-muted/20">
             <div className="text-center text-muted-foreground p-4">
                 <p className="font-bold">Carte non disponible</p>
-                <p className="text-sm">Veuillez fournir une clé API Google Maps valide dans votre fichier `.env` pour afficher la carte.</p>
+                <p className="text-sm">
+                  Veuillez fournir une clé API Google Maps valide dans votre fichier `.env`.
+                   Si la clé est déjà présente, vérifiez qu'elle est correctement configurée dans votre console Google Cloud pour autoriser ce domaine.
+                </p>
             </div>
         </div>
     );

@@ -47,6 +47,23 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-google-maps-api-key-here"
 
 **CRITICAL: The maps, image recognition, and price submission features will NOT work until you replace the placeholder values with real, valid API keys.**
 
+---
+
+### Troubleshooting Google Maps Error (`ApiTargetBlockedMapError`)
+
+If your map displays an error message stating that it's blocked, it's likely due to the API key restrictions in your Google Cloud project. To fix this:
+
+1.  Go to the **Google Cloud Console** > **APIs & Services** > **Credentials**.
+2.  Select your Google Maps API key.
+3.  Under **Application restrictions**, ensure that you have selected **HTTP referrers (web sites)**.
+4.  In the **Website restrictions** section, add the domains where your app is hosted. For development in this environment, you should add:
+    *   `*.cloudworkstations.dev`
+5.  If you are deploying to production, add your production domain as well (e.g., `your-app-name.web.app`).
+
+This will explicitly authorize your application to use the API key.
+
+---
+
 ### 2. Install Dependencies
 ```bash
 npm install
