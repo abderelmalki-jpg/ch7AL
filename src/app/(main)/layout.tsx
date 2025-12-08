@@ -105,7 +105,7 @@ export default function MainLayout({
                 </main>
             </SidebarInset>
             
-            {showBottomNav && <BottomNav />}
+            <BottomNav />
         </div>
     </SidebarProvider>
   );

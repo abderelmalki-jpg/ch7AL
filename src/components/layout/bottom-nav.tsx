@@ -29,11 +29,20 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 w-full text-muted-foreground transition-colors",
-                isActive ? "text-accent" : "hover:text-accent"
+                isActive ? "text-primary" : "hover:text-primary"
               )}
             >
-              <item.icon className="h-6 w-6" />
-              <span className="text-xs font-medium">{item.label}</span>
+              {item.href === '/add-product' ? (
+                 <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary text-primary-foreground -mt-4 shadow-lg border-4 border-background">
+                    <item.icon className="h-6 w-6" />
+                 </div>
+              ) : (
+                <item.icon className="h-6 w-6" />
+              )}
+              <span className={cn(
+                  "text-xs font-medium",
+                   item.href === '/add-product' && 'sr-only' // Hide label for add button
+              )}>{item.label}</span>
             </Link>
           );
         })}
