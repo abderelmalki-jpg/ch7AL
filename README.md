@@ -1,3 +1,4 @@
+git push -u origin main
 # CH7AL - Price Sharing App
 
 This is a Next.js application for community-based price sharing.
