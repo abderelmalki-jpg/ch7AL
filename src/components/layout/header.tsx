@@ -26,30 +26,25 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 hidden w-full bg-background/80 backdrop-blur-sm md:block">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/dashboard">
-          <Logo className="h-24 w-24" />
-        </Link>
-        <div className="flex items-center gap-4">
-            <p className="text-sm font-medium">
-                Bonjour, {user?.displayName || 'Utilisateur'}
-            </p>
-            <Link href="/profile">
-            <Avatar className="h-10 w-10 border-2 border-primary">
-                {!isUserLoading && user && (
-                <AvatarImage
-                    src={user.photoURL || undefined}
-                    alt={user.displayName || "User Avatar"}
-                />
-                )}
-                <AvatarFallback className="bg-muted">
-                    <User className="w-5 h-5"/>
-                </AvatarFallback>
-            </Avatar>
-            </Link>
-        </div>
+    <div className="flex h-16 items-center justify-between p-2">
+      <Link href="/dashboard">
+          <Logo className="h-20 w-20" />
+      </Link>
+      <div className="hidden md:flex items-center gap-4">
+          <Link href="/profile">
+          <Avatar className="h-10 w-10 border-2 border-primary">
+              {!isUserLoading && user && (
+              <AvatarImage
+                  src={user.photoURL || undefined}
+                  alt={user.displayName || "User Avatar"}
+              />
+              )}
+              <AvatarFallback className="bg-muted">
+                  <User className="w-5 h-5"/>
+              </AvatarFallback>
+          </Avatar>
+          </Link>
       </div>
-    </header>
+    </div>
   );
 }

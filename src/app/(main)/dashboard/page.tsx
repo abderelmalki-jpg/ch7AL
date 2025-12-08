@@ -117,7 +117,7 @@ function HomePageContent() {
 
     return (
         <div className="flex-1">
-             <div className="relative h-64 w-full hidden md:flex items-center justify-center text-center text-white overflow-hidden">
+             <div className="relative h-48 w-full hidden md:flex items-center justify-center text-center text-white overflow-hidden">
                 <Image 
                     src="https://res.cloudinary.com/dhjwimevi/image/upload/v1764756650/90ab7acdb5a379d79bca798078f014ea_tvw3wl.jpg"
                     alt="Souk background"
@@ -127,7 +127,7 @@ function HomePageContent() {
                 <div className="absolute inset-0 bg-black/40" />
                 <div className="relative z-10">
                     <h1 className="text-5xl font-headline font-bold drop-shadow-md">Ch7al</h1>
-                    <p className="text-xl mt-2 tracking-wider uppercase font-light drop-shadow">compare  -  partager  -  recompenser</p>
+                    <p className="text-xl mt-2 tracking-wider uppercase font-light drop-shadow">Comparer - Partager - Récompenser</p>
                 </div>
             </div>
 
@@ -137,21 +137,6 @@ function HomePageContent() {
                     <p className="text-muted-foreground">Qu'allez-vous faire aujourd'hui ?</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button asChild size="lg" className="w-full h-14 text-lg">
-                        <Link href="/add-product">
-                            <PlusCircle className="mr-2 h-5 w-5" />
-                            Contribuer
-                        </Link>
-                    </Button>
-                    <Button asChild size="lg" variant="secondary" className="w-full h-14 text-lg bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                        <Link href="/search">
-                            <Search className="mr-2 h-5 w-5" />
-                            Rechercher un produit
-                        </Link>
-                    </Button>
-                </div>
-                
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold text-center">Les Bons Plans</h2>
                     <div className="flex gap-2 justify-center">
@@ -196,7 +181,13 @@ function HomePageContent() {
                         </div>
                     ) : (
                         <div className="h-96 w-full rounded-lg overflow-hidden border">
-                            <MapClient apiKey={apiKey} stores={storesForMap} />
+                           {storesForMap.length > 0 ? (
+                                <MapClient apiKey={apiKey} stores={storesForMap} />
+                           ): (
+                                <div className="flex items-center justify-center h-full bg-muted">
+                                    <p className="text-muted-foreground">Aucune localisation à afficher.</p>
+                                </div>
+                           )}
                         </div>
                     )}
                 </div>
