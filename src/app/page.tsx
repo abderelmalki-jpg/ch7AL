@@ -14,7 +14,7 @@ export default function LandingPage() {
     <div className="relative min-h-screen w-full bg-background">
       
       {/* Mobile View: Video Hero */}
-      <div className="md:hidden relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4">
+      <div className="md:hidden relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background p-4">
         <div className="relative w-full aspect-video rounded-2xl shadow-2xl overflow-hidden bg-black">
             <video
                 autoPlay
