@@ -1,15 +1,20 @@
 
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
+import { LandingHeader } from '@/components/layout/landing-header';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LandingPage() {
+  const soukHeroImage = PlaceHolderImages.find(img => img.id === 'souk-hero');
+
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4">
+    <div className="relative min-h-screen w-full bg-background">
       
-      <div className="w-full max-w-4xl flex flex-col items-center">
-        {/* Video Player in a rounded container */}
+      {/* Mobile View: Video Hero */}
+      <div className="md:hidden relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-accent p-4">
         <div className="relative w-full aspect-video rounded-2xl shadow-2xl overflow-hidden bg-black">
             <video
                 autoPlay
@@ -25,7 +30,6 @@ export default function LandingPage() {
                 Votre navigateur ne supporte pas la vidéo.
             </video>
             
-            {/* Overlay for text and button */}
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
                  <div className="text-center">
                     <div className="flex justify-center mb-4">
@@ -49,6 +53,43 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* Desktop View: Image Hero */}
+      <div className="hidden md:flex flex-col min-h-screen">
+        <LandingHeader />
+        <main className="flex-1 flex flex-col">
+          <section className="relative flex-1 flex items-center justify-center text-center text-white">
+            {soukHeroImage && (
+                <Image
+                    src={soukHeroImage.imageUrl}
+                    alt={soukHeroImage.description}
+                    data-ai-hint={soukHeroImage.imageHint}
+                    fill
+                    className="object-cover"
+                    priority
+                />
+            )}
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative z-10 p-8">
+              <div className="flex justify-center mb-4">
+                <Logo className="h-32 w-32" />
+              </div>
+              <h1 className="font-headline text-7xl lg:text-8xl font-bold text-white drop-shadow-lg">
+                Ch7al
+              </h1>
+              <p className="mt-4 max-w-2xl mx-auto text-xl lg:text-2xl text-white/90 drop-shadow-md">
+                Comparer - Partager - Récompenser
+              </p>
+              <div className="mt-8">
+                <Link href="/dashboard">
+                  <Button size="lg" className="h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground">
+                    Commencer l'aventure
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
