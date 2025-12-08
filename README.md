@@ -20,12 +20,12 @@ GEMINI_API_KEY="your-google-ai-api-key-here"
 # These are public keys and are safe to be exposed on the client-side.
 # Get these from your Firebase project settings under "General".
 # https://console.firebase.google.com/project/_/settings/general/
-NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyDF7nAbcjRtM1fczMg_WyrdwuvyDiqbOGQ"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id-here"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-sender-id-here"
-NEXT_PUBLIC_FIREBASE_APP_ID="your-web-app-id-here"
+NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyAJuQu1zUjvst6GevnVUAJe17ew7PhxODs"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="hanouti-6ce26.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="hanouti-6ce26"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="hanouti-6ce26.firebasestorage.app"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="252246765953"
+NEXT_PUBLIC_FIREBASE_APP_ID="1:252246765953:web:726dc032c6eeba126bb880"
 NEXT_PUBLIC_BASE_URL="http://localhost:9002"
 
 # ==== Firebase Admin SDK (for Server Actions) ====
@@ -40,7 +40,7 @@ FIREBASE_PRIVATE_KEY="your-private-key-here"
 # IMPORTANT: Get your Google Maps API key from the Google Cloud Console.
 # Make sure to enable the "Maps JavaScript API" for your project.
 # The map on the dashboard will not work without this key.
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="AIzaSyDF7nAbcjRtM1fczMg_WyrdwuvyDiqbOGQ"
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="AIzaSyAJuQu1zUjvst6GevnVUAJe17ew7PhxODs"
 ```
 
 **Important Note on `FIREBASE_PRIVATE_KEY`**: When you copy the private key from the JSON file you downloaded, it will contain newline characters (`\n`). You must format it as a single line in your `.env` file, replacing the newlines with `\n`. For example:

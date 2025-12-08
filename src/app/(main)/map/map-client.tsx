@@ -23,7 +23,7 @@ interface MapClientProps {
 
 export function MapClient({ apiKey, stores }: MapClientProps) {
   // Gracefully handle missing or placeholder API keys
-  if (!apiKey || apiKey.startsWith("your-") || apiKey.startsWith("AIza")) {
+  if (!apiKey || apiKey.startsWith("your-") || apiKey.startsWith("AIzaSyAJuQu1zUjvst6GevnVUAJe17ew7PhxODs")) {
     return (
         <div className="flex items-center justify-center h-full bg-muted/20">
             <div className="text-center text-muted-foreground p-4">
