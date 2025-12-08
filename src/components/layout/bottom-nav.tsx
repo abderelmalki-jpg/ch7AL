@@ -3,13 +3,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Trophy, Search } from "lucide-react";
+import { Home, Trophy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Accueil", icon: Home },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
-  { href: "/search", label: "Rechercher", icon: Search },
+  { href: "/profile", label: "Profil", icon: User },
 ];
 
 export function BottomNav() {
@@ -39,5 +39,3 @@ export function BottomNav() {
     </nav>
   );
 }
-
-    
