@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Trophy, User, PlusCircle, Search } from "lucide-react";
+import { Home, Trophy, User, PlusCircle, Search, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -16,6 +16,12 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+
+  const isAddProductPage = pathname.startsWith('/add-product');
+
+  if (isAddProductPage) {
+    return null; // Don't render the nav bar on the add product page
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-card/95 backdrop-blur-sm md:hidden">

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Suspense, useEffect } from 'react';
@@ -7,23 +6,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { useUser } from '@/firebase';
-import { Loader2, PlusCircle, Search, Trophy, User as UserIcon, Home, Map } from 'lucide-react';
-import { Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 
 const PROTECTED_ROUTES = ['/profile', '/add-product', '/dashboard', '/leaderboard', '/map', '/search', '/settings'];
 const AUTH_ROUTE = '/auth';
 const LANDING_PAGE = '/';
 
 const NO_NAV_ROUTES = ['/add-product'];
-
-const mainNav = [
-    { href: "/dashboard", label: "Accueil", icon: Home },
-    { href: "/search", label: "Rechercher", icon: Search },
-    { href: "/add-product", label: "Ajouter un prix", icon: PlusCircle },
-    { href: "/map", label: "Carte", icon: Map },
-    { href: "/leaderboard", label: "Classement", icon: Trophy },
-];
 
 export default function MainLayout({
   children,
@@ -76,37 +65,14 @@ export default function MainLayout({
   }
   
   return (
-    <SidebarProvider>
-        <div className="relative flex min-h-screen w-full flex-col md:flex-row">
-            <Sidebar>
-                <Header />
-                 <SidebarMenu>
-                    {mainNav.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <SidebarMenuItem key={item.href}>
-                                <Link href={item.href}>
-                                    <SidebarMenuButton isActive={isActive} >
-                                        <item.icon />
-                                        {item.label}
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                        )
-                    })}
-                </SidebarMenu>
-            </Sidebar>
-
-            <SidebarInset>
-                 <main className="flex-1 pb-20 md:pb-0">
-                    <Suspense>
-                        {children}
-                    </Suspense>
-                </main>
-            </SidebarInset>
-            
-            <BottomNav />
-        </div>
-    </SidebarProvider>
+    <div className="relative flex min-h-screen w-full flex-col">
+        <Header />
+        <main className="flex-1 pb-20 md:pb-0">
+            <Suspense>
+                {children}
+            </Suspense>
+        </main>
+        {showBottomNav && <BottomNav />}
+    </div>
   );
 }

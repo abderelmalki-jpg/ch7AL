@@ -26,11 +26,11 @@ export function Header() {
   }
 
   return (
-    <div className="flex h-16 items-center justify-between p-2">
+    <div className="flex h-16 items-center justify-between p-2 container mx-auto">
       <Link href="/dashboard">
           <Logo className="h-20 w-20" />
       </Link>
-      <div className="hidden md:flex items-center gap-4">
+      <div className="flex items-center gap-4">
           <Link href="/profile">
           <Avatar className="h-10 w-10 border-2 border-primary">
               {!isUserLoading && user && (
