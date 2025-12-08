@@ -34,7 +34,7 @@ export default function LandingPage() {
                         Ch7al
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
-                        Comparez . Economisez . Partagez avec la communauté
+                        Comparer - Partager - Récompenser
                     </p>
                     <div className="mt-8">
                       <Link href="/dashboard">
