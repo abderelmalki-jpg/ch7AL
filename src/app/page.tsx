@@ -31,7 +31,7 @@ export default function LandingPage() {
                         <Logo className="h-24 w-24" />
                     </div>
                      <h1 className="font-headline text-5xl md:text-7xl font-bold text-white drop-shadow-lg">
-                        CH7AL
+                        Ch7al
                     </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
                         Comparez . Economisez . Partagez avec la communauté

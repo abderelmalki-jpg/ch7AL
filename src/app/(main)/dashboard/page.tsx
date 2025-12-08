@@ -126,7 +126,7 @@ function HomePageContent() {
                 />
                 <div className="absolute inset-0 bg-black/40" />
                 <div className="relative z-10">
-                    <h1 className="text-5xl font-headline font-bold drop-shadow-md">Hada ch7al</h1>
+                    <h1 className="text-5xl font-headline font-bold drop-shadow-md">Ch7al</h1>
                     <p className="text-xl mt-2 tracking-wider uppercase font-light drop-shadow">compare  -  partager  -  recompenser</p>
                 </div>
             </div>

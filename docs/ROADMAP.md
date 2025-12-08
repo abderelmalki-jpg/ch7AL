@@ -1,8 +1,8 @@
-# Rapport Technique de l'Application "CH7AL"
+# Rapport Technique de l'Application "Ch7al"
 
 ## 1. Concept et Objectif
 
-**CH7AL** est une application mobile et web communautaire conçue pour le marché marocain. Son objectif principal est de permettre aux utilisateurs de trouver et de partager les prix de produits de consommation courante vendus dans les commerces de proximité ("hanouts").
+**Ch7al** est une application mobile et web communautaire conçue pour le marché marocain. Son objectif principal est de permettre aux utilisateurs de trouver et de partager les prix de produits de consommation courante vendus dans les commerces de proximité ("hanouts").
 
 En s'appuyant sur la contribution des utilisateurs, l'application vise à créer une base de données de prix transparente, aidant la communauté à réaliser des économies et à trouver les meilleures offres autour d'eux.
 
@@ -229,4 +229,4 @@ C'est le cœur de l'application, qui combine plusieurs logiques.
       });
     }
     ```
-Ce rapport devrait vous donner toutes les clés pour comprendre et adapter la logique de l'application CH7AL à n'importe quelle plateforme native.
+Ce rapport devrait vous donner toutes les clés pour comprendre et adapter la logique de l'application Ch7al à n'importe quelle plateforme native.

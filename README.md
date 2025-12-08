@@ -1,5 +1,5 @@
-git push -u origin main
-# CH7AL - Price Sharing App
+
+# Ch7al - Price Sharing App
 
 This is a Next.js application for community-based price sharing.
 
@@ -20,7 +20,7 @@ GEMINI_API_KEY="your-google-ai-api-key-here"
 # These are public keys and are safe to be exposed on the client-side.
 # Get these from your Firebase project settings under "General".
 # https://console.firebase.google.com/project/_/settings/general/
-NEXT_PUBLIC_FIREBASE_API_KEY="your-client-api-key-here"
+NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyDF7nAbcjRtM1fczMg_WyrdwuvyDiqbOGQ"
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id-here"
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
@@ -40,7 +40,7 @@ FIREBASE_PRIVATE_KEY="your-private-key-here"
 # IMPORTANT: Get your Google Maps API key from the Google Cloud Console.
 # Make sure to enable the "Maps JavaScript API" for your project.
 # The map on the dashboard will not work without this key.
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-google-maps-api-key-here"
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="AIzaSyDF7nAbcjRtM1fczMg_WyrdwuvyDiqbOGQ"
 ```
 
 **Important Note on `FIREBASE_PRIVATE_KEY`**: When you copy the private key from the JSON file you downloaded, it will contain newline characters (`\n`). You must format it as a single line in your `.env` file, replacing the newlines with `\n`. For example:

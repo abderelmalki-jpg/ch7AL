@@ -1,6 +1,6 @@
-# Firebase Functions for CH7AL
+# Firebase Functions for Ch7al
 
-This directory contains the backend logic for the CH7AL application, running on Firebase Cloud Functions.
+This directory contains the backend logic for the Ch7al application, running on Firebase Cloud Functions.
 
 ## Environment Configuration
 
