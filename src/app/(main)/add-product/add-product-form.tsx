@@ -54,6 +54,7 @@ export function AddProductForm() {
     const { ref: zxingRef } = useZxing({
         onDecodeResult: handleBarcodeScan,
         paused: !isScanning,
+        videoRef: videoRef,
     });
 
     useEffect(() => {
@@ -81,9 +82,8 @@ export function AddProductForm() {
               const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
               if(isMounted) {
                   streamRef.current = stream;
-                  const videoElement = isScanning ? zxingRef.current : videoRef.current;
-                  if (videoElement) {
-                    videoElement.srcObject = stream;
+                  if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
                   }
                   setCameraError(null);
               }
@@ -110,9 +110,6 @@ export function AddProductForm() {
              if (videoRef.current) {
                 videoRef.current.srcObject = null;
             }
-             if (zxingRef.current) {
-                zxingRef.current.srcObject = null;
-            }
           }
         }
 
@@ -124,7 +121,7 @@ export function AddProductForm() {
             streamRef.current.getTracks().forEach(track => track.stop());
           }
         };
-    }, [isCameraOn, isScanning, zxingRef]);
+    }, [isCameraOn, isScanning]);
 
 
     const handleCapture = async () => {
@@ -376,37 +373,30 @@ export function AddProductForm() {
         </Card>
     );
     
-    if (isCameraOn) {
+    if (isCameraOn || isScanning) {
+        const title = isScanning ? "Scanner un Code-barres" : "Identifier avec l'IA";
         return (
-            <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
+            <CameraView onBack={() => { setIsCameraOn(false); setIsScanning(false); }} title={title}>
                  <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                     <canvas ref={canvasRef} className="hidden" />
+                    {isScanning && <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white bg-black/50 px-2 py-1 rounded text-xs">Visez le code-barres</p>}
                 </div>
-                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
-                    {isIdentifying ? (
-                        <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Analyse en cours...
-                        </>
-                    ) : (
-                        <>
-                            <Zap className="mr-2 h-5 w-5" />
-                            Identifier le Produit
-                        </>
-                    )}
-                </Button>
-            </CameraView>
-        )
-    }
-
-    if (isScanning) {
-        return (
-             <CameraView onBack={() => setIsScanning(false)} title="Scanner un Code-barres">
-                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
-                    <video ref={zxingRef} className="w-full h-full object-cover"/>
-                    <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white bg-black/50 px-2 py-1 rounded text-xs">Visez le code-barres</p>
-                </div>
+                {isCameraOn && (
+                    <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
+                        {isIdentifying ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Analyse en cours...
+                            </>
+                        ) : (
+                            <>
+                                <Zap className="mr-2 h-5 w-5" />
+                                Identifier le Produit
+                            </>
+                        )}
+                    </Button>
+                )}
             </CameraView>
         )
     }
