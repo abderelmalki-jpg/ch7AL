@@ -411,8 +411,8 @@ export function AddProductForm() {
                         <span>Scanner Code</span>
                     </Button>
                     <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2">
-                        <Zap className="h-6 w-6" />
-                        <span>Analyser avec l'IA</span>
+                        <Camera className="h-6 w-6" />
+                        <span>Prendre une photo</span>
                     </Button>
                 </div>
                  <div className="relative mb-6">
