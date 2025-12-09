@@ -9,11 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode } from 'lucide-react';
+import { Loader2, MapPin, X, Camera, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
-import { addPrice, findProductByBarcode } from './actions';
-import { useZxing } from 'react-zxing';
+import { addPrice } from './actions';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 
 export function AddProductForm() {
@@ -31,7 +30,6 @@ export function AddProductForm() {
     const [storeName, setStoreName] = useState('');
     const [brand, setBrand] = useState('');
     const [category, setCategory] = useState('');
-    const [barcode, setBarcode] = useState('');
     const [photoDataUri, setPhotoDataUri] = useState('');
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
@@ -47,16 +45,9 @@ export function AddProductForm() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [isCameraOn, setIsCameraOn] = useState(false);
-    const [isScanning, setIsScanning] = useState(false);
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
-    const { ref: zxingRef } = useZxing({
-        onDecodeResult: handleBarcodeScan,
-        paused: !isScanning,
-        videoRef: videoRef,
-    });
-
     useEffect(() => {
         const nameParam = searchParams.get('name');
         const brandParam = searchParams.get('brand');
@@ -73,7 +64,7 @@ export function AddProductForm() {
         let isMounted = true;
 
         async function setupCamera() {
-          if (isCameraOn || isScanning) {
+          if (isCameraOn) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
               setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
               return;
@@ -99,7 +90,6 @@ export function AddProductForm() {
                        setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
                   }
                   setIsCameraOn(false);
-                  setIsScanning(false);
                 }
             }
           } else {
@@ -121,7 +111,7 @@ export function AddProductForm() {
             streamRef.current.getTracks().forEach(track => track.stop());
           }
         };
-    }, [isCameraOn, isScanning]);
+    }, [isCameraOn]);
 
 
     const handleCapture = async () => {
@@ -159,43 +149,6 @@ export function AddProductForm() {
         }
         setIsIdentifying(false);
     };
-
-    function handleBarcodeScan(result: any){
-        if (!result) return;
-        const scannedCode = result.getText();
-        if (!scannedCode) return;
-        
-        setIsScanning(false);
-        setBarcode(scannedCode);
-
-        toast({
-            title: "Code-barres scanné !",
-            description: `Recherche du produit avec le code : ${scannedCode}`
-        });
-
-        startPriceTransition(async () => {
-            if (!firestore) return;
-            const { product, error } = await findProductByBarcode(firestore, scannedCode);
-
-            if (error) {
-                toast({ variant: 'destructive', title: "Erreur", description: error });
-            } else if (product) {
-                setProductName(product.name || '');
-                setBrand(product.brand || '');
-                setCategory(product.category || '');
-                if(product.imageUrl) setPhotoDataUri(product.imageUrl);
-                toast({
-                    title: "Produit trouvé !",
-                    description: `${product.name} a été pré-rempli.`
-                });
-            } else {
-                toast({
-                    title: "Produit inconnu",
-                    description: "Ce code-barres n'est pas dans notre base. Merci de remplir les informations."
-                });
-            }
-        });
-    }
 
     const uploadImage = async (dataUri: string, userId: string): Promise<string> => {
         if (!storage) throw new Error("Firebase Storage n'est pas initialisé.");
@@ -237,7 +190,7 @@ export function AddProductForm() {
                 if (photoDataUri && photoDataUri.startsWith('data:image')) {
                   imageUrl = await uploadImage(photoDataUri, user!.uid);
                 } else if (photoDataUri) {
-                  imageUrl = photoDataUri; // It's already a URL from barcode scan
+                  imageUrl = photoDataUri; // It's already a URL
                 }
 
                 const priceData = {
@@ -252,7 +205,6 @@ export function AddProductForm() {
                     longitude,
                     brand,
                     category,
-                    barcode,
                     imageUrl,
                 };
             
@@ -373,30 +325,26 @@ export function AddProductForm() {
         </Card>
     );
     
-    if (isCameraOn || isScanning) {
-        const title = isScanning ? "Scanner un Code-barres" : "Identifier avec l'IA";
+    if (isCameraOn) {
         return (
-            <CameraView onBack={() => { setIsCameraOn(false); setIsScanning(false); }} title={title}>
+            <CameraView onBack={() => setIsCameraOn(false)} title={"Identifier avec l'IA"}>
                  <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                     <canvas ref={canvasRef} className="hidden" />
-                    {isScanning && <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white bg-black/50 px-2 py-1 rounded text-xs">Visez le code-barres</p>}
                 </div>
-                {isCameraOn && (
-                    <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
-                        {isIdentifying ? (
-                            <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Analyse en cours...
-                            </>
-                        ) : (
-                            <>
-                                <Zap className="mr-2 h-5 w-5" />
-                                Identifier le Produit
-                            </>
-                        )}
-                    </Button>
-                )}
+                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
+                    {isIdentifying ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Analyse en cours...
+                        </>
+                    ) : (
+                        <>
+                            <Camera className="mr-2 h-5 w-5" />
+                            Identifier le Produit
+                        </>
+                    )}
+                </Button>
             </CameraView>
         )
     }
@@ -412,16 +360,12 @@ export function AddProductForm() {
                 </div>
                 <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
                 <CardDescription>
-                    Scannez un code-barres ou identifiez un produit avec votre caméra.
+                    Prenez une photo pour identifier un produit et ajouter son prix.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="mb-6 grid grid-cols-2 gap-4">
-                    <Button onClick={() => setIsScanning(true)} size="lg" className="h-auto py-4 flex-col gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-                        <Barcode className="h-6 w-6" />
-                        <span>Scanner Code</span>
-                    </Button>
-                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2">
+                 <div className="mb-6">
+                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="w-full h-auto py-4 flex-col gap-2">
                         <Camera className="h-6 w-6" />
                         <span>Prendre une photo</span>
                     </Button>
@@ -475,13 +419,6 @@ export function AddProductForm() {
                         </div>
                     </div>
                     
-                    {barcode && (
-                        <div className="space-y-2">
-                            <Label htmlFor="barcode">Code-barres</Label>
-                             <Input id="barcode" name="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-                        </div>
-                    )}
-
                      <div className="space-y-2">
                         <Label htmlFor="storeName">Lieu (Hanout)</Label>
                         <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
@@ -532,5 +469,3 @@ export function AddProductForm() {
     </div>
   );
 }
-
-    

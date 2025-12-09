@@ -29,7 +29,6 @@ const PriceSchema = z.object({
   longitude: z.number().optional().nullable(),
   brand: z.string().optional(),
   category: z.string().optional(),
-  barcode: z.string().optional(),
   imageUrl: z.string().optional(),
 });
 
@@ -58,7 +57,6 @@ export async function addPrice(
     longitude,
     brand,
     category,
-    barcode,
     imageUrl,
   } = validatedFields.data;
 
@@ -69,25 +67,11 @@ export async function addPrice(
       const pricesCollection = collection(db, 'prices');
       const usersCollection = collection(db, 'users');
 
-      let productRef;
-      let productSnap;
-
-      // Prioriser la recherche par code-barres s'il est fourni
-      if (barcode) {
-        const productQuery = query(productsCollection, where('barcode', '==', barcode), where('name', '==', productName.trim()));
-        const querySnapshot = await transaction.get(productQuery);
-        if (!querySnapshot.empty) {
-            productRef = querySnapshot.docs[0].ref;
-            productSnap = querySnapshot.docs[0];
-        }
-      }
-
-      // Si non trouvé par code-barres, chercher ou créer par nom
-      if (!productRef) {
-        const productDocId = productName.trim().toLowerCase().replace(/\s+/g, '-');
-        productRef = doc(productsCollection, productDocId);
-        productSnap = await transaction.get(productRef);
-      }
+      // Chercher ou créer par nom
+      const productDocId = productName.trim().toLowerCase().replace(/\s+/g, '-');
+      const productRef = doc(productsCollection, productDocId);
+      const productSnap = await transaction.get(productRef);
+      
 
       const storeRef = doc(storesCollection, storeName.trim());
       const storeSnap = await transaction.get(storeRef);
@@ -114,10 +98,6 @@ export async function addPrice(
           uploadedBy: userId,
       };
 
-      if (barcode) {
-        productData.barcode = barcode;
-      }
-      
       if (imageUrl) {
         productData.imageUrl = imageUrl;
       }
@@ -160,7 +140,6 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // Create a safe data object for logging, excluding the large data URI
     const { imageUrl: _removed, ...safeData } = data;
 
     if (error.code === 'permission-denied') {
@@ -177,33 +156,3 @@ export async function addPrice(
     return { status: 'error', message: errorMessage };
   }
 }
-
-// Action to find a product by its barcode using CLIENT SDK
-export async function findProductByBarcode(db: Firestore, barcode: string): Promise<{product: any | null, error: string | null}> {
-    try {
-        const productQuery = query(collection(db, 'products'), where('barcode', '==', barcode));
-        const snapshot = await getDocs(productQuery);
-        
-        if (snapshot.empty) {
-            return { product: null, error: null };
-        }
-        
-        const productDoc = snapshot.docs[0];
-        const product = { id: productDoc.id, ...productDoc.data() };
-
-        return { product, error: null };
-    } catch (e: any) {
-        console.error("Erreur lors de la recherche par code-barres:", e);
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `products`,
-                operation: 'list',
-                requestResourceData: { barcode },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
-        return { product: null, error: "Une erreur est survenue lors de la recherche du produit." };
-    }
-}
-
-    
