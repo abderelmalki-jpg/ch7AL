@@ -11,8 +11,12 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  // Use a generic link for search results, or a specific one for internal products
+  const productLink = product.id.startsWith('http') ? product.id : `/product/${product.id}`;
+  const isExternalLink = product.id.startsWith('http');
+
   return (
-    <Link href={`/product/${product.id}`} className="block group">
+    <Link href={productLink} target={isExternalLink ? "_blank" : "_self"} rel={isExternalLink ? "noopener noreferrer" : ""} className="block group">
       <Card className="overflow-hidden transition-all group-hover:shadow-lg group-hover:-translate-y-1 h-full flex flex-col">
         <div className="aspect-square relative bg-muted">
           {product.imageUrl ? (
@@ -30,8 +34,8 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
         <CardContent className="p-3 flex flex-col flex-grow">
-          <h3 className="font-semibold text-sm truncate group-hover:whitespace-normal">{product.name}</h3>
-          <p className="text-xs text-muted-foreground">{product.brand}</p>
+          <h3 className="font-semibold text-sm truncate group-hover:whitespace-normal group-hover:overflow-visible group-hover:text-wrap">{product.name}</h3>
+          {product.brand && <p className="text-xs text-muted-foreground">{product.brand}</p>}
           <div className="flex-grow"></div>
            <div className="flex justify-between items-end mt-2">
             {product.category && <Badge variant="secondary" className="hidden sm:inline-flex">{product.category}</Badge>}
