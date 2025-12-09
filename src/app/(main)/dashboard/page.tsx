@@ -155,6 +155,12 @@ function HomePageContent() {
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Desktop Sidebar */}
                     <aside className="hidden md:block md:w-56 lg:w-64 flex-shrink-0">
+                       <Link href="/add-product" passHref>
+                         <Button size="lg" className="w-full h-12 mb-6 bg-green-500 hover:bg-green-600 text-white">
+                           <PlusCircle className="mr-2 h-5 w-5" />
+                           Ajouter un prix
+                         </Button>
+                       </Link>
                        <h2 className="text-lg font-bold mb-4">Les Bons Plans</h2>
                        <FilterControls />
                     </aside>
@@ -275,3 +281,5 @@ export default function HomePage() {
     </Suspense>
   )
 }
+
+    

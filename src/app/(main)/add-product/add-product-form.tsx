@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, X, Camera, Zap, ArrowLeft } from 'lucide-react';
+import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { addPrice } from './actions';
+import { addPrice, findProductByBarcode } from './actions';
+import { useZxing } from 'react-zxing';
 
 export function AddProductForm() {
     const { toast } = useToast();
@@ -27,6 +28,7 @@ export function AddProductForm() {
     const [storeName, setStoreName] = useState('');
     const [brand, setBrand] = useState('');
     const [category, setCategory] = useState('');
+    const [barcode, setBarcode] = useState('');
     const [photoDataUri, setPhotoDataUri] = useState('');
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
@@ -42,16 +44,14 @@ export function AddProductForm() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [isCameraOn, setIsCameraOn] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
     const [isIdentifying, setIsIdentifying] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     
-    useEffect(() => {
-        const action = searchParams.get('action');
-        if (action === 'camera') {
-            setIsCameraOn(true);
-        }
-    }, [searchParams]);
-
+    const { ref: zxingRef } = useZxing({
+        onDecodeResult: handleBarcodeScan,
+        paused: !isScanning,
+    });
 
     useEffect(() => {
         const nameParam = searchParams.get('name');
@@ -68,18 +68,8 @@ export function AddProductForm() {
      useEffect(() => {
         let isMounted = true;
 
-        const stopCamera = () => {
-             if (streamRef.current) {
-              streamRef.current.getTracks().forEach(track => track.stop());
-              streamRef.current = null;
-            }
-             if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
-        }
-
         async function setupCamera() {
-          if (isCameraOn) {
+          if (isCameraOn || isScanning) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
               setCameraError("L'accès à la caméra n'est pas supporté par ce navigateur.");
               return;
@@ -88,8 +78,9 @@ export function AddProductForm() {
               const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
               if(isMounted) {
                   streamRef.current = stream;
-                  if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
+                  const videoElement = isScanning ? zxingRef.current : videoRef.current;
+                  if (videoElement) {
+                    videoElement.srcObject = stream;
                   }
                   setCameraError(null);
               }
@@ -105,10 +96,20 @@ export function AddProductForm() {
                        setCameraError("Une erreur est survenue lors de l'accès à la caméra.");
                   }
                   setIsCameraOn(false);
+                  setIsScanning(false);
                 }
             }
           } else {
-            stopCamera();
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop());
+              streamRef.current = null;
+            }
+             if (videoRef.current) {
+                videoRef.current.srcObject = null;
+            }
+             if (zxingRef.current) {
+                zxingRef.current.srcObject = null;
+            }
           }
         }
 
@@ -116,9 +117,11 @@ export function AddProductForm() {
 
         return () => {
           isMounted = false;
-          stopCamera();
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+          }
         };
-    }, [isCameraOn]);
+    }, [isCameraOn, isScanning, zxingRef]);
 
 
     const handleCapture = async () => {
@@ -140,26 +143,58 @@ export function AddProductForm() {
                 setBrand(result.brand);
                 setCategory(result.category);
                 setPhotoDataUri(dataUri);
-                setIsCameraOn(false); // Turn off camera on success
+                setIsCameraOn(false);
                 toast({
                     title: "Produit Identifié!",
                     description: `C'est un(e) ${result.name}.`,
                 })
-            } catch (e: any) {
+            } catch (e) {
                 console.error(e);
-                let description = "L'IA n'a pas pu identifier le produit. Réessayez.";
-                if (e.message && e.message.includes('503')) {
-                    description = "Le service de reconnaissance est surchargé. Veuillez réessayer dans quelques instants."
-                }
                 toast({
                     variant: "destructive",
                     title: "Erreur d'identification",
-                    description: description,
+                    description: "L'IA n'a pas pu identifier le produit. Réessayez.",
                 });
             }
         }
         setIsIdentifying(false);
     };
+
+    function handleBarcodeScan(result: any){
+        if (!result) return;
+        const scannedCode = result.getText();
+        if (!scannedCode) return;
+        
+        setIsScanning(false); // Stop scanning once a result is found
+        setBarcode(scannedCode);
+
+        toast({
+            title: "Code-barres scanné !",
+            description: `Recherche du produit avec le code : ${scannedCode}`
+        });
+
+        startPriceTransition(async () => {
+            const { product, error } = await findProductByBarcode(scannedCode);
+
+            if (error) {
+                toast({ variant: 'destructive', title: "Erreur", description: error });
+            } else if (product) {
+                setProductName(product.name || '');
+                setBrand(product.brand || '');
+                setCategory(product.category || '');
+                if(product.imageUrl) setPhotoDataUri(product.imageUrl);
+                toast({
+                    title: "Produit trouvé !",
+                    description: `${product.name} a été pré-rempli.`
+                });
+            } else {
+                toast({
+                    title: "Produit inconnu",
+                    description: "Ce code-barres n'est pas dans notre base. Merci de remplir les informations."
+                });
+            }
+        });
+    }
 
 
     const handlePriceSubmit = async (event: React.FormEvent) => {
@@ -198,6 +233,7 @@ export function AddProductForm() {
                 longitude,
                 brand,
                 category,
+                barcode,
                 photoDataUri,
             };
 
@@ -294,10 +330,10 @@ export function AddProductForm() {
     }
 
     const CameraView = ({onBack, children, title}: {onBack: () => void, children: React.ReactNode, title: string}) => (
-        <Card className="bg-transparent border-0 shadow-none">
-            <CardHeader className="text-primary-foreground">
+        <Card>
+            <CardHeader>
                 <div className="flex justify-between items-center">
-                    <Button onClick={onBack} variant="ghost" size="sm" className="text-primary-foreground hover:bg-white/10 hover:text-white">
+                    <Button onClick={onBack} variant="outline" size="sm">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Retour
                     </Button>
@@ -321,47 +357,60 @@ export function AddProductForm() {
     
     if (isCameraOn) {
         return (
-            <div className="bg-gray-900 min-h-screen flex flex-col p-4">
-                <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
-                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
-                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                        <canvas ref={canvasRef} className="hidden" />
-                    </div>
-                    <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90 h-14 text-lg">
-                        {isIdentifying ? (
-                            <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Analyse en cours...
-                            </>
-                        ) : (
-                            <>
-                                <Zap className="mr-2 h-5 w-5" />
-                                Identifier le Produit
-                            </>
-                        )}
-                    </Button>
-                </CameraView>
-            </div>
+            <CameraView onBack={() => setIsCameraOn(false)} title="Identifier avec l'IA">
+                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                    <canvas ref={canvasRef} className="hidden" />
+                </div>
+                <Button onClick={handleCapture} disabled={isIdentifying} className="w-full mt-4">
+                    {isIdentifying ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Analyse en cours...
+                        </>
+                    ) : (
+                        <>
+                            <Zap className="mr-2 h-5 w-5" />
+                            Identifier le Produit
+                        </>
+                    )}
+                </Button>
+            </CameraView>
+        )
+    }
+
+    if (isScanning) {
+        return (
+             <CameraView onBack={() => setIsScanning(false)} title="Scanner un Code-barres">
+                 <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg relative">
+                    <video ref={zxingRef} className="w-full h-full object-cover"/>
+                    <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white bg-black/50 px-2 py-1 rounded text-xs">Visez le code-barres</p>
+                </div>
+            </CameraView>
         )
     }
 
   return (
     <div className="space-y-8">
         <Card className="overflow-hidden">
-             <div className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-center">
+            <CardHeader className="text-center">
                  <div className="flex justify-center mb-4">
-                    <div className="p-3 bg-white/20 rounded-full">
-                         <Camera className="h-8 w-8" />
+                    <div className="p-3 bg-primary/10 rounded-full">
+                         <Camera className="h-8 w-8 text-primary" />
                     </div>
                 </div>
-                <CardTitle className="font-headline text-3xl">Ajouter un prix</CardTitle>
-                <CardDescription className="text-primary-foreground/80">
-                    Utilisez votre caméra pour identifier un produit ou remplissez les champs manuellement.
+                <CardTitle className="font-headline text-3xl text-primary">Ajouter un prix</CardTitle>
+                <CardDescription>
+                    Scannez un code-barres ou identifiez un produit avec votre caméra.
                 </CardDescription>
-            </div>
-            <CardContent className="p-6">
-                 <div className="mb-6">
-                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="w-full h-auto py-4 flex-col gap-2">
+            </CardHeader>
+            <CardContent>
+                 <div className="mb-6 grid grid-cols-2 gap-4">
+                    <Button onClick={() => setIsScanning(true)} size="lg" className="h-auto py-4 flex-col gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+                        <Barcode className="h-6 w-6" />
+                        <span>Scanner Code</span>
+                    </Button>
+                    <Button onClick={() => setIsCameraOn(true)} size="lg" className="h-auto py-4 flex-col gap-2">
                         <Zap className="h-6 w-6" />
                         <span>Analyser avec l'IA</span>
                     </Button>
@@ -414,18 +463,14 @@ export function AddProductForm() {
                             {formErrors.price && <p className="text-sm font-medium text-destructive">{formErrors.price}</p>}
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="brand">Marque (optionnel)</Label>
-                            <Input id="brand" name="brand" placeholder="ex: Coca-Cola" value={brand} onChange={(e) => setBrand(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="category">Catégorie (optionnel)</Label>
-                            <Input id="category" name="category" placeholder="ex: Boisson gazeuse" value={category} onChange={(e) => setCategory(e.target.value)} />
-                        </div>
-                    </div>
                     
+                    {barcode && (
+                        <div className="space-y-2">
+                            <Label htmlFor="barcode">Code-barres</Label>
+                             <Input id="barcode" name="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+                        </div>
+                    )}
+
                      <div className="space-y-2">
                         <Label htmlFor="storeName">Lieu (Hanout)</Label>
                         <Input id="storeName" name="storeName" placeholder="ex: Epicerie Al Amal" value={storeName} onChange={e => setStoreName(e.target.value)} required />
