@@ -28,8 +28,8 @@ function initializeAdminApp() {
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
     
-    if (!projectId || !clientEmail || !privateKey) {
-        console.error("🔥 Erreur critique: Des variables d'environnement pour Firebase Admin SDK sont manquantes. Le SDK Admin ne sera pas initialisé.");
+    if (!projectId || !clientEmail || !privateKey || privateKey.includes('your-private-key')) {
+        console.error("🔥 Erreur critique: Des variables d'environnement pour Firebase Admin SDK sont manquantes ou non configurées. Le SDK Admin ne sera pas initialisé.");
         return;
     }
 

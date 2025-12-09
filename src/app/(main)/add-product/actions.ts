@@ -32,12 +32,7 @@ async function uploadImage(dataUri: string, userId: string): Promise<string> {
     const { adminStorage } = await getAdminServices();
     if (!adminStorage) throw new Error("Firebase Admin Storage n'est pas initialisé.");
     
-    // Utilisation directe du nom du bucket depuis les variables d'environnement
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-        throw new Error("Le nom du bucket de stockage Firebase n'est pas configuré dans les variables d'environnement.");
-    }
-    const bucket = adminStorage.bucket(bucketName);
+    const bucket = adminStorage.bucket();
     
     const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
     const imageFile = bucket.file(imagePath);
@@ -186,18 +181,6 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    // Create a safe data object for logging, excluding the large data URI
-    const { photoDataUri: _removed, ...safeData } = data;
-
-    if (error.code === 'permission-denied' || (error.code === 7 && error.message.includes("permission-denied"))) {
-        const permissionError = new FirestorePermissionError({
-            path: `prices, products, stores, or users`,
-            operation: 'write',
-            requestResourceData: safeData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
-
     const errorMessage = error.message || "Une erreur inconnue est survenue lors de l'ajout du prix.";
 
     return { status: 'error', message: errorMessage };
@@ -227,5 +210,3 @@ export async function findProductByBarcode(barcode: string): Promise<{product: a
         return { product: null, error: "Une erreur est survenue lors de la recherche du produit." };
     }
 }
-
-    
