@@ -11,15 +11,18 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, MapPin, X, Camera, Zap, ArrowLeft, Barcode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { addPrice, findProductByBarcode } from './actions';
 import { useZxing } from 'react-zxing';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 
 export function AddProductForm() {
     const { toast } = useToast();
     const router = useRouter();
     const { user } = useUser();
+    const firestore = useFirestore();
     const searchParams = useSearchParams();
+    const storage = firestore ? getStorage(firestore.app) : null;
 
     const [isSubmittingPrice, startPriceTransition] = useTransition();
 
@@ -165,7 +168,7 @@ export function AddProductForm() {
         const scannedCode = result.getText();
         if (!scannedCode) return;
         
-        setIsScanning(false); // Stop scanning once a result is found
+        setIsScanning(false);
         setBarcode(scannedCode);
 
         toast({
@@ -174,7 +177,8 @@ export function AddProductForm() {
         });
 
         startPriceTransition(async () => {
-            const { product, error } = await findProductByBarcode(scannedCode);
+            if (!firestore) return;
+            const { product, error } = await findProductByBarcode(firestore, scannedCode);
 
             if (error) {
                 toast({ variant: 'destructive', title: "Erreur", description: error });
@@ -196,6 +200,17 @@ export function AddProductForm() {
         });
     }
 
+    const uploadImage = async (dataUri: string, userId: string): Promise<string> => {
+        if (!storage) throw new Error("Firebase Storage n'est pas initialisé.");
+        
+        const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
+        const imageRef = storageRef(storage, imagePath);
+
+        const snapshot = await uploadString(imageRef, dataUri, 'data_url');
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
+    }
+
 
     const handlePriceSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -209,9 +224,9 @@ export function AddProductForm() {
         }
 
         if (!storeName) errors.storeName = "Le nom du magasin est requis.";
-        if (!user) {
+        if (!user || !firestore) {
             errors.userId = "Vous devez être connecté pour soumettre un prix.";
-            toast({ variant: 'destructive', title: 'Utilisateur non connecté' });
+            toast({ variant: 'destructive', title: 'Utilisateur non connecté ou base de données indisponible' });
         }
 
         setFormErrors(errors);
@@ -220,25 +235,31 @@ export function AddProductForm() {
         }
 
         startPriceTransition(async () => {
-            const priceData = {
-                userId: user!.uid,
-                userEmail: user!.email!,
-                productName,
-                price: parsedPrice,
-                storeName,
-                address,
-                city,
-                neighborhood,
-                latitude,
-                longitude,
-                brand,
-                category,
-                barcode,
-                photoDataUri,
-            };
-
             try {
-                const result = await addPrice(priceData);
+                let imageUrl: string | undefined = undefined;
+                if (photoDataUri && photoDataUri.startsWith('data:image')) {
+                  imageUrl = await uploadImage(photoDataUri, user!.uid);
+                } else if (photoDataUri) {
+                  imageUrl = photoDataUri; // It's already a URL from barcode scan
+                }
+
+                const priceData = {
+                    userId: user!.uid,
+                    productName,
+                    price: parsedPrice,
+                    storeName,
+                    address,
+                    city,
+                    neighborhood,
+                    latitude,
+                    longitude,
+                    brand,
+                    category,
+                    barcode,
+                    imageUrl,
+                };
+            
+                const result = await addPrice(firestore!, priceData);
                 
                 if (result.status === 'success') {
                     toast({
@@ -521,7 +542,5 @@ export function AddProductForm() {
     </div>
   );
 }
-
-    
 
     
