@@ -1,6 +1,11 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Add the following line to allow cross-origin requests in development.
+    allowedDevOrigins: ["*.cloudworkstations.dev"],
+  },
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
