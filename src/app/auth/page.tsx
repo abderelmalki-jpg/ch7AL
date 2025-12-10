@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthForm } from "./auth-form";
-import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { isSignInWithEmailLink, signInWithEmailLink, type User } from 'firebase/auth';
@@ -110,11 +109,8 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 py-8 bg-background">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
-            <Logo className="h-28 w-28" />
-        </div>
         <Card className="shadow-lg rounded-xl">
-            <CardHeader className="text-center">
+            <CardHeader className="text-center pt-8">
                 <CardTitle className="text-2xl font-bold text-center">Bienvenue !</CardTitle>
                 <CardDescription>Connectez-vous pour continuer</CardDescription>
             </CardHeader>
@@ -126,5 +122,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-    
