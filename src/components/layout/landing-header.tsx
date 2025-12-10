@@ -22,7 +22,6 @@ export function LandingHeader() {
         <div className="container mx-auto flex h-20 items-center justify-between p-4">
             <Link href="/" className="flex items-center gap-2">
                 <Logo className="h-16 w-16" />
-                <span className="text-2xl font-bold text-white drop-shadow-md">Ch7al</span>
             </Link>
              <nav className="hidden md:flex items-center gap-6 text-white/90 font-medium">
                 {navLinks.map(link => (

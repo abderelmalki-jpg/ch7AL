@@ -35,9 +35,6 @@ export default function LandingPage() {
                     <div className="flex justify-center mb-4">
                         <Logo className="h-24 w-24" />
                     </div>
-                     <h1 className="font-headline text-5xl md:text-7xl font-bold text-white drop-shadow-lg">
-                        Ch7al
-                    </h1>
                     <p className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-white drop-shadow-md">
                         Comparer - Partager - Récompenser
                     </p>
@@ -73,9 +70,6 @@ export default function LandingPage() {
               <div className="flex justify-center mb-4">
                 <Logo className="h-32 w-32" />
               </div>
-              <h1 className="font-headline text-7xl lg:text-8xl font-bold text-white drop-shadow-lg">
-                Ch7al
-              </h1>
               <p className="mt-4 max-w-2xl mx-auto text-xl lg:text-2xl text-white/90 drop-shadow-md">
                 Comparer - Partager - Récompenser
               </p>
