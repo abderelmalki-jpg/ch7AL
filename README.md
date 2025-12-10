@@ -1,4 +1,8 @@
+fatal: Could not read from remote repository.
 
+Please make sure you have the correct access rights
+and the repository exists.
+studio-3669303802:~/studio{main}$ 
 # Ch7al - Price Sharing App
 
 This is a Next.js application for community-based price sharing.
