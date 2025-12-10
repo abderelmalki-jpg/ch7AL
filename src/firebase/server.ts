@@ -9,8 +9,8 @@ let adminApp: App | undefined;
 let adminDb: Firestore | null = null;
 let adminStorage: Storage | null = null;
 
-// Définir le nom du bucket de stockage directement et de manière fiable
-const STORAGE_BUCKET = 'hanouti-6ce26.appspot.com';
+// Définir le nom du bucket de stockage pour correspondre à la configuration client
+const STORAGE_BUCKET = 'hanouti-6ce26.firebasestorage.app';
 
 function initializeAdminApp() {
     if (getApps().some(app => app.name === 'admin')) {
@@ -29,7 +29,7 @@ function initializeAdminApp() {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
     
     if (!projectId || !clientEmail || !privateKey || privateKey.includes('your-private-key')) {
-        console.error("🔥 Erreur critique: Des variables d'environnement pour Firebase Admin SDK sont manquantes ou non configurées. Le SDK Admin ne sera pas initialisé.");
+        console.warn("⚠️ Variables d'environnement Firebase Admin manquantes. Le SDK Admin ne sera pas initialisé. C'est normal en production côté client.");
         return;
     }
 
@@ -44,7 +44,6 @@ function initializeAdminApp() {
 
         adminApp = initializeApp({
             credential: cert(serviceAccount),
-            // Utiliser le nom du bucket directement ici
             storageBucket: STORAGE_BUCKET,
         }, 'admin');
         
@@ -66,12 +65,8 @@ interface AdminServices {
     adminStorage: Storage | null;
 }
 
-/**
- * Gets the initialized Firebase Admin services.
- * It will attempt to initialize them on the first call if they haven't been already.
- */
 export async function getAdminServices(): Promise<AdminServices> {
-    if (!adminApp) {
+    if (!getApps().some(app => app.name === 'admin')) {
         initializeAdminApp();
     }
     return { adminDb, adminStorage };
