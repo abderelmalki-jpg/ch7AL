@@ -35,25 +35,27 @@ export function Header() {
   }
 
   return (
-    <header className="hidden md:flex h-16 items-center justify-between px-4 container mx-auto border-b">
-      <div className="flex items-center gap-6">
-        <Link href="/dashboard">
-          <div className="w-24 h-12">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-contain"
-              >
-                <source
-                  src="https://res.cloudinary.com/dhjwimevi/video/upload/v1764326857/grok-video-ac00e8b7-74a3-4043-bcf7-9673f81dcf59_1_vewvrz.mp4"
-                  type="video/mp4"
-                />
-              </video>
-          </div>
-        </Link>
-        <nav className="flex items-center gap-4">
+    <header className="hidden md:flex h-16 items-center px-4 container mx-auto border-b">
+        <div className="flex-1">
+            <Link href="/dashboard">
+                <div className="w-24 h-12">
+                    <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-contain"
+                    >
+                        <source
+                        src="https://res.cloudinary.com/dhjwimevi/video/upload/v1764326857/grok-video-ac00e8b7-74a3-4043-bcf7-9673f81dcf59_1_vewvrz.mp4"
+                        type="video/mp4"
+                        />
+                    </video>
+                </div>
+            </Link>
+        </div>
+        
+        <nav className="flex-1 flex justify-center items-center gap-6">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -70,9 +72,8 @@ export function Header() {
             );
           })}
         </nav>
-      </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex-1 flex items-center justify-end gap-4">
           <Link href="/add-product" passHref>
              <Button>
                <PlusCircle className="mr-2 h-4 w-4" />
