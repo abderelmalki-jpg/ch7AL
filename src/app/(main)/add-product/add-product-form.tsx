@@ -152,7 +152,7 @@ export function AddProductForm() {
     const uploadImage = async (dataUri: string, userId: string): Promise<string> => {
         if (!storage) throw new Error("Firebase Storage n'est pas initialisé.");
         
-        const imagePath = `product-images/${userId}/${Date.now()}.jpg`;
+        const imagePath = `product-images/${Date.now()}-${userId}.jpg`;
         const imageRef = storageRef(storage, imagePath);
 
         const snapshot = await uploadString(imageRef, dataUri, 'data_url');
