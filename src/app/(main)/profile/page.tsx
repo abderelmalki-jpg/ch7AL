@@ -11,12 +11,13 @@ import { updateProfile as updateAuthProfile } from 'firebase/auth';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Loader2, Camera, Trophy, BarChart3, Edit } from "lucide-react";
+import { LogOut, Loader2, Camera, Trophy, BarChart3, Edit, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export default function ProfilePage() {
     const auth = useAuth();
@@ -123,6 +124,14 @@ export default function ProfilePage() {
 
     return (
         <div className="bg-gradient-to-b from-primary/80 to-primary h-full p-4 space-y-6 flex flex-col">
+            
+             <div className="absolute top-4 right-4">
+                <Link href="/settings" passHref>
+                    <Button variant="ghost" size="icon" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/20">
+                        <Settings className="h-6 w-6" />
+                    </Button>
+                </Link>
+            </div>
             
             <div className="flex-grow flex flex-col items-center justify-center text-center text-primary-foreground">
                 <div className="relative group">

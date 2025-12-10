@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Trophy, User, PlusCircle, Search, Map } from "lucide-react";
+import { Home, Trophy, User, PlusCircle, Search, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
