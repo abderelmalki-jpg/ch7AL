@@ -29,7 +29,7 @@ const PriceSchema = z.object({
   longitude: z.number().optional().nullable(),
   brand: z.string().optional(),
   category: z.string().optional(),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().url().optional().nullable(),
 });
 
 type PriceInput = z.infer<typeof PriceSchema>;
@@ -98,21 +98,16 @@ export async function addPrice(
           uploadedBy: userId,
       };
 
-      if (imageUrl) {
-        productData.imageUrl = imageUrl;
-      }
-
-      if (!productSnap || !productSnap.exists()) {
+      if (!productSnap.exists()) {
         productData.createdAt = serverTimestamp();
+        if(imageUrl) productData.imageUrl = imageUrl;
         transaction.set(productRef, productData);
       } else {
-        // Only update image if it doesn't exist
-        const existingData = productSnap.data();
-        if (imageUrl && !existingData.imageUrl) {
-            transaction.update(productRef, { imageUrl, updatedAt: serverTimestamp() });
-        } else {
-            transaction.update(productRef, { updatedAt: serverTimestamp() });
+        const updateData: any = { updatedAt: serverTimestamp() };
+        if (imageUrl && !productSnap.data()?.imageUrl) {
+            updateData.imageUrl = imageUrl;
         }
+        transaction.update(productRef, updateData);
       }
 
       const priceRef = doc(pricesCollection);
@@ -140,7 +135,8 @@ export async function addPrice(
   } catch (error: any) {
     console.error("🔥 Erreur Firestore dans l'action addPrice:", error);
     
-    const { imageUrl: _removed, ...safeData } = data;
+    // Create a safe data object for logging, excluding the large data URI
+    const { ...safeData } = data;
 
     if (error.code === 'permission-denied') {
         const permissionError = new FirestorePermissionError({

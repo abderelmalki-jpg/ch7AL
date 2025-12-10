@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useTransition } from 'react';
@@ -177,6 +176,7 @@ export function AddProductForm() {
         if (!user || !firestore) {
             errors.userId = "Vous devez être connecté pour soumettre un prix.";
             toast({ variant: 'destructive', title: 'Utilisateur non connecté ou base de données indisponible' });
+            return;
         }
 
         setFormErrors(errors);
@@ -208,7 +208,7 @@ export function AddProductForm() {
                     imageUrl,
                 };
             
-                const result = await addPrice(firestore!, priceData);
+                const result = await addPrice(firestore, priceData);
                 
                 if (result.status === 'success') {
                     toast({
