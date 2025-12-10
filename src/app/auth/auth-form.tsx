@@ -7,12 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/firebase/provider";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, Mail, KeyRound, User } from "lucide-react";
+import { Loader2, Mail, KeyRound, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   handleEmailSignUp,
   handleEmailSignIn,
-  handleMagicLinkSignIn
 } from "@/firebase/non-blocking-login";
 
 const getFirebaseErrorMessage = (errorCode: string) => {
@@ -35,16 +34,13 @@ const getFirebaseErrorMessage = (errorCode: string) => {
 };
 
 type AuthMode = 'signin' | 'signup';
-type AuthMethod = 'password' | 'magiclink';
 
 export function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [isLinkSent, setIsLinkSent] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
-  const [authMethod, setAuthMethod] = useState<AuthMethod>('password');
 
   const auth = useAuth();
   const { toast } = useToast();
@@ -71,31 +67,10 @@ export function AuthForm() {
     });
   };
 
-  const handleSendMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!auth || !email) return;
-
-    startTransition(async () => {
-        try {
-            await handleMagicLinkSignIn(auth, email);
-            setIsLinkSent(true);
-            toast({
-                title: 'Lien envoyé !',
-                description: `Un lien de connexion a été envoyé à ${email}.`,
-            });
-        } catch (error: any) {
-            console.error("Auth Error:", error, error.code);
-            const errorMessage = getFirebaseErrorMessage(error.code);
-            toast({ variant: 'destructive', title: 'Erreur d\'envoi', description: errorMessage });
-        }
-    });
-  }
-  
   const resetForm = () => {
     setEmail('');
     setPassword('');
     setUsername('');
-    setIsLinkSent(false);
   }
 
   const renderPasswordForm = () => (
@@ -130,36 +105,6 @@ export function AuthForm() {
     </form>
   );
 
-  const renderMagicLinkForm = () => {
-     if (isLinkSent) {
-        return (
-            <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
-                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-green-800">Vérifiez votre boîte mail</h3>
-                <p className="text-green-700 mt-2">
-                    Nous avons envoyé un lien de connexion magique à <strong className="font-bold">{email}</strong>.
-                </p>
-                <Button variant="link" onClick={() => {setIsLinkSent(false); setEmail('')}}>Envoyer à une autre adresse</Button>
-            </div>
-        )
-    }
-    return (
-         <form className="space-y-4" onSubmit={handleSendMagicLink}>
-            <div className="space-y-2">
-            <Label htmlFor="magic-email">Email</Label>
-            <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="magic-email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isPending} className="pl-9" />
-            </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={isPending || !auth || !email}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Envoyer le lien magique
-            </Button>
-        </form>
-    )
-  }
-
   return (
     <div>
         <div className="flex bg-muted p-1 rounded-lg mb-4">
@@ -175,20 +120,8 @@ export function AuthForm() {
             </button>
         </div>
 
-      {authMethod === 'password' ? renderPasswordForm() : renderMagicLinkForm()}
+      {renderPasswordForm()}
       
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Ou</span>
-        </div>
-      </div>
-
-      <Button variant="outline" className="w-full" onClick={() => setAuthMethod(authMethod === 'password' ? 'magiclink' : 'password')}>
-        {authMethod === 'password' ? "Se connecter avec un lien magique" : "Se connecter avec un mot de passe"}
-      </Button>
     </div>
   );
 }
