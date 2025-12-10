@@ -41,7 +41,7 @@ export default function LandingPage() {
 
           {/* Contenu centré */}
           <div className="relative z-20 flex flex-col items-center justify-center text-center p-4 sm:p-8">
-              <div className="flex justify-center mb-4 md:hidden">
+              <div className="flex justify-center mb-4">
                   <Logo className="h-24 w-24" />
               </div>
               <p className="mt-4 max-w-2xl mx-auto text-xl lg:text-2xl text-white drop-shadow-md">
