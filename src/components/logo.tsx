@@ -10,6 +10,7 @@ export function Logo({ className }: { className?: string }) {
         alt="Ch7al Logo"
         fill
         className="object-contain"
+        priority
       />
     </div>
   );
