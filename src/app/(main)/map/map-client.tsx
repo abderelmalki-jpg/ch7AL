@@ -51,7 +51,7 @@ export function MapClient({ apiKey, stores }: MapClientProps) {
       <Map
         defaultCenter={defaultCenter}
         defaultZoom={12}
-        mapId="ch3rel-map"
+        mapId="ch7al-map"
         gestureHandling={'cooperative'}
         disableDefaultUI={false}
         zoomControl={true}
