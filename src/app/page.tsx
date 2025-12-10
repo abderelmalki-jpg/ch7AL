@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/logo';
 import { LandingHeader } from '@/components/layout/landing-header';
 
 export default function LandingPage() {
@@ -41,9 +40,9 @@ export default function LandingPage() {
 
           {/* Contenu centré */}
           <div className="relative z-20 flex flex-col items-center justify-center text-center p-4 sm:p-8">
-              <div className="flex justify-center mb-4">
-                  <Logo className="h-24 w-24" />
-              </div>
+              <h1 className="text-5xl font-bold text-white drop-shadow-lg mb-4">
+                  Ch7al
+              </h1>
               <p className="mt-4 max-w-2xl mx-auto text-xl lg:text-2xl text-white drop-shadow-md">
                   Comparer - Partager - Récompenser
               </p>

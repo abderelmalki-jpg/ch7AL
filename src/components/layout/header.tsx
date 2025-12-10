@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Logo } from "@/components/logo";
 import { useUser } from "@/firebase";
 import { Button } from "../ui/button";
 import { User } from "lucide-react";
@@ -28,7 +27,7 @@ export function Header() {
   return (
     <div className="flex h-16 items-center justify-between p-2 container mx-auto">
       <Link href="/dashboard">
-          <Logo className="h-20 w-20" />
+          <span className="font-bold text-xl">Ch7al</span>
       </Link>
       <div className="flex items-center gap-4">
           <Link href="/profile">
