@@ -1,4 +1,3 @@
-
 'use client'
 
 import Link from "next/link";
@@ -25,9 +24,22 @@ export function Header() {
   }
 
   return (
-    <div className="flex h-16 items-center justify-between p-2 container mx-auto">
+    <header className="hidden md:flex h-16 items-center justify-between px-4 container mx-auto border-b">
       <Link href="/dashboard">
-          <span className="font-bold text-xl">Ch7al</span>
+        <div className="w-24 h-12">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-contain"
+            >
+              <source
+                src="https://res.cloudinary.com/dhjwimevi/video/upload/v1764326857/grok-video-ac00e8b7-74a3-4043-bcf7-9673f81dcf59_1_vewvrz.mp4"
+                type="video/mp4"
+              />
+            </video>
+        </div>
       </Link>
       <div className="flex items-center gap-4">
           <Link href="/profile">
@@ -44,6 +56,6 @@ export function Header() {
           </Avatar>
           </Link>
       </div>
-    </div>
+    </header>
   );
 }

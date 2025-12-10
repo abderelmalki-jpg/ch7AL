@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -16,12 +15,6 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
-
-  const isAddProductPage = pathname.startsWith('/add-product');
-
-  if (isAddProductPage) {
-    return null; // Don't render the nav bar on the add product page
-  }
 
   return (
     <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-card/95 backdrop-blur-sm md:hidden">
