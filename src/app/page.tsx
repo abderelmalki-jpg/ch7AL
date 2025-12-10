@@ -24,7 +24,7 @@ export default function LandingPage() {
                 className="w-full h-full object-cover"
             >
                 <source
-                src="https://res.cloudinary.com/dhjwimevi/video/upload/v1761429194/Design_sans_titre_4_witvsw.mp4"
+                src="https://res.cloudinary.com/dhjwimevi/video/upload/v1764326857/grok-video-ac00e8b7-74a3-4043-bcf7-9673f81dcf59_1_vewvrz.mp4"
                 type="video/mp4"
                 />
                 Votre navigateur ne supporte pas la vidéo.
