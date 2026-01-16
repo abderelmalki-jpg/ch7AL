@@ -20,7 +20,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Belleza&family=Alegreya:wght@400;500;700&display=swap" rel="stylesheet" />
         <link rel="icon" href="https://res.cloudinary.com/db2ljqpdt/image/upload/v1760802070/image2_devrs5.png" />
       </head>
       <body className="font-body bg-background text-foreground antialiased min-h-screen flex flex-col">

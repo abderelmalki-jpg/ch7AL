@@ -38,20 +38,11 @@ export function Header() {
     <header className="hidden md:flex h-16 items-center px-4 container mx-auto border-b">
         <div className="flex-1">
             <Link href="/dashboard">
-                <div className="w-24 h-12">
-                    <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-full h-full object-contain"
-                    >
-                        <source
-                        src="https://res.cloudinary.com/dhjwimevi/video/upload/v1764326857/grok-video-ac00e8b7-74a3-4043-bcf7-9673f81dcf59_1_vewvrz.mp4"
-                        type="video/mp4"
-                        />
-                    </video>
-                </div>
+                <img
+                    src="https://i.ibb.co/6RJW1z1/ch7alhadak-logo.png"
+                    alt="ch7alhadak logo"
+                    className="h-12 w-auto"
+                />
             </Link>
         </div>
         
