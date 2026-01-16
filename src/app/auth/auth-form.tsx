@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   handleEmailSignUp,
   handleEmailSignIn,
+  handleSendSignInLink,
 } from "@/firebase/non-blocking-login";
 
 const getFirebaseErrorMessage = (errorCode: string) => {
@@ -33,7 +34,7 @@ const getFirebaseErrorMessage = (errorCode: string) => {
   }
 };
 
-type AuthMode = 'signin' | 'signup';
+type AuthMode = 'signin' | 'signup' | 'passwordless';
 
 export function AuthForm() {
   const [email, setEmail] = useState('');
@@ -66,6 +67,22 @@ export function AuthForm() {
       }
     });
   };
+
+  const sendLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    startTransition(async () => {
+      try {
+        await handleSendSignInLink(auth, email);
+        toast({ title: 'Lien de connexion envoyé', description: 'Consultez votre boîte mail pour vous connecter.' });
+      } catch (error: any) {
+        console.error("Auth Error:", error, error.code);
+        const errorMessage = getFirebaseErrorMessage(error.code);
+        toast({ variant: 'destructive', title: 'Erreur', description: errorMessage });
+      }
+    });
+  }
 
   const resetForm = () => {
     setEmail('');
@@ -105,23 +122,44 @@ export function AuthForm() {
     </form>
   );
 
+  const renderPasswordlessForm = () => (
+    <form className="space-y-4" onSubmit={sendLink}>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input id="email" type="email" placeholder="email@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={isPending} className="pl-9" />
+        </div>
+      </div>
+      <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isPending || !auth}>
+        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Envoyer le lien de connexion
+      </Button>
+    </form>
+  )
+
   return (
     <div>
-        <div className="flex bg-muted p-1 rounded-lg mb-4">
-            <button 
-                onClick={() => { setAuthMode('signin'); resetForm(); }}
-                className={cn("flex-1 p-2 rounded-md text-sm font-medium", authMode === 'signin' && "bg-background shadow-sm")}>
-                Se connecter
-            </button>
-            <button 
-                onClick={() => { setAuthMode('signup'); resetForm(); }}
-                className={cn("flex-1 p-2 rounded-md text-sm font-medium", authMode === 'signup' && "bg-background shadow-sm")}>
-                S'inscrire
-            </button>
-        </div>
+      <div className="flex bg-muted p-1 rounded-lg mb-4">
+        <button 
+            onClick={() => { setAuthMode('signin'); resetForm(); }}
+            className={cn("flex-1 p-2 rounded-md text-sm font-medium", authMode === 'signin' && "bg-background shadow-sm")}>
+            Se connecter
+        </button>
+        <button 
+            onClick={() => { setAuthMode('signup'); resetForm(); }}
+            className={cn("flex-1 p-2 rounded-md text-sm font-medium", authMode === 'signup' && "bg-background shadow-sm")}>
+            S'inscrire
+        </button>
+      </div>
 
-      {renderPasswordForm()}
-      
+      {authMode === 'passwordless' ? renderPasswordlessForm() : renderPasswordForm()}
+
+      <div className="mt-4 text-center text-sm">
+        <button onClick={() => setAuthMode(authMode === 'passwordless' ? 'signin' : 'passwordless')} className="underline">
+          {authMode === 'passwordless' ? 'Se connecter avec un mot de passe' : 'Se connecter avec un lien magique'}
+        </button>
+      </div>
     </div>
   );
 }
